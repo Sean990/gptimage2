@@ -1,0 +1,7 @@
+node_modules
+dist
+.agents
+.env
+*.log
+.vite-dev.*.log
+nano-banana-loading-check.png
