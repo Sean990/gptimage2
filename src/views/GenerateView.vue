@@ -22,25 +22,63 @@ import { api, resolveApiUrl } from '../services/api'
 import { useSiteStore } from '../services/siteStore'
 
 const route = useRoute()
-const { siteData, loadSiteData } = useSiteStore()
-const sizes = [
-  { label: '1K 方图 1024x1024', value: '1024x1024' },
-  { label: '2K 横图 1536x1024', value: '1536x1024' },
-  { label: '2K 竖图 1024x1536', value: '1024x1536' },
-  { label: '自动 auto', value: 'auto' },
+const { loadSiteData } = useSiteStore()
+const modes = [
+  { value: 'generate', label: '文生图', requiresReference: false },
+  { value: 'image', label: '图生图', requiresReference: true },
+  { value: 'edit', label: '精修图', requiresReference: true },
 ]
+const aspectRatios = [
+  { label: '1:1', value: '1:1' },
+  { label: '16:9', value: '16:9' },
+  { label: '9:16', value: '9:16' },
+  { label: '4:3', value: '4:3' },
+  { label: '3:4', value: '3:4' },
+  { label: '自动', value: 'auto' },
+]
+const resolutionOptions = [
+  { label: '自动', value: 'auto' },
+  { label: '1K', value: '1K' },
+  { label: '2K', value: '2K' },
+  { label: '4K', value: '4K' },
+]
+const sizeMatrix = {
+  '1K': {
+    '1:1': '1024x1024',
+    '16:9': '1792x1008',
+    '9:16': '1008x1792',
+    '4:3': '1344x1008',
+    '3:4': '1008x1344',
+  },
+  '2K': {
+    '1:1': '2048x2048',
+    '16:9': '2560x1440',
+    '9:16': '1440x2560',
+    '4:3': '1920x1440',
+    '3:4': '1440x1920',
+  },
+  '4K': {
+    '1:1': '2880x2880',
+    '16:9': '3840x2160',
+    '9:16': '2160x3840',
+    '4:3': '3264x2448',
+    '3:4': '2448x3264',
+  },
+}
 const qualities = [
-  { label: '默认', value: '' },
+  { label: '自动 auto', value: 'auto' },
   { label: '高 high', value: 'high' },
   { label: '中 medium', value: 'medium' },
   { label: '低 low', value: 'low' },
-  { label: '自动 auto', value: 'auto' },
 ]
 const outputFormats = [
-  { label: '默认', value: '' },
   { label: 'PNG', value: 'png' },
   { label: 'JPEG', value: 'jpeg' },
   { label: 'WEBP', value: 'webp' },
+]
+const moderationOptions = [
+  { label: '自动 auto', value: 'auto' },
+  { label: '低限制 low', value: 'low' },
 ]
 const modelGroups = [
   {
@@ -76,25 +114,6 @@ const modelGroups = [
       },
     ],
   },
-  {
-    label: '视频模型',
-    models: [
-      {
-        value: 'seedance-2.0',
-        name: 'Seedance 2.0',
-        badge: '视频',
-        description: '适合多模态电影级视频与音画同步方向。',
-        meta: '视频镜头等待态',
-      },
-      {
-        value: 'veo-3.1',
-        name: 'Veo 3.1',
-        badge: '视频',
-        description: '适合文本或图像到电影感视频的镜头规划。',
-        meta: '视频镜头等待态',
-      },
-    ],
-  },
 ]
 const modelOptions = modelGroups.flatMap((group) => group.models)
 const gptLoadingDots = Array.from({ length: 169 }, (_, index) => {
@@ -121,17 +140,25 @@ const gptLoadingDots = Array.from({ length: 169 }, (_, index) => {
 })
 
 const model = ref('gpt-image-2')
-const size = ref('1024x1024')
+const mode = ref('generate')
+const aspectRatio = ref('3:4')
+const resolution = ref('4K')
 const imageCount = ref(1)
-const quality = ref('')
-const outputFormat = ref('')
+const quality = ref('auto')
+const outputFormat = ref('png')
+const moderation = ref('auto')
+const outputCompression = ref(0)
+const advancedOpen = ref(false)
 const prompt = ref(
   route.query.prompt ||
     '室内柔光人像摄影，保留上传照片的人物身份与五官特征，白色蕾丝连衣裙，窗边自然光，暖色调，中景构图，真实肤质，杂志级质感。',
 )
 const urlInput = ref('')
 const imageUrl = ref('')
+const maskUrlInput = ref('')
+const maskImageUrl = ref('')
 const uploads = ref([])
+const maskUploads = ref([])
 const output = ref([])
 const loading = ref(false)
 const loadingProgress = ref(27)
@@ -142,14 +169,28 @@ const galleryOpen = ref(false)
 const gallery = ref([])
 const modelPicker = ref(null)
 const modelMenuOpen = ref(false)
+const selectMenuOpen = ref('')
 
 const referenceCount = computed(() => uploads.value.length + (imageUrl.value ? 1 : 0))
+const maskCount = computed(() => maskUploads.value.length + (maskImageUrl.value ? 1 : 0))
 const canReverse = computed(() => referenceCount.value > 0)
 const canAddReference = computed(() => referenceCount.value < 4)
+const canAddMask = computed(() => maskCount.value < 1)
+const activeMode = computed(() => modes.find((item) => item.value === mode.value) || modes[0])
+const requiresReference = computed(() => activeMode.value.requiresReference)
 const normalizedImageCount = computed(() => Math.min(10, Math.max(1, Number(imageCount.value) || 1)))
 const loadingTileCount = computed(() => normalizedImageCount.value)
 const activeModelKey = computed(() => normalizeModelKey(model.value))
 const activeModelLabel = computed(() => formatModelLabel(activeModelKey.value, model.value))
+const size = computed(() => {
+  if (resolution.value === 'auto' || aspectRatio.value === 'auto') return 'auto'
+  return sizeMatrix[resolution.value]?.[aspectRatio.value] || 'auto'
+})
+const resolutionLabel = computed(() => {
+  const parts = [resolution.value]
+  if (size.value !== 'auto') parts.push(size.value)
+  return parts.join(' · ')
+})
 const selectedModel = computed(
   () =>
     modelOptions.find((item) => item.value === model.value) || {
@@ -160,25 +201,27 @@ const selectedModel = computed(
       meta: '通用等待态',
     },
 )
+const selectedAspectRatioLabel = computed(() => getOptionLabel(aspectRatios, aspectRatio.value))
+const selectedResolutionLabel = computed(() => getOptionLabel(resolutionOptions, resolution.value))
+const selectedQualityLabel = computed(() => getOptionLabel(qualities, quality.value))
+const selectedOutputFormatLabel = computed(() => getOptionLabel(outputFormats, outputFormat.value))
+const selectedModerationLabel = computed(() => getOptionLabel(moderationOptions, moderation.value))
 const loadingVariant = computed(() => {
   if (activeModelKey.value === 'gpt-image-2') return 'gpt-image-2'
   if (activeModelKey.value === 'nano-banana-2') return 'nano-banana-2'
   if (activeModelKey.value === 'nano-banana' || activeModelKey.value === 'nano-banana-pro') return 'nano-banana'
-  if (['veo', 'seedance', 'sora'].includes(activeModelKey.value)) return 'video'
   return 'generic'
 })
 const loadingTitle = computed(() => {
   if (loadingVariant.value === 'gpt-image-2') return 'GPT Image 2 正在生成'
   if (loadingVariant.value === 'nano-banana-2') return 'Nano Banana 2 正在推理'
   if (loadingVariant.value === 'nano-banana') return 'Nano Banana 正在组织画面'
-  if (loadingVariant.value === 'video') return `${activeModelLabel.value} 正在准备镜头`
   return `${activeModelLabel.value} 正在生成`
 })
 const loadingHint = computed(() => {
   if (loadingVariant.value === 'gpt-image-2') return '使用 image-gen-loading-state-dots 风格等待态'
   if (loadingVariant.value === 'nano-banana-2') return '优先整理参考图一致性、材质细节和构图'
   if (loadingVariant.value === 'nano-banana') return '正在快速铺开构图、色彩和主体风格'
-  if (loadingVariant.value === 'video') return '视频模型会先规划帧节奏、镜头和运动方向'
   return '正在准备当前模型的输出结果'
 })
 const loadingStatusText = computed(() => `正在创建图像 · ${loadingProgress.value}%`)
@@ -193,6 +236,26 @@ const promptQualityLabel = computed(() => {
   if (promptQualityScore.value >= 45) return '可生成，建议继续补充细节'
   return '描述偏短，建议补充主体、光线和构图'
 })
+const promptLabel = computed(() => {
+  return '提示词 *'
+})
+const promptPlaceholder = computed(() => {
+  if (mode.value === 'image') return '描述如何基于参考图生成新图，例如：保持人物身份，替换为高级摄影棚背景，增强服装质感。'
+  if (mode.value === 'edit') return '描述要精修的局部或整体，例如：只替换背景为高级摄影棚，主体保持不变。'
+  return '详细描述你想要生成的图像，包括主体、风格、光线、色调等...'
+})
+const referenceLabel = computed(() => {
+  return '参考图像'
+})
+const advancedSummary = computed(() => {
+  const items = [
+    activeMode.value.label,
+    `${normalizedImageCount.value} 张`,
+    outputFormat.value.toUpperCase(),
+  ]
+  if (mode.value === 'edit' && maskCount.value) items.push('含蒙版')
+  return items.join(' · ')
+})
 
 function normalizeModelKey(value = '') {
   const normalized = value.trim().toLowerCase().replace(/[_\s]+/g, '-')
@@ -202,9 +265,6 @@ function normalizeModelKey(value = '') {
   if (normalized.includes('nano-banana-2') || normalized.includes('nanobanana2')) return 'nano-banana-2'
   if (normalized.includes('nano-banana-pro') || normalized.includes('nanobananapro')) return 'nano-banana-pro'
   if (normalized.includes('nano-banana') || normalized.includes('nanobanana')) return 'nano-banana'
-  if (normalized.includes('seedance')) return 'seedance'
-  if (normalized.includes('veo')) return 'veo'
-  if (normalized.includes('sora')) return 'sora'
   return normalized
 }
 
@@ -213,14 +273,16 @@ function formatModelLabel(modelKey, rawValue) {
   if (modelKey === 'nano-banana-2') return 'Nano Banana 2'
   if (modelKey === 'nano-banana-pro') return 'Nano Banana Pro'
   if (modelKey === 'nano-banana') return 'Nano Banana'
-  if (modelKey === 'seedance') return 'Seedance'
-  if (modelKey === 'veo') return 'Veo'
-  if (modelKey === 'sora') return 'Sora'
   return rawValue.trim() || '当前模型'
+}
+
+function getOptionLabel(options, value) {
+  return options.find((item) => item.value === value)?.label || value
 }
 
 function toggleModelMenu() {
   modelMenuOpen.value = !modelMenuOpen.value
+  selectMenuOpen.value = ''
 }
 
 function selectModel(value) {
@@ -228,13 +290,36 @@ function selectModel(value) {
   modelMenuOpen.value = false
 }
 
-function closeModelMenuOnOutside(event) {
-  if (!modelMenuOpen.value || modelPicker.value?.contains(event.target)) return
+function toggleSelectMenu(key) {
+  selectMenuOpen.value = selectMenuOpen.value === key ? '' : key
   modelMenuOpen.value = false
+}
+
+function selectSimpleOption(key, value) {
+  if (key === 'aspectRatio') aspectRatio.value = value
+  if (key === 'resolution') resolution.value = value
+  if (key === 'quality') quality.value = value
+  if (key === 'outputFormat') outputFormat.value = value
+  if (key === 'moderation') moderation.value = value
+  selectMenuOpen.value = ''
+}
+
+function closeMenusOnOutside(event) {
+  const target = event.target
+  if (modelMenuOpen.value && !modelPicker.value?.contains(target)) {
+    modelMenuOpen.value = false
+  }
+  if (selectMenuOpen.value && (!(target instanceof Element) || !target.closest('.select-picker'))) {
+    selectMenuOpen.value = ''
+  }
 }
 
 function closeModelMenu() {
   modelMenuOpen.value = false
+}
+
+function closeSelectMenu() {
+  selectMenuOpen.value = ''
 }
 
 function normalizeGeneratedImage(item, index = 0, defaults = {}) {
@@ -245,6 +330,8 @@ function normalizeGeneratedImage(item, index = 0, defaults = {}) {
     url: resolveApiUrl(imageUrl),
     prompt: item.prompt || defaults.prompt,
     model: item.model || defaults.model,
+    mode: item.mode || defaults.mode,
+    apiMode: item.apiMode || defaults.apiMode,
     ratio: item.ratio,
     resolution: item.resolution,
     size: item.size || defaults.size,
@@ -265,6 +352,8 @@ function normalizeGenerationRecord(record, defaults = {}) {
     ...defaults,
     prompt: record?.prompt || defaults.prompt,
     model: record?.model || defaults.model,
+    mode: record?.mode || defaults.mode,
+    apiMode: record?.apiMode || defaults.apiMode,
     size: record?.size || defaults.size,
     quality: record?.quality || defaults.quality,
     output_format: record?.output_format || defaults.output_format,
@@ -333,15 +422,56 @@ async function onFileChange(event) {
   event.target.value = ''
 }
 
+async function onMaskFileChange(event) {
+  if (!canAddMask.value) {
+    showNotice('最多添加 1 张蒙版')
+    event.target.value = ''
+    return
+  }
+
+  const file = Array.from(event.target.files || [])[0]
+  if (!file) return
+
+  const mapped = {
+    name: file.name,
+    src: URL.createObjectURL(file),
+  }
+  maskUploads.value = [mapped]
+
+  try {
+    const uploaded = await api.uploadFiles([file])
+    maskUploads.value = maskUploads.value.map((item) => ({
+      ...item,
+      remoteUrl: uploaded[0]?.url ? resolveApiUrl(uploaded[0].url) : item.remoteUrl,
+    }))
+    showNotice('蒙版已添加')
+  } catch (error) {
+    showNotice(error.message || '蒙版上传失败，已保留本地预览')
+  }
+
+  event.target.value = ''
+}
+
 function removeUpload(index) {
   const [removed] = uploads.value.splice(index, 1)
   if (removed?.src) URL.revokeObjectURL(removed.src)
   showNotice('已移除参考图')
 }
 
+function removeMaskUpload(index) {
+  const [removed] = maskUploads.value.splice(index, 1)
+  if (removed?.src) URL.revokeObjectURL(removed.src)
+  showNotice('已移除蒙版')
+}
+
 function removeUrlReference() {
   imageUrl.value = ''
   showNotice('已移除 URL 参考图')
+}
+
+function removeMaskUrlReference() {
+  maskImageUrl.value = ''
+  showNotice('已移除 URL 蒙版')
 }
 
 async function reversePrompt() {
@@ -368,54 +498,68 @@ async function generate() {
     showNotice('请先输入提示词')
     return
   }
+  if (requiresReference.value && !referenceCount.value) {
+    showNotice(mode.value === 'edit' ? '请先添加原图或参考图' : '请先添加参考图')
+    return
+  }
   generationAbortController.value?.abort()
   const controller = new AbortController()
   generationAbortController.value = controller
   loading.value = true
   output.value = []
 
-  // try {
-  //   const requestPayload = compactPayload({
-  //     prompt: prompt.value,
-  //     model: model.value,
-  //     size: size.value,
-  //     n: normalizedImageCount.value,
-  //     quality: quality.value,
-  //     output_format: outputFormat.value,
-  //     response_format: 'b64_json',
-  //     references: getReferences(),
-  //   })
-  //   const result = await api.generateImages(requestPayload, {
-  //     signal: controller.signal,
-  //   })
-  //   const normalizedResult = normalizeGenerationRecord(result, {
-  //     ...requestPayload,
-  //     createdAt: new Date().toISOString(),
-  //   })
-  //   output.value = normalizedResult.images.map((item) => ({
-  //     id: item.id,
-  //     title: item.title,
-  //     src: item.url,
-  //     prompt: item.prompt,
-  //     model: item.model,
-  //     ratio: item.ratio,
-  //     resolution: item.resolution,
-  //     size: item.size,
-  //     quality: item.quality,
-  //     outputFormat: item.outputFormat,
-  //     createdAt: item.createdAt,
-  //   }))
-  //   gallery.value = [normalizedResult, ...gallery.value]
-  //   showNotice(normalizedImageCount.value > 1 ? '批量生成已完成' : '图像生成已完成')
-  // } catch (error) {
-  //   output.value = []
-  //   showNotice(error.name === 'AbortError' ? '已停止生成' : (error.message || '图像生成失败，请稍后重试'))
-  // } finally {
-  //   if (generationAbortController.value === controller) {
-  //     generationAbortController.value = null
-  //     loading.value = false
-  //   }
-  // }
+  try {
+    const requestPayload = compactPayload({
+      prompt: prompt.value,
+      model: model.value,
+      mode: mode.value,
+      api_mode: 'image',
+      action: mode.value === 'generate' ? 'generate' : 'edit',
+      size: size.value,
+      ratio: aspectRatio.value,
+      resolution: resolution.value,
+      n: normalizedImageCount.value,
+      quality: quality.value,
+      output_format: outputFormat.value,
+      moderation: moderation.value,
+      output_compression: outputCompression.value,
+      response_format: 'b64_json',
+      references: getReferences(),
+      mask: getMaskReference(),
+    })
+    const result = await api.generateImages(requestPayload, {
+      signal: controller.signal,
+    })
+    const normalizedResult = normalizeGenerationRecord(result, {
+      ...requestPayload,
+      createdAt: new Date().toISOString(),
+    })
+    output.value = normalizedResult.images.map((item) => ({
+      id: item.id,
+      title: item.title,
+      src: item.url,
+      prompt: item.prompt,
+      model: item.model,
+      mode: item.mode,
+      apiMode: item.apiMode,
+      ratio: item.ratio,
+      resolution: item.resolution,
+      size: item.size,
+      quality: item.quality,
+      outputFormat: item.outputFormat,
+      createdAt: item.createdAt,
+    }))
+    gallery.value = [normalizedResult, ...gallery.value]
+    showNotice(normalizedImageCount.value > 1 ? '批量生成已完成' : '图像生成已完成')
+  } catch (error) {
+    output.value = []
+    showNotice(error.name === 'AbortError' ? '已停止生成' : (error.message || '图像生成失败，请稍后重试'))
+  } finally {
+    if (generationAbortController.value === controller) {
+      generationAbortController.value = null
+      loading.value = false
+    }
+  }
 }
 
 function stopGeneration() {
@@ -438,6 +582,21 @@ function addUrlReference() {
   showNotice('图片 URL 已作为参考图加入')
 }
 
+function addMaskUrlReference() {
+  const nextUrl = maskUrlInput.value.trim()
+  if (!nextUrl) {
+    showNotice('请先输入蒙版 URL')
+    return
+  }
+  if (!canAddMask.value && !maskImageUrl.value) {
+    showNotice('最多添加 1 张蒙版')
+    return
+  }
+  maskImageUrl.value = nextUrl
+  maskUrlInput.value = ''
+  showNotice('蒙版 URL 已加入')
+}
+
 async function copyCurrentPrompt() {
   try {
     await navigator.clipboard.writeText(prompt.value)
@@ -457,6 +616,10 @@ function getReferences() {
     imageUrl.value,
     ...uploads.value.map((item) => item.remoteUrl || item.src),
   ].filter(Boolean)
+}
+
+function getMaskReference() {
+  return maskImageUrl.value || maskUploads.value[0]?.remoteUrl || maskUploads.value[0]?.src || ''
 }
 
 async function openGallery() {
@@ -481,17 +644,23 @@ watch(loading, (isLoading) => {
 
 onMounted(() => {
   loadSiteData()
-  window.addEventListener('click', closeModelMenuOnOutside)
+  window.addEventListener('click', closeMenusOnOutside)
 })
 
 onBeforeUnmount(() => {
   clearLoadingProgressTimer()
-  window.removeEventListener('click', closeModelMenuOnOutside)
+  window.removeEventListener('click', closeMenusOnOutside)
+  uploads.value.forEach((item) => {
+    if (item.src) URL.revokeObjectURL(item.src)
+  })
+  maskUploads.value.forEach((item) => {
+    if (item.src) URL.revokeObjectURL(item.src)
+  })
 })
 </script>
 
 <template>
-  <main class="page">
+  <main class="page generate-page">
     <section class="section-tight">
       <div class="container">
         <SectionTitle
@@ -534,10 +703,7 @@ onBeforeUnmount(() => {
                     <span class="model-picker-copy">
                       <span class="model-preview-head">
                         <strong>{{ selectedModel.name }}</strong>
-                        <span class="model-badge">{{ selectedModel.badge }}</span>
                       </span>
-                      <span>{{ selectedModel.description }}</span>
-                      <small>{{ selectedModel.value }} · {{ selectedModel.meta }}</small>
                     </span>
                     <ChevronDown class="model-picker-arrow" :class="{ open: modelMenuOpen }" aria-hidden="true" />
                   </button>
@@ -558,9 +724,7 @@ onBeforeUnmount(() => {
                         <span>
                           <span class="model-option-head">
                             <strong>{{ item.name }}</strong>
-                            <span class="model-badge">{{ item.badge }}</span>
                           </span>
-                          <small>{{ item.description }}</small>
                         </span>
                         <Check v-if="item.value === model" aria-hidden="true" />
                       </button>
@@ -569,35 +733,113 @@ onBeforeUnmount(() => {
                 </div>
               </div>
               <div class="field">
-                <label for="size">图片尺寸</label>
-                <select id="size" v-model="size">
-                  <option v-for="item in sizes" :key="item.value" :value="item.value">{{ item.label }}</option>
-                </select>
+                <label for="aspect-ratio">纵横比</label>
+                <div class="model-picker select-picker">
+                  <button
+                    id="aspect-ratio"
+                    class="model-picker-button select-picker-button"
+                    type="button"
+                    :aria-label="`纵横比，当前为 ${selectedAspectRatioLabel}`"
+                    :aria-expanded="selectMenuOpen === 'aspectRatio'"
+                    aria-haspopup="listbox"
+                    aria-controls="aspect-ratio-menu"
+                    @click.stop="toggleSelectMenu('aspectRatio')"
+                    @keydown.escape="closeSelectMenu"
+                  >
+                    <span class="model-picker-copy">
+                      <span class="model-preview-head">
+                        <strong>{{ selectedAspectRatioLabel }}</strong>
+                      </span>
+                    </span>
+                    <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'aspectRatio' }" aria-hidden="true" />
+                  </button>
+                  <div
+                    v-if="selectMenuOpen === 'aspectRatio'"
+                    id="aspect-ratio-menu"
+                    class="model-menu select-menu"
+                    role="listbox"
+                    aria-labelledby="aspect-ratio"
+                  >
+                    <button
+                      v-for="item in aspectRatios"
+                      :key="item.value"
+                      class="model-option select-option"
+                      :class="{ active: item.value === aspectRatio }"
+                      type="button"
+                      role="option"
+                      :aria-selected="item.value === aspectRatio"
+                      @click.stop="selectSimpleOption('aspectRatio', item.value)"
+                      @keydown.escape="closeSelectMenu"
+                    >
+                      <span>
+                        <span class="model-option-head">
+                          <strong>{{ item.label }}</strong>
+                        </span>
+                      </span>
+                      <Check v-if="item.value === aspectRatio" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="field">
-                <label for="image-count">数量</label>
-                <input id="image-count" v-model.number="imageCount" type="number" min="1" max="10" />
-              </div>
-              <div class="field">
-                <label for="quality">质量</label>
-                <select id="quality" v-model="quality">
-                  <option v-for="item in qualities" :key="item.label" :value="item.value">{{ item.label }}</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="output-format">输出格式</label>
-                <select id="output-format" v-model="outputFormat">
-                  <option v-for="item in outputFormats" :key="item.label" :value="item.value">{{ item.label }}</option>
-                </select>
+                <label for="resolution">分辨率</label>
+                <div class="model-picker select-picker">
+                  <button
+                    id="resolution"
+                    class="model-picker-button select-picker-button"
+                    type="button"
+                    :aria-label="`分辨率，当前为 ${selectedResolutionLabel}`"
+                    :aria-expanded="selectMenuOpen === 'resolution'"
+                    aria-haspopup="listbox"
+                    aria-controls="resolution-menu"
+                    @click.stop="toggleSelectMenu('resolution')"
+                    @keydown.escape="closeSelectMenu"
+                  >
+                    <span class="model-picker-copy">
+                      <span class="model-preview-head">
+                        <strong>{{ selectedResolutionLabel }}</strong>
+                      </span>
+                    </span>
+                    <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'resolution' }" aria-hidden="true" />
+                  </button>
+                  <div
+                    v-if="selectMenuOpen === 'resolution'"
+                    id="resolution-menu"
+                    class="model-menu select-menu"
+                    role="listbox"
+                    aria-labelledby="resolution"
+                  >
+                    <button
+                      v-for="item in resolutionOptions"
+                      :key="item.value"
+                      class="model-option select-option"
+                      :class="{ active: item.value === resolution }"
+                      type="button"
+                      role="option"
+                      :aria-selected="item.value === resolution"
+                      @click.stop="selectSimpleOption('resolution', item.value)"
+                      @keydown.escape="closeSelectMenu"
+                    >
+                      <span>
+                        <span class="model-option-head">
+                          <strong>{{ item.label }}</strong>
+                        </span>
+                      </span>
+                      <Check v-if="item.value === resolution" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+                <small v-if="size !== 'auto'">{{ resolutionLabel }}</small>
               </div>
             </div>
 
             <div class="field">
-              <label for="prompt">提示词 *</label>
+              <label for="prompt">{{ promptLabel }}</label>
               <textarea
                 id="prompt"
                 v-model.trim="prompt"
-                placeholder="详细描述你想要生成的图像，包括主体、风格、光线、色调等..."
+                :placeholder="promptPlaceholder"
+                spellcheck="false"
               />
               <div class="quality-meter" aria-live="polite">
                 <div class="quality-meter-head">
@@ -612,11 +854,19 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="field">
-              <label>参考图像 ({{ referenceCount }}/4)</label>
+              <label>{{ referenceLabel }} ({{ referenceCount }}/4)</label>
               <div class="field">
                 <label for="image-url">上传参考图片或输入图片 URL</label>
                 <div class="control-row">
-                  <input id="image-url" v-model.trim="urlInput" placeholder="输入图片 URL" />
+                  <input
+                    id="image-url"
+                    v-model.trim="urlInput"
+                    type="url"
+                    inputmode="url"
+                    autocomplete="off"
+                    placeholder="输入图片 URL"
+                    spellcheck="false"
+                  />
                   <button
                     class="icon-button"
                     type="button"
@@ -651,6 +901,230 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
+            <details class="advanced-panel" :open="advancedOpen" @toggle="advancedOpen = $event.target.open">
+              <summary>
+                <span>高级设置</span>
+                <small>{{ advancedSummary }}</small>
+                <ChevronDown aria-hidden="true" />
+              </summary>
+              <div class="advanced-grid">
+                <div class="field mode-field">
+                  <label>生成模式</label>
+                  <div class="mode-tabs" role="tablist" aria-label="图片生成模式">
+                    <button
+                      v-for="item in modes"
+                      :key="item.value"
+                      type="button"
+                      role="tab"
+                      :aria-selected="mode === item.value"
+                      :class="{ active: mode === item.value }"
+                      @click="mode = item.value"
+                    >
+                      {{ item.label }}
+                    </button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="image-count">数量</label>
+                  <input id="image-count" v-model.number="imageCount" type="number" inputmode="numeric" min="1" max="10" />
+                </div>
+                <div class="field">
+                  <label for="quality">质量</label>
+                  <div class="model-picker select-picker">
+                    <button
+                      id="quality"
+                      class="model-picker-button select-picker-button"
+                      type="button"
+                      :aria-label="`质量，当前为 ${selectedQualityLabel}`"
+                      :aria-expanded="selectMenuOpen === 'quality'"
+                      aria-haspopup="listbox"
+                      aria-controls="quality-menu"
+                      @click.stop="toggleSelectMenu('quality')"
+                      @keydown.escape="closeSelectMenu"
+                    >
+                      <span class="model-picker-copy">
+                        <span class="model-preview-head">
+                          <strong>{{ selectedQualityLabel }}</strong>
+                        </span>
+                      </span>
+                      <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'quality' }" aria-hidden="true" />
+                    </button>
+                    <div
+                      v-if="selectMenuOpen === 'quality'"
+                      id="quality-menu"
+                      class="model-menu select-menu"
+                      role="listbox"
+                      aria-labelledby="quality"
+                    >
+                      <button
+                        v-for="item in qualities"
+                        :key="item.value"
+                        class="model-option select-option"
+                        :class="{ active: item.value === quality }"
+                        type="button"
+                        role="option"
+                        :aria-selected="item.value === quality"
+                        @click.stop="selectSimpleOption('quality', item.value)"
+                        @keydown.escape="closeSelectMenu"
+                      >
+                        <span>
+                          <span class="model-option-head">
+                            <strong>{{ item.label }}</strong>
+                          </span>
+                        </span>
+                        <Check v-if="item.value === quality" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="output-format">输出格式</label>
+                  <div class="model-picker select-picker">
+                    <button
+                      id="output-format"
+                      class="model-picker-button select-picker-button"
+                      type="button"
+                      :aria-label="`输出格式，当前为 ${selectedOutputFormatLabel}`"
+                      :aria-expanded="selectMenuOpen === 'outputFormat'"
+                      aria-haspopup="listbox"
+                      aria-controls="output-format-menu"
+                      @click.stop="toggleSelectMenu('outputFormat')"
+                      @keydown.escape="closeSelectMenu"
+                    >
+                      <span class="model-picker-copy">
+                        <span class="model-preview-head">
+                          <strong>{{ selectedOutputFormatLabel }}</strong>
+                        </span>
+                      </span>
+                      <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'outputFormat' }" aria-hidden="true" />
+                    </button>
+                    <div
+                      v-if="selectMenuOpen === 'outputFormat'"
+                      id="output-format-menu"
+                      class="model-menu select-menu"
+                      role="listbox"
+                      aria-labelledby="output-format"
+                    >
+                      <button
+                        v-for="item in outputFormats"
+                        :key="item.value"
+                        class="model-option select-option"
+                        :class="{ active: item.value === outputFormat }"
+                        type="button"
+                        role="option"
+                        :aria-selected="item.value === outputFormat"
+                        @click.stop="selectSimpleOption('outputFormat', item.value)"
+                        @keydown.escape="closeSelectMenu"
+                      >
+                        <span>
+                          <span class="model-option-head">
+                            <strong>{{ item.label }}</strong>
+                          </span>
+                        </span>
+                        <Check v-if="item.value === outputFormat" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="moderation">审核</label>
+                  <div class="model-picker select-picker">
+                    <button
+                      id="moderation"
+                      class="model-picker-button select-picker-button"
+                      type="button"
+                      :aria-label="`审核，当前为 ${selectedModerationLabel}`"
+                      :aria-expanded="selectMenuOpen === 'moderation'"
+                      aria-haspopup="listbox"
+                      aria-controls="moderation-menu"
+                      @click.stop="toggleSelectMenu('moderation')"
+                      @keydown.escape="closeSelectMenu"
+                    >
+                      <span class="model-picker-copy">
+                        <span class="model-preview-head">
+                          <strong>{{ selectedModerationLabel }}</strong>
+                        </span>
+                      </span>
+                      <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'moderation' }" aria-hidden="true" />
+                    </button>
+                    <div
+                      v-if="selectMenuOpen === 'moderation'"
+                      id="moderation-menu"
+                      class="model-menu select-menu"
+                      role="listbox"
+                      aria-labelledby="moderation"
+                    >
+                      <button
+                        v-for="item in moderationOptions"
+                        :key="item.value"
+                        class="model-option select-option"
+                        :class="{ active: item.value === moderation }"
+                        type="button"
+                        role="option"
+                        :aria-selected="item.value === moderation"
+                        @click.stop="selectSimpleOption('moderation', item.value)"
+                        @keydown.escape="closeSelectMenu"
+                      >
+                        <span>
+                          <span class="model-option-head">
+                            <strong>{{ item.label }}</strong>
+                          </span>
+                        </span>
+                        <Check v-if="item.value === moderation" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="outputFormat === 'jpeg' || outputFormat === 'webp'" class="field">
+                  <label for="compression">压缩 {{ outputCompression }}%</label>
+                  <input id="compression" v-model.number="outputCompression" type="range" min="0" max="100" />
+                </div>
+              </div>
+              <div v-if="mode === 'edit'" class="mask-panel">
+                <label>蒙版 ({{ maskCount }}/1)</label>
+                <div class="control-row">
+                  <input
+                    id="mask-url"
+                    v-model.trim="maskUrlInput"
+                    type="url"
+                    inputmode="url"
+                    autocomplete="off"
+                    placeholder="输入 PNG 蒙版 URL"
+                    spellcheck="false"
+                  />
+                  <button
+                    class="icon-button"
+                    type="button"
+                    aria-label="加入蒙版 URL"
+                    :disabled="!maskUrlInput.trim() || (!canAddMask && !maskImageUrl)"
+                    @click="addMaskUrlReference"
+                  >
+                    <LinkIcon aria-hidden="true" />
+                  </button>
+                </div>
+                <label class="upload-zone upload-zone-compact">
+                  <ImagePlus aria-hidden="true" />
+                  <strong>点击上传蒙版</strong>
+                  <span>仅支持 PNG，白色区域会被编辑</span>
+                  <input type="file" accept="image/png" hidden @change="onMaskFileChange" />
+                </label>
+                <div v-if="maskCount" class="reference-grid mask-grid">
+                  <div v-if="maskImageUrl" class="reference-thumb">
+                    <img :src="maskImageUrl" alt="URL 蒙版" />
+                    <button class="icon-button thumb-remove" type="button" aria-label="移除 URL 蒙版" @click="removeMaskUrlReference">
+                      <X aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div v-for="(item, index) in maskUploads" :key="item.src" class="reference-thumb">
+                    <img :src="item.src" :alt="item.name" />
+                    <button class="icon-button thumb-remove" type="button" :aria-label="`移除 ${item.name}`" @click="removeMaskUpload(index)">
+                      <Trash2 aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </details>
+
             <div class="reverse-box">
               <h3>
                 <Wand2 aria-hidden="true" />
@@ -667,7 +1141,7 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="generation-actions">
-              <button class="btn btn-primary" type="button" :disabled="loading" @click="generate">
+              <button class="btn btn-primary" type="button" :aria-busy="loading" :disabled="loading" @click="generate">
                 <Sparkles v-if="!loading" aria-hidden="true" />
                 <Loader2 v-else class="spinner" aria-hidden="true" />
                 {{ loading ? '正在创建图像...' : '开始生成' }}
@@ -681,6 +1155,11 @@ onBeforeUnmount(() => {
 
           <aside class="card output-panel">
             <h2>输出</h2>
+            <div class="output-meta-row">
+              <span>{{ activeMode.label }}</span>
+              <span>Image API</span>
+              <span>{{ normalizedImageCount }} 张</span>
+            </div>
             <div
               v-if="loading"
               class="model-loading-state"
@@ -716,13 +1195,6 @@ onBeforeUnmount(() => {
               <template v-else-if="loadingVariant === 'nano-banana'">
                 <div class="banana-thinking-loading" aria-hidden="true">
                   <div class="banana-thinking-canvas"></div>
-                </div>
-              </template>
-              <template v-else-if="loadingVariant === 'video'">
-                <div class="video-loading-wave" aria-hidden="true">
-                  <span class="video-loading-frame"></span>
-                  <span class="video-loading-frame"></span>
-                  <span class="video-loading-frame"></span>
                 </div>
               </template>
               <template v-else>
@@ -766,11 +1238,11 @@ onBeforeUnmount(() => {
             </div>
             <div v-else class="empty-output">
               <ImagePlus aria-hidden="true" />
-              <p>生成的图像将显示在这里<br />输入提示词并点击“开始生成”</p>
+              <p>生成的图像将显示在这里<br />{{ requiresReference ? '添加参考图、输入提示词并点击“开始生成”' : '输入提示词并点击“开始生成”' }}</p>
             </div>
             <p class="tip">
               <Sparkles aria-hidden="true" />
-              <span>提示：提供越详细的描述，生成效果越好。可以包含风格、光线、色调、构图等信息。</span>
+              <span>提示：先填写提示词和参考图即可开始生成，接口与格式等细项可在高级设置里调整。</span>
             </p>
           </aside>
         </div>
@@ -801,6 +1273,7 @@ onBeforeUnmount(() => {
         <div v-else-if="gallery.length" class="reference-grid">
           <div v-for="record in gallery" :key="record.id" class="reference-thumb">
             <img :src="record.images[0]?.url" :alt="record.prompt" />
+            <span class="thumb-chip">{{ record.mode || 'generate' }}</span>
           </div>
         </div>
         <div v-else class="empty-state">

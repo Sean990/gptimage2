@@ -19,6 +19,7 @@ let themeMedia = null
 
 const navItems = [
   { label: 'AI 生图', to: '/generate', path: '/generate' },
+  { label: 'AI 视频', soon: true },
   { label: '提示词优化', to: '/prompt-optimizer', path: '/prompt-optimizer' },
   { label: '功能亮点', to: '/#feature', path: '/', hash: '#feature' },
   { label: '定价', to: '/pricing', path: '/pricing' },
@@ -30,6 +31,7 @@ const loginDisabled = computed(() => !email.value.includes('@') || email.value.l
 const isDark = computed(() => theme.value === 'dark')
 
 function isActive(item) {
+  if (item.soon) return false
   if (item.hash) return route.path === item.path && activeSection.value === item.hash
   return route.path === item.path
 }
@@ -154,15 +156,23 @@ onBeforeUnmount(() => {
       </RouterLink>
 
       <nav class="main-nav" aria-label="主导航">
-        <RouterLink
+        <template
           v-for="item in navItems"
           :key="item.label"
-          :to="item.to"
-          :class="{ active: isActive(item) }"
-          :aria-current="isActive(item) ? 'page' : undefined"
         >
-          {{ item.label }}
-        </RouterLink>
+          <span v-if="item.soon" class="nav-soon" aria-disabled="true" :aria-label="`${item.label}，规划中`" title="规划中">
+            {{ item.label }}
+            <small>即将上线</small>
+          </span>
+          <RouterLink
+            v-else
+            :to="item.to"
+            :class="{ active: isActive(item) }"
+            :aria-current="isActive(item) ? 'page' : undefined"
+          >
+            {{ item.label }}
+          </RouterLink>
+        </template>
       </nav>
 
       <div class="header-actions">
@@ -195,14 +205,19 @@ onBeforeUnmount(() => {
     </div>
 
     <nav v-if="open" id="mobile-menu" class="mobile-panel" aria-label="移动端导航">
-      <RouterLink
-        v-for="item in navItems"
-        :key="item.label"
-        :to="item.to"
-        :class="{ active: isActive(item) }"
-      >
-        {{ item.label }}
-      </RouterLink>
+      <template v-for="item in navItems" :key="item.label">
+        <span v-if="item.soon" class="nav-soon mobile-soon" aria-disabled="true" :aria-label="`${item.label}，规划中`" title="规划中">
+          {{ item.label }}
+          <small>即将上线</small>
+        </span>
+        <RouterLink
+          v-else
+          :to="item.to"
+          :class="{ active: isActive(item) }"
+        >
+          {{ item.label }}
+        </RouterLink>
+      </template>
       <button type="button" @click="openLogin">登录</button>
     </nav>
   </header>
