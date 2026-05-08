@@ -4,7 +4,7 @@ import { RouterView } from 'vue-router'
 import AppFooter from './components/AppFooter.vue'
 import AppHeader from './components/AppHeader.vue'
 
-const backgroundRef = ref(null)
+const cursorRef = ref(null)
 let motionMedia = null
 let followFrame = 0
 let targetPointer = { x: 0.5, y: 0.24 }
@@ -12,8 +12,6 @@ let visiblePointer = { x: 0.5, y: 0.24 }
 let cursorStrength = 0.72
 let focusProgress = 0
 let targetFocusProgress = 0
-let focusRadius = 160
-let targetFocusRadius = 160
 
 const interactiveSelector = [
   'a[href]',
@@ -30,12 +28,8 @@ const interactiveSelector = [
 ].join(',')
 
 const defaultGlow = {
-  grid: 832,
-  primary: 320,
-  secondary: 400,
-  tertiary: 416,
-  blur: 18,
   scale: 1.08,
+  focusedScale: 0.28,
 }
 
 function clamp(value, min, max) {
@@ -47,34 +41,16 @@ function mix(from, to, amount) {
 }
 
 function writeBackgroundVars() {
-  const target = backgroundRef.value
+  const target = cursorRef.value
   if (!target) return
 
   const { x, y } = visiblePointer
-  const shiftX = (x - 0.5) * 32
-  const shiftY = (y - 0.5) * 26
-  const focusedPrimary = focusRadius
-  const focusedSecondary = focusRadius * 1.08
-  const focusedTertiary = focusRadius * 1.16
-  const focusedGrid = focusRadius * 1.5
+  const xPx = x * window.innerWidth
+  const yPx = y * window.innerHeight
+  const scale = mix(defaultGlow.scale, defaultGlow.focusedScale, focusProgress)
 
-  target.style.setProperty('--cursor-x', `${(x * 100).toFixed(2)}%`)
-  target.style.setProperty('--cursor-y', `${(y * 100).toFixed(2)}%`)
-  target.style.setProperty('--grid-focus-radius', `${mix(defaultGlow.grid, focusedGrid, focusProgress).toFixed(1)}px`)
-  target.style.setProperty('--cursor-radius-a', `${mix(defaultGlow.primary, focusedPrimary, focusProgress).toFixed(1)}px`)
-  target.style.setProperty('--cursor-radius-b', `${mix(defaultGlow.secondary, focusedSecondary, focusProgress).toFixed(1)}px`)
-  target.style.setProperty('--cursor-radius-c', `${mix(defaultGlow.tertiary, focusedTertiary, focusProgress).toFixed(1)}px`)
-  target.style.setProperty('--cursor-blur', `${mix(defaultGlow.blur, 2, focusProgress).toFixed(1)}px`)
-  target.style.setProperty('--cursor-scale', mix(defaultGlow.scale, 1, focusProgress).toFixed(3))
-  target.style.setProperty('--bg-shift-x', `${shiftX.toFixed(2)}px`)
-  target.style.setProperty('--bg-shift-y', `${shiftY.toFixed(2)}px`)
-  target.style.setProperty('--bg-shift-x-soft', `${(shiftX * 0.08).toFixed(2)}px`)
-  target.style.setProperty('--bg-shift-y-soft', `${(shiftY * 0.08).toFixed(2)}px`)
-  target.style.setProperty('--bg-shift-x-reverse', `${(shiftX * -0.22).toFixed(2)}px`)
-  target.style.setProperty('--bg-shift-y-reverse', `${(shiftY * -0.22).toFixed(2)}px`)
-  target.style.setProperty('--bg-shift-x-mesh', `${(shiftX * 0.28).toFixed(2)}px`)
-  target.style.setProperty('--bg-shift-y-mesh', `${(shiftY * 0.28).toFixed(2)}px`)
-  target.style.setProperty('--cursor-strength', cursorStrength.toFixed(2))
+  target.style.transform = `translate3d(${xPx.toFixed(1)}px, ${yPx.toFixed(1)}px, 0) translate3d(-50%, -50%, 0) scale(${scale.toFixed(3)})`
+  target.style.opacity = cursorStrength.toFixed(2)
 }
 
 function animateBackgroundFollow() {
@@ -85,15 +61,13 @@ function animateBackgroundFollow() {
     y: visiblePointer.y + (targetPointer.y - visiblePointer.y) * followEase,
   }
   focusProgress += (targetFocusProgress - focusProgress) * focusEase
-  focusRadius += (targetFocusRadius - focusRadius) * focusEase
   writeBackgroundVars()
 
   const distance = Math.hypot(targetPointer.x - visiblePointer.x, targetPointer.y - visiblePointer.y)
-  const focusDistance = Math.abs(targetFocusProgress - focusProgress) + Math.abs(targetFocusRadius - focusRadius) / 1000
+  const focusDistance = Math.abs(targetFocusProgress - focusProgress)
   if (distance < 0.001 && focusDistance < 0.002) {
-    visiblePointer = targetPointer
+    visiblePointer = { ...targetPointer }
     focusProgress = targetFocusProgress
-    focusRadius = targetFocusRadius
     writeBackgroundVars()
     followFrame = 0
     return
@@ -108,9 +82,8 @@ function startBackgroundFollow() {
 }
 
 function jumpBackgroundToTarget() {
-  visiblePointer = targetPointer
+  visiblePointer = { ...targetPointer }
   focusProgress = targetFocusProgress
-  focusRadius = targetFocusRadius
   writeBackgroundVars()
 }
 
@@ -126,7 +99,6 @@ function setInteractiveFocus(event) {
     x: clamp(event.clientX / window.innerWidth, 0, 1),
     y: clamp(event.clientY / window.innerHeight, 0, 1),
   }
-  targetFocusRadius = 12
   targetFocusProgress = 1
 }
 
@@ -200,10 +172,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="backgroundRef" class="interactive-background" aria-hidden="true">
+  <div class="interactive-background" aria-hidden="true">
     <span class="interactive-background__mesh"></span>
     <span class="interactive-background__grid"></span>
-    <span class="interactive-background__cursor"></span>
+    <span ref="cursorRef" class="interactive-background__cursor"></span>
   </div>
   <AppHeader />
   <div id="main-content" tabindex="-1">

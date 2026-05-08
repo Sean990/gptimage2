@@ -8,6 +8,7 @@ import {
   Download,
   GalleryHorizontal,
   ImagePlus,
+  Layers3,
   Link as LinkIcon,
   Loader2,
   Square,
@@ -28,29 +29,35 @@ const modes = [
   { value: 'edit', label: '精修图', badge: '蒙版', requiresReference: true },
 ]
 const aspectRatios = [
-  { label: '1:1', value: '1:1' },
-  { label: '16:9', value: '16:9' },
-  { label: '9:16', value: '9:16' },
-  { label: '4:3', value: '4:3' },
-  { label: '3:4', value: '3:4' },
+  { label: '方图 1:1', value: '1:1' },
+  { label: '横向 3:2', value: '3:2' },
+  { label: '竖向 2:3', value: '2:3' },
+  { label: '宽屏 16:9', value: '16:9' },
+  { label: '长图 9:16', value: '9:16' },
+  { label: '横向 4:3', value: '4:3' },
+  { label: '竖向 3:4', value: '3:4' },
   { label: '自动', value: 'auto' },
 ]
 const resolutionOptions = [
   { label: '自动', value: 'auto' },
-  { label: '1K', value: '1K' },
+  { label: '标准', value: '1K' },
   { label: '2K', value: '2K' },
   { label: '4K', value: '4K' },
 ]
 const sizeMatrix = {
   '1K': {
     '1:1': '1024x1024',
-    '16:9': '1792x1008',
-    '9:16': '1008x1792',
-    '4:3': '1344x1008',
-    '3:4': '1008x1344',
+    '3:2': '1536x1024',
+    '2:3': '1024x1536',
+    '16:9': '2048x1152',
+    '9:16': '1152x2048',
+    '4:3': '1280x960',
+    '3:4': '960x1280',
   },
   '2K': {
     '1:1': '2048x2048',
+    '3:2': '2016x1344',
+    '2:3': '1344x2016',
     '16:9': '2560x1440',
     '9:16': '1440x2560',
     '4:3': '1920x1440',
@@ -58,6 +65,8 @@ const sizeMatrix = {
   },
   '4K': {
     '1:1': '2880x2880',
+    '3:2': '3072x2048',
+    '2:3': '2048x3072',
     '16:9': '3840x2160',
     '9:16': '2160x3840',
     '4:3': '3264x2448',
@@ -74,6 +83,10 @@ const outputFormats = [
   { label: 'PNG', value: 'png' },
   { label: 'JPEG', value: 'jpeg' },
   { label: 'WEBP', value: 'webp' },
+]
+const backgroundOptions = [
+  { label: '自动 auto', value: 'auto' },
+  { label: '不透明 opaque', value: 'opaque' },
 ]
 const moderationOptions = [
   { label: '自动 auto', value: 'auto' },
@@ -158,9 +171,10 @@ const model = ref('gpt-image-2')
 const mode = ref('generate')
 const aspectRatio = ref('3:4')
 const resolution = ref('4K')
-const imageCount = ref(1)
+const batchMode = ref(false)
 const quality = ref('auto')
 const outputFormat = ref('png')
+const background = ref('auto')
 const moderation = ref('auto')
 const outputCompression = ref(0)
 const advancedOpen = ref(true)
@@ -173,7 +187,8 @@ const uploads = ref([])
 const maskUploads = ref([])
 const output = ref([])
 const loading = ref(false)
-const loadingProgress = ref(27)
+const loadingStage = ref('准备提交生成任务')
+const partialImages = ref([])
 const generationAbortController = ref(null)
 const reversing = ref(false)
 const notice = ref('')
@@ -190,7 +205,8 @@ const canAddReference = computed(() => referenceCount.value < 4)
 const canAddMask = computed(() => maskCount.value < 1)
 const activeMode = computed(() => modes.find((item) => item.value === mode.value) || modes[0])
 const requiresReference = computed(() => activeMode.value.requiresReference)
-const normalizedImageCount = computed(() => Math.min(10, Math.max(1, Number(imageCount.value) || 1)))
+const showReferenceSection = computed(() => requiresReference.value || batchMode.value)
+const normalizedImageCount = computed(() => (batchMode.value ? 4 : 1))
 const loadingTileCount = computed(() => normalizedImageCount.value)
 const activeModelKey = computed(() => normalizeModelKey(model.value))
 const activeModelLabel = computed(() => formatModelLabel(activeModelKey.value, model.value))
@@ -235,6 +251,7 @@ const selectedAspectRatioLabel = computed(() => getOptionLabel(aspectRatios, asp
 const selectedResolutionLabel = computed(() => getOptionLabel(resolutionOptions, resolution.value))
 const selectedQualityLabel = computed(() => getOptionLabel(qualities, quality.value))
 const selectedOutputFormatLabel = computed(() => getOptionLabel(outputFormats, outputFormat.value))
+const selectedBackgroundLabel = computed(() => getOptionLabel(backgroundOptions, background.value))
 const selectedModerationLabel = computed(() => getOptionLabel(moderationOptions, moderation.value))
 const galleryImageCount = computed(() => gallery.value.reduce((total, record) => total + record.images.length, 0))
 const gallerySummary = computed(() => {
@@ -254,12 +271,13 @@ const loadingTitle = computed(() => {
   return `${activeModelLabel.value} 正在生成`
 })
 const loadingHint = computed(() => {
-  if (loadingVariant.value === 'gpt-image-2') return '使用 image-gen-loading-state-dots 风格等待态'
+  if (loadingVariant.value === 'gpt-image-2') return '正在生成高清图像，请稍候片刻'
   if (loadingVariant.value === 'nano-banana-2') return '优先整理参考图一致性、材质细节和构图'
   if (loadingVariant.value === 'nano-banana') return '正在快速铺开构图、色彩和主体风格'
   return '正在准备当前模型的输出结果'
 })
-const loadingStatusText = computed(() => `正在创建图像 · ${loadingProgress.value}%`)
+const loadingStatusText = computed(() => loadingStage.value)
+const hasPartialImages = computed(() => partialImages.value.length > 0)
 const promptQualityScore = computed(() => {
   const lengthScore = Math.min(prompt.value.trim().length, 90) / 90
   const referenceScore = requiresReference.value ? Math.min(referenceCount.value, 2) * 0.16 : 0
@@ -275,11 +293,13 @@ const promptLabel = computed(() => {
   return '提示词 *'
 })
 const promptPlaceholder = computed(() => {
+  if (batchMode.value) return '输入批量生图提示词，例如：一组高级商业摄影海报，分别探索不同构图、光线和色彩方案。'
   if (mode.value === 'image') return '描述如何基于参考图生成新图，例如：保持人物身份，替换为高级摄影棚背景，增强服装质感。'
   if (mode.value === 'edit') return '描述要精修的局部或整体，例如：只替换背景为高级摄影棚，主体保持不变。'
   return '详细描述你想要生成的图像，包括主体、风格、光线、色调等...'
 })
 const referenceLabel = computed(() => {
+  if (batchMode.value && !requiresReference.value) return '参考图像（可选）'
   return mode.value === 'edit' ? '原图 / 参考图像' : '参考图像'
 })
 const advancedSummary = computed(() => {
@@ -291,6 +311,7 @@ const advancedSummary = computed(() => {
   if (mode.value === 'edit' && maskCount.value) items.push('含蒙版')
   return items.join(' · ')
 })
+const creditCost = computed(() => normalizedImageCount.value * 2)
 
 function normalizeModelKey(value = '') {
   const normalized = value.trim().toLowerCase().replace(/[_\s]+/g, '-')
@@ -335,8 +356,13 @@ function selectSimpleOption(key, value) {
   if (key === 'resolution') resolution.value = value
   if (key === 'quality') quality.value = value
   if (key === 'outputFormat') outputFormat.value = value
+  if (key === 'background') background.value = value
   if (key === 'moderation') moderation.value = value
   selectMenuOpen.value = ''
+}
+
+function supportsOutputCompression(format = outputFormat.value) {
+  return format === 'jpeg' || format === 'webp'
 }
 
 function closeMenusOnOutside(event) {
@@ -362,6 +388,17 @@ function randomizePrompt() {
   showNotice('已随机生成提示词')
 }
 
+function enableBatchMode() {
+  batchMode.value = true
+  mode.value = 'generate'
+  showNotice('已切换到高级批量生图')
+}
+
+function disableBatchMode() {
+  batchMode.value = false
+  showNotice('已返回普通生图')
+}
+
 function normalizeGeneratedImage(item, index = 0, defaults = {}) {
   const imageUrl = item.url || item.src || item.image_url || item.image || ''
   return {
@@ -377,6 +414,7 @@ function normalizeGeneratedImage(item, index = 0, defaults = {}) {
     size: item.size || defaults.size,
     quality: item.quality || defaults.quality,
     outputFormat: item.output_format || defaults.output_format,
+    background: item.background || defaults.background,
     createdAt: item.createdAt || defaults.createdAt,
   }
 }
@@ -400,6 +438,7 @@ function normalizeGenerationRecord(record, defaults = {}) {
     size: record?.size || defaults.size,
     quality: record?.quality || defaults.quality,
     output_format: record?.output_format || defaults.output_format,
+    background: record?.background || defaults.background,
     createdAt: record?.createdAt || defaults.createdAt,
   }
 
@@ -411,6 +450,25 @@ function normalizeGenerationRecord(record, defaults = {}) {
       ? record.images.map((item, index) => normalizeGeneratedImage(item, index, recordDefaults))
       : [],
   }
+}
+
+function mapRecordImages(record) {
+  return record.images.map((item) => ({
+    id: item.id,
+    title: item.title,
+    src: item.url,
+    prompt: item.prompt,
+    model: item.model,
+    mode: item.mode,
+    apiMode: item.apiMode,
+    ratio: item.ratio,
+    resolution: item.resolution,
+    size: item.size,
+    quality: item.quality,
+    outputFormat: item.outputFormat,
+    background: item.background,
+    createdAt: item.createdAt,
+  }))
 }
 
 function loadLocalGallery() {
@@ -466,22 +524,33 @@ function showNotice(text) {
   }, 2600)
 }
 
-let loadingProgressTimer = null
+function handleGenerationStreamEvent(event) {
+  if (event.type === 'started') {
+    loadingStage.value = '已提交生成任务'
+    return
+  }
 
-function clearLoadingProgressTimer() {
-  if (!loadingProgressTimer) return
-  window.clearInterval(loadingProgressTimer)
-  loadingProgressTimer = null
-}
+  if (event.type === 'status') {
+    loadingStage.value = event.message || '正在生成图像'
+    return
+  }
 
-function startLoadingProgressTimer() {
-  clearLoadingProgressTimer()
-  loadingProgress.value = 27
-  loadingProgressTimer = window.setInterval(() => {
-    const remaining = 99 - loadingProgress.value
-    const step = Math.max(1, Math.ceil(remaining * 0.08))
-    loadingProgress.value = Math.min(99, loadingProgress.value + step)
-  }, 1200)
+  if (event.type === 'partial_image' && event.image) {
+    partialImages.value = [
+      ...partialImages.value,
+      {
+        id: `partial-${event.index || partialImages.value.length + 1}`,
+        title: `生成预览 ${event.index || partialImages.value.length + 1}`,
+        src: event.image,
+      },
+    ].slice(-normalizedImageCount.value)
+    loadingStage.value = `已收到预览 ${event.index || partialImages.value.length}${event.total ? `/${event.total}` : ''}`
+    return
+  }
+
+  if (event.type === 'completed') {
+    loadingStage.value = '生成完成，正在载入结果'
+  }
 }
 
 async function onFileChange(event) {
@@ -597,6 +666,8 @@ async function generate() {
   generationAbortController.value = controller
   loading.value = true
   output.value = []
+  partialImages.value = []
+  loadingStage.value = '准备提交生成任务'
 
   try {
     const requestPayload = compactPayload({
@@ -611,37 +682,35 @@ async function generate() {
       n: normalizedImageCount.value,
       quality: quality.value,
       output_format: outputFormat.value,
+      background: background.value,
       moderation: moderation.value,
-      output_compression: outputCompression.value,
-      response_format: 'b64_json',
-      references: requiresReference.value ? getReferences() : [],
+      output_compression: supportsOutputCompression() ? outputCompression.value : undefined,
+      references: showReferenceSection.value ? getReferences() : [],
       mask: mode.value === 'edit' ? getMaskReference() : '',
     })
-    const result = await api.generateImages(requestPayload, {
+    const streamableRequestPayload = compactPayload({
+      ...requestPayload,
+      response_format: 'b64_json',
+    })
+    const result = await api.generateImagesStream(streamableRequestPayload, {
+      onEvent: handleGenerationStreamEvent,
+    }, {
       signal: controller.signal,
+    }).catch(async (error) => {
+      if (error.name === 'AbortError') throw error
+      loadingStage.value = '正在等待最终结果'
+      return api.generateImages(requestPayload, {
+        signal: controller.signal,
+      })
     })
     const normalizedResult = normalizeGenerationRecord(result, {
       ...requestPayload,
       createdAt: new Date().toISOString(),
     })
-    output.value = normalizedResult.images.map((item) => ({
-      id: item.id,
-      title: item.title,
-      src: item.url,
-      prompt: item.prompt,
-      model: item.model,
-      mode: item.mode,
-      apiMode: item.apiMode,
-      ratio: item.ratio,
-      resolution: item.resolution,
-      size: item.size,
-      quality: item.quality,
-      outputFormat: item.outputFormat,
-      createdAt: item.createdAt,
-    }))
+    output.value = mapRecordImages(normalizedResult)
     gallery.value = mergeGalleryRecords([normalizedResult], gallery.value)
     persistLocalGallery()
-    showNotice(normalizedImageCount.value > 1 ? '批量生成已完成' : '图像生成已完成')
+    showNotice(batchMode.value ? '批量生成已完成' : '图像生成已完成')
   } catch (error) {
     output.value = []
     showNotice(error.name === 'AbortError' ? '已停止生成' : (error.message || '图像生成失败，请稍后重试'))
@@ -649,6 +718,8 @@ async function generate() {
     if (generationAbortController.value === controller) {
       generationAbortController.value = null
       loading.value = false
+      partialImages.value = []
+      loadingStage.value = '准备提交生成任务'
     }
   }
 }
@@ -742,21 +813,8 @@ function useGalleryRecord(record) {
   resolution.value = record.resolution || resolution.value
   quality.value = record.quality || quality.value
   outputFormat.value = record.outputFormat || record.output_format || outputFormat.value
-  output.value = record.images.map((item) => ({
-    id: item.id,
-    title: item.title,
-    src: item.url,
-    prompt: item.prompt,
-    model: item.model,
-    mode: item.mode,
-    apiMode: item.apiMode,
-    ratio: item.ratio,
-    resolution: item.resolution,
-    size: item.size,
-    quality: item.quality,
-    outputFormat: item.outputFormat,
-    createdAt: item.createdAt,
-  }))
+  background.value = record.background || background.value
+  output.value = mapRecordImages(record)
   galleryOpen.value = false
   showNotice('已载入图库记录')
 }
@@ -802,6 +860,7 @@ function saveCurrentOutputToGallery() {
     size: size.value,
     quality: quality.value,
     output_format: outputFormat.value,
+    background: background.value,
     createdAt: new Date().toISOString(),
     images: output.value.map((item) => ({
       ...item,
@@ -827,16 +886,6 @@ function galleryRecordMeta(record) {
     .join(' · ')
 }
 
-watch(loading, (isLoading) => {
-  if (isLoading) {
-    startLoadingProgressTimer()
-    return
-  }
-
-  clearLoadingProgressTimer()
-  loadingProgress.value = 27
-})
-
 watch(galleryOpen, syncGalleryScrollLock)
 
 onMounted(() => {
@@ -846,7 +895,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  clearLoadingProgressTimer()
   syncGalleryScrollLock(false)
   window.removeEventListener('click', closeMenusOnOutside)
   uploads.value.forEach((item) => {
@@ -859,17 +907,24 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="page generate-page">
+  <main class="page generate-page" :class="{ 'batch-mode-page': batchMode }">
     <section class="section-tight">
       <div class="container">
         <SectionTitle
           align="left"
           level="h1"
-          title="GPT Image 2 照片生成"
-          description="结合参考图和提示词，快速生成高质量 AI 写真与视觉内容。"
+          :eyebrow="batchMode ? '高级功能' : ''"
+          :title="batchMode ? '批量 AI 生图' : 'GPT Image 2 照片生成'"
+          :description="batchMode ? '一次生成多张图片，提高创作效率。' : '结合参考图和提示词，快速生成高质量 AI 写真与视觉内容。'"
         />
 
         <div class="tool-toolbar">
+          <button v-if="!batchMode" class="btn btn-soft" type="button" @click="enableBatchMode">
+            需要批量生成？试试高级批量生图功能
+          </button>
+          <button v-else class="btn btn-soft" type="button" @click="disableBatchMode">
+            只需要单张？返回普通生图
+          </button>
           <button class="btn btn-ghost" type="button" @click="openGallery">
             <GalleryHorizontal aria-hidden="true" />
             我的图库<span v-if="gallery.length">{{ gallery.length }}</span>
@@ -885,7 +940,7 @@ onBeforeUnmount(() => {
             <div class="mode-switch-card">
               <div class="settings-section-head">
                 <h2>生成模式</h2>
-                <span>{{ activeMode.badge }}</span>
+                <span>{{ batchMode ? `${normalizedImageCount} 张图片` : activeMode.badge }}</span>
               </div>
               <div class="mode-tabs" role="tablist" aria-label="图片生成模式">
                 <button
@@ -902,7 +957,14 @@ onBeforeUnmount(() => {
                 </button>
               </div>
             </div>
-            <h2>参数设置</h2>
+            <h2>{{ batchMode ? '批量生成设置' : '参数设置' }}</h2>
+            <div v-if="batchMode" class="batch-count-card" aria-label="批量生成数量">
+              <div>
+                <span>生成数量</span>
+                <strong>4 张图片</strong>
+              </div>
+              <small>需要 {{ creditCost }} 积分</small>
+            </div>
             <div class="settings-grid">
               <div class="field model-field">
                 <label for="model">模型选择</label>
@@ -1074,8 +1136,8 @@ onBeforeUnmount(() => {
               <small>不知道怎么写？试试下方的「AI 反推提示词」功能</small>
             </div>
 
-            <div v-if="requiresReference" class="field reference-section">
-              <label>{{ referenceLabel }} ({{ referenceCount }}/4)</label>
+            <div v-if="showReferenceSection" class="field reference-section">
+              <label>{{ referenceLabel }} <span v-if="requiresReference">({{ referenceCount }}/4)</span></label>
               <div class="field">
                 <label for="image-url">上传参考图片或输入图片 URL</label>
                 <div class="control-row">
@@ -1103,7 +1165,7 @@ onBeforeUnmount(() => {
                 <ImagePlus aria-hidden="true" />
                 <strong>点击上传</strong>
                 <span>或拖拽图片</span>
-                <span>支持 PNG, JPG, WEBP（最大 10MB）</span>
+                <span>支持 PNG, JPEG, WEBP（最大 10MB）</span>
                 <input type="file" accept="image/png,image/jpeg,image/webp" multiple hidden @change="onFileChange" />
               </label>
               <div v-if="referenceCount" class="reference-grid">
@@ -1129,10 +1191,6 @@ onBeforeUnmount(() => {
                 <ChevronDown aria-hidden="true" />
               </summary>
               <div class="advanced-grid">
-                <div class="field">
-                  <label for="image-count">数量</label>
-                  <input id="image-count" v-model.number="imageCount" type="number" inputmode="numeric" min="1" max="10" />
-                </div>
                 <div class="field">
                   <label for="quality">质量</label>
                   <div class="model-picker select-picker">
@@ -1232,6 +1290,55 @@ onBeforeUnmount(() => {
                   </div>
                 </div>
                 <div class="field">
+                  <label for="background">背景</label>
+                  <div class="model-picker select-picker">
+                    <button
+                      id="background"
+                      class="model-picker-button select-picker-button"
+                      type="button"
+                      :aria-label="`背景，当前为 ${selectedBackgroundLabel}`"
+                      :aria-expanded="selectMenuOpen === 'background'"
+                      aria-haspopup="listbox"
+                      aria-controls="background-menu"
+                      @click.stop="toggleSelectMenu('background')"
+                      @keydown.escape="closeSelectMenu"
+                    >
+                      <span class="model-picker-copy">
+                        <span class="model-preview-head">
+                          <strong>{{ selectedBackgroundLabel }}</strong>
+                        </span>
+                      </span>
+                      <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'background' }" aria-hidden="true" />
+                    </button>
+                    <div
+                      v-if="selectMenuOpen === 'background'"
+                      id="background-menu"
+                      class="model-menu select-menu"
+                      role="listbox"
+                      aria-labelledby="background"
+                    >
+                      <button
+                        v-for="item in backgroundOptions"
+                        :key="item.value"
+                        class="model-option select-option"
+                        :class="{ active: item.value === background }"
+                        type="button"
+                        role="option"
+                        :aria-selected="item.value === background"
+                        @click.stop="selectSimpleOption('background', item.value)"
+                        @keydown.escape="closeSelectMenu"
+                      >
+                        <span>
+                          <span class="model-option-head">
+                            <strong>{{ item.label }}</strong>
+                          </span>
+                        </span>
+                        <Check v-if="item.value === background" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
                   <label for="moderation">审核</label>
                   <div class="model-picker select-picker">
                     <button
@@ -1280,7 +1387,7 @@ onBeforeUnmount(() => {
                     </div>
                   </div>
                 </div>
-                <div v-if="outputFormat === 'jpeg' || outputFormat === 'webp'" class="field">
+                <div v-if="supportsOutputCompression()" class="field">
                   <label for="compression">压缩 {{ outputCompression }}%</label>
                   <input id="compression" v-model.number="outputCompression" type="range" min="0" max="100" />
                 </div>
@@ -1310,7 +1417,7 @@ onBeforeUnmount(() => {
                 <label class="upload-zone upload-zone-compact">
                   <ImagePlus aria-hidden="true" />
                   <strong>点击上传蒙版</strong>
-                  <span>仅支持 PNG，白色区域会被编辑</span>
+                  <span>仅支持 PNG，透明区域会被编辑</span>
                   <input type="file" accept="image/png" hidden @change="onMaskFileChange" />
                 </label>
                 <div v-if="maskCount" class="reference-grid mask-grid">
@@ -1349,7 +1456,7 @@ onBeforeUnmount(() => {
               <button class="btn btn-primary" type="button" :aria-busy="loading" :disabled="loading" @click="generate">
                 <Sparkles v-if="!loading" aria-hidden="true" />
                 <Loader2 v-else class="spinner" aria-hidden="true" />
-                {{ loading ? '正在创建图像...' : '开始生成' }}
+                {{ loading ? (batchMode ? '批量生成中...' : '正在创建图像...') : (batchMode ? `批量生成 ${normalizedImageCount} 张图片` : '开始生成') }}
               </button>
               <button v-if="loading" class="btn btn-soft" type="button" @click="stopGeneration">
                 <Square aria-hidden="true" />
@@ -1361,12 +1468,12 @@ onBeforeUnmount(() => {
           <aside class="card output-panel">
             <div class="output-panel-head">
               <div>
-                <h2>输出</h2>
-                <p>{{ activeMode.label }} · {{ resolutionLabel }}</p>
+                <h2>{{ batchMode ? '生成结果' : 'AI生成结果' }}</h2>
+                <p>{{ batchMode ? '批量生成的图像将显示在这里' : `${activeMode.label} · ${resolutionLabel}` }}</p>
               </div>
               <div class="output-meta-row">
+                <span>{{ selectedModel.name }}</span>
                 <span>{{ activeMode.label }}</span>
-                <span>Image API</span>
                 <span>{{ normalizedImageCount }} 张</span>
               </div>
             </div>
@@ -1379,7 +1486,15 @@ onBeforeUnmount(() => {
                 role="status"
                 aria-live="polite"
               >
-                <template v-if="normalizedImageCount > 1">
+                <template v-if="hasPartialImages">
+                  <div class="generated-output partial-output output-canvas" :class="outputGridClass" :style="outputAspectStyle">
+                    <figure v-for="item in partialImages" :key="item.id" class="output-item partial-output-item">
+                      <img :src="item.src" :alt="item.title" />
+                      <figcaption class="partial-badge">{{ item.title }}</figcaption>
+                    </figure>
+                  </div>
+                </template>
+                <template v-else-if="normalizedImageCount > 1">
                   <div class="loading-output-grid output-canvas" :class="outputGridClass" :style="outputAspectStyle">
                     <div
                       v-for="index in loadingTileCount"
@@ -1480,16 +1595,16 @@ onBeforeUnmount(() => {
                   :key="slot"
                   class="empty-output-slot"
                 >
-                  <ImagePlus v-if="slot === 1" aria-hidden="true" />
-                  <strong>{{ normalizedImageCount === 1 ? '等待生成' : `画布 ${slot}` }}</strong>
-                  <span>{{ activeMode.label }} · {{ selectedResolutionLabel }}</span>
+                  <Layers3 v-if="slot === 1" aria-hidden="true" />
+                  <strong>{{ batchMode ? '批量生成的图像将显示在这里' : '生成的图像将显示在这里' }}</strong>
+                  <span>{{ batchMode ? '选择数量并点击“批量生成”' : '输入提示词并点击“开始生成”' }}</span>
                 </div>
               </div>
             </div>
 
             <p class="tip output-tip">
               <Sparkles aria-hidden="true" />
-              <span>{{ activeMode.label }} · {{ resolutionLabel }} · {{ selectedOutputFormatLabel }} · {{ normalizedImageCount }} 张</span>
+              <span>{{ batchMode ? '批量生成功能每张图片消耗 2 积分，适合需要多个创意方案的场景。' : '提示：提供越详细的描述，生成效果越好。可以包含风格、光线、色调、构图等信息。' }}</span>
             </p>
           </aside>
         </div>

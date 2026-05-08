@@ -15,6 +15,7 @@ const NotFoundView = () => import('./views/NotFoundView.vue')
 const routes = [
   { path: '/', name: 'home', component: HomeView, meta: { title: 'GPT Image 2 - AI 图片生成与编辑平台' } },
   { path: '/generate', name: 'generate', component: GenerateView, meta: { title: 'AI 图生图 - 用提示词和参考图快速生成图片 | GPT Image 2' } },
+  { path: '/batch-generate', redirect: '/generate' },
   { path: '/prompt-optimizer', name: 'prompt-optimizer', component: PromptOptimizerView, meta: { title: 'AI 提示词优化器 - 一键优化 Prompt | GPT Image 2' } },
   { path: '/pricing', name: 'pricing', component: PricingView, meta: { title: 'GPT Image 2 定价 - AI 图片生成积分与套餐' } },
   { path: '/showcase', name: 'showcase', component: ShowcaseView, meta: { title: 'AI 图片案例展示 - 查看真实提示词和生成效果 | GPT Image 2' } },
@@ -26,6 +27,7 @@ const routes = [
   { path: '/terms-of-service', name: 'terms', component: LegalView, props: { type: 'terms' }, meta: { title: '服务条款 | GPT Image 2' } },
   { path: '/zh', redirect: '/' },
   { path: '/zh/generate', redirect: '/generate' },
+  { path: '/zh/batch-generate', redirect: '/generate' },
   { path: '/zh/prompt-optimizer', redirect: '/prompt-optimizer' },
   { path: '/zh/pricing', redirect: '/pricing' },
   { path: '/zh/showcase', redirect: '/showcase' },

@@ -43,12 +43,15 @@ import SectionTitle from '../components/SectionTitle.vue'
             <section id="generator" class="card doc-section">
               <ImagePlus aria-hidden="true" />
               <h2>生成参数</h2>
-              <p>模型名称、图片尺寸、数量、质量和输出格式与本地 PowerShell 生图脚本保持一致。参考图最多 4 张，适合人物一致性、产品保真和局部编辑。</p>
+              <p>模型名称、图片尺寸、数量、质量、背景、审核和输出格式按 OpenAI 图像生成文档整理。参考图最多 4 张，适合人物一致性、产品保真和局部编辑。</p>
               <div class="code-box">model: gpt-image-2
-size: 1024x1024 | 1536x1024 | 1024x1536 | auto
+size: auto | 1024x1024 | 1536x1024 | 1024x1536 | 2048x1152 | 3840x2160 | 2160x3840
 n: 1-10
 quality: high | medium | low | auto
-output_format: png | jpeg | webp</div>
+output_format: png | jpeg | webp
+background: auto | opaque
+moderation: auto | low
+output_compression: 0-100 (jpeg/webp only)</div>
             </section>
 
             <section id="api" class="card doc-section">
@@ -63,7 +66,8 @@ output_format: png | jpeg | webp</div>
   "n": 1,
   "quality": "high",
   "output_format": "png",
-  "response_format": "b64_json"
+  "background": "auto",
+  "moderation": "auto"
 }</div>
             </section>
 
