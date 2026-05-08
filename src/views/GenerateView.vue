@@ -4,14 +4,22 @@ import { useRoute } from 'vue-router'
 import {
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Copy,
-  Download,
+  ExternalLink,
+  Eye,
   GalleryHorizontal,
   ImagePlus,
   Layers3,
   Link as LinkIcon,
+  LogIn,
   Loader2,
+  Save,
+  Shuffle,
   Square,
+  Images,
+  Wand,
   Sparkles,
   Trash2,
   Wand2,
@@ -194,6 +202,7 @@ const reversing = ref(false)
 const notice = ref('')
 const galleryOpen = ref(false)
 const gallery = ref([])
+const imagePreview = ref(null)
 const modelPicker = ref(null)
 const modelMenuOpen = ref(false)
 const selectMenuOpen = ref('')
@@ -201,15 +210,23 @@ const selectMenuOpen = ref('')
 const referenceCount = computed(() => uploads.value.length + (imageUrl.value ? 1 : 0))
 const maskCount = computed(() => maskUploads.value.length + (maskImageUrl.value ? 1 : 0))
 const canReverse = computed(() => referenceCount.value > 0)
-const canAddReference = computed(() => referenceCount.value < 4)
 const canAddMask = computed(() => maskCount.value < 1)
 const activeMode = computed(() => modes.find((item) => item.value === mode.value) || modes[0])
 const requiresReference = computed(() => activeMode.value.requiresReference)
-const batchCountOptions = [1, 2, 3, 4]
+const maxReferenceCount = computed(() => (mode.value === 'edit' ? 1 : 4))
+const canAddReference = computed(() => referenceCount.value < maxReferenceCount.value)
+const batchCountOptions = [
+  { label: '2 张图片', value: 2 },
+  { label: '4 张图片', value: 4, recommended: true },
+  { label: '8 张图片', value: 8 },
+  { label: '6 张图片', value: 6 },
+  { label: '10 张图片', value: 10 },
+]
 const showReferenceSection = computed(() => requiresReference.value)
 const normalizedImageCount = computed(() => {
   if (!batchMode.value) return 1
-  return Math.min(4, Math.max(1, Number(batchCount.value) || 4))
+  const currentCount = Number(batchCount.value) || 4
+  return batchCountOptions.some((item) => item.value === currentCount) ? currentCount : 4
 })
 const loadingTileCount = computed(() => normalizedImageCount.value)
 const activeModelKey = computed(() => normalizeModelKey(model.value))
@@ -227,6 +244,13 @@ const activeOutputCount = computed(() => {
   if (loading.value) return normalizedImageCount.value
   return output.value.length || normalizedImageCount.value
 })
+const previewImages = computed(() => imagePreview.value?.images || [])
+const currentPreviewImage = computed(() => previewImages.value[imagePreview.value?.index || 0] || null)
+const previewCount = computed(() => previewImages.value.length)
+const previewPosition = computed(() => {
+  if (!previewCount.value) return ''
+  return `${(imagePreview.value?.index || 0) + 1} / ${previewCount.value}`
+})
 const outputGridClass = computed(() => {
   const count = activeOutputCount.value
   if (count <= 1) return 'output-grid--single'
@@ -238,9 +262,7 @@ const outputGridClass = computed(() => {
 const outputAspectStyle = computed(() => ({
   '--output-ratio': aspectRatio.value === 'auto' ? '1 / 1' : aspectRatio.value.replace(':', ' / '),
 }))
-const outputPlaceholders = computed(() =>
-  Array.from({ length: normalizedImageCount.value }, (_, index) => index + 1),
-)
+const outputPlaceholders = computed(() => [1])
 const selectedModel = computed(
   () =>
     modelOptions.find((item) => item.value === model.value) || {
@@ -257,23 +279,11 @@ const selectedQualityLabel = computed(() => getOptionLabel(qualities, quality.va
 const selectedOutputFormatLabel = computed(() => getOptionLabel(outputFormats, outputFormat.value))
 const selectedBackgroundLabel = computed(() => getOptionLabel(backgroundOptions, background.value))
 const selectedModerationLabel = computed(() => getOptionLabel(moderationOptions, moderation.value))
-const heroTitle = computed(() => (batchMode.value ? '批量 AI 生图工作台' : 'GPT Image 2 创作工作台'))
+const selectedBatchCountLabel = computed(() => getOptionLabel(batchCountOptions, normalizedImageCount.value))
+const heroTitle = computed(() => (batchMode.value ? '批量 AI 生图' : 'GPT Image 2 照片生成'))
 const heroDescription = computed(() =>
-  batchMode.value
-    ? '并行生成多张候选图，统一管理画幅、质量和输出格式。'
-    : '把提示词、参考图和输出参数集中到一个清晰的创作流程里。',
+  batchMode.value ? '一次生成多张图片，提高创作效率。' : '结合参考图和提示词，快速生成高质量 AI 写真与视觉内容。',
 )
-const workflowStats = computed(() => [
-  { label: '模型', value: selectedModel.value.name },
-  { label: '画幅', value: selectedAspectRatioLabel.value },
-  { label: '输出', value: `${normalizedImageCount.value} 张 ${outputFormat.value.toUpperCase()}` },
-])
-const currentSetup = computed(() => [
-  { label: '模式', value: activeMode.value.label },
-  { label: '尺寸', value: resolutionLabel.value },
-  { label: '质量', value: selectedQualityLabel.value },
-  { label: '参考', value: requiresReference.value ? `${referenceCount.value}/4` : '无需' },
-])
 const galleryImageCount = computed(() => gallery.value.reduce((total, record) => total + record.images.length, 0))
 const gallerySummary = computed(() => {
   if (!gallery.value.length) return '暂无生成记录'
@@ -319,7 +329,13 @@ const promptPlaceholder = computed(() => {
   return '详细描述你想要生成的图像，包括主体、风格、光线、色调等...'
 })
 const referenceLabel = computed(() => {
-  return mode.value === 'edit' ? '原图 / 参考图像' : '参考图像'
+  return mode.value === 'edit' ? '原图' : '参考图像'
+})
+const referenceInputLabel = computed(() => {
+  return mode.value === 'edit' ? '上传 1 张原图或输入图片 URL' : '上传参考图片或输入图片 URL'
+})
+const referenceUploadHint = computed(() => {
+  return mode.value === 'edit' ? '仅支持 1 张原图（PNG, JPEG, WEBP，最大 10MB）' : '支持 PNG, JPEG, WEBP（最大 10MB）'
 })
 const advancedSummary = computed(() => {
   const items = [
@@ -377,6 +393,7 @@ function selectSimpleOption(key, value) {
   if (key === 'outputFormat') outputFormat.value = value
   if (key === 'background') background.value = value
   if (key === 'moderation') moderation.value = value
+  if (key === 'batchCount') batchCount.value = value
   selectMenuOpen.value = ''
 }
 
@@ -402,6 +419,51 @@ function closeSelectMenu() {
   selectMenuOpen.value = ''
 }
 
+function trimReferencesForMode() {
+  const maxCount = maxReferenceCount.value
+  if (referenceCount.value <= maxCount) return
+
+  if (mode.value === 'edit') {
+    uploads.value.slice(1).forEach((item) => {
+      if (item.src) URL.revokeObjectURL(item.src)
+    })
+    if (imageUrl.value) {
+      uploads.value.forEach((item) => {
+        if (item.src) URL.revokeObjectURL(item.src)
+      })
+      uploads.value = []
+    } else {
+      uploads.value = uploads.value.slice(0, 1)
+    }
+    showNotice('精修图模式仅保留 1 张原图')
+    return
+  }
+
+  uploads.value.slice(maxCount).forEach((item) => {
+    if (item.src) URL.revokeObjectURL(item.src)
+  })
+  uploads.value = uploads.value.slice(0, Math.max(0, maxCount - (imageUrl.value ? 1 : 0)))
+}
+
+function handleWindowKeydown(event) {
+  if (imagePreview.value) {
+    if (event.key === 'Escape') {
+      closeImagePreview()
+      return
+    }
+    if (event.key === 'ArrowLeft') {
+      showPreviousPreviewImage()
+      return
+    }
+    if (event.key === 'ArrowRight') {
+      showNextPreviewImage()
+    }
+    return
+  }
+  if (event.key !== 'Escape') return
+  if (galleryOpen.value) closeGallery()
+}
+
 function randomizePrompt() {
   prompt.value = getRandomPrompt()
   showNotice('已随机生成提示词')
@@ -415,6 +477,10 @@ function enableBatchMode() {
 function disableBatchMode() {
   batchMode.value = false
   showNotice('已返回普通生图')
+}
+
+function openLoginFromGenerate() {
+  window.dispatchEvent(new CustomEvent('open-login'))
 }
 
 function normalizeGeneratedImage(item, index = 0, defaults = {}) {
@@ -573,18 +639,20 @@ function handleGenerationStreamEvent(event) {
 
 async function onFileChange(event) {
   if (!canAddReference.value) {
-    showNotice('最多添加 4 张参考图')
+    showNotice(mode.value === 'edit' ? '精修图仅支持 1 张原图' : `最多添加 ${maxReferenceCount.value} 张参考图`)
     event.target.value = ''
     return
   }
-  const files = Array.from(event.target.files || []).slice(0, 4 - referenceCount.value)
+
+  const availableSlots = Math.max(0, maxReferenceCount.value - referenceCount.value)
+  const files = Array.from(event.target.files || []).slice(0, availableSlots)
   const mapped = files.map((file) => ({
     name: file.name,
     src: URL.createObjectURL(file),
   }))
   const startIndex = uploads.value.length
-  uploads.value = [...uploads.value, ...mapped].slice(0, 4)
-  if (mapped.length) showNotice(`已添加 ${mapped.length} 张参考图`)
+  uploads.value = [...uploads.value, ...mapped].slice(0, maxReferenceCount.value)
+  if (mapped.length) showNotice(mode.value === 'edit' ? '原图已添加' : `已添加 ${mapped.length} 张参考图`)
 
   try {
     const uploaded = await api.uploadFiles(files)
@@ -671,11 +739,18 @@ async function reversePrompt() {
 
 async function generate() {
   if (loading.value) return
+  const generationStartTime = performance.now()
+  const logGenerationDuration = () => {
+    const durationSeconds = ((performance.now() - generationStartTime) / 1000).toFixed(2)
+    console.info(`[图像生成耗时] ${durationSeconds}s`)
+  }
   if (!prompt.value.trim()) {
+    logGenerationDuration()
     showNotice('请先输入提示词')
     return
   }
   if (requiresReference.value && !referenceCount.value) {
+    logGenerationDuration()
     showNotice(mode.value === 'edit' ? '请先添加原图或参考图' : '请先添加参考图')
     return
   }
@@ -733,6 +808,7 @@ async function generate() {
     output.value = []
     showNotice(error.name === 'AbortError' ? '已停止生成' : (error.message || '图像生成失败，请稍后重试'))
   } finally {
+    logGenerationDuration()
     if (generationAbortController.value === controller) {
       generationAbortController.value = null
       loading.value = false
@@ -741,6 +817,8 @@ async function generate() {
     }
   }
 }
+
+watch(mode, trimReferencesForMode)
 
 function stopGeneration() {
   if (!loading.value) return
@@ -754,12 +832,18 @@ function addUrlReference() {
     return
   }
   if (!canAddReference.value && !imageUrl.value) {
-    showNotice('最多添加 4 张参考图')
+    showNotice(mode.value === 'edit' ? '精修图仅支持 1 张原图' : `最多添加 ${maxReferenceCount.value} 张参考图`)
     return
+  }
+  if (mode.value === 'edit') {
+    uploads.value.forEach((item) => {
+      if (item.src) URL.revokeObjectURL(item.src)
+    })
+    uploads.value = []
   }
   imageUrl.value = nextUrl
   urlInput.value = ''
-  showNotice('图片 URL 已作为参考图加入')
+  showNotice(mode.value === 'edit' ? '图片 URL 已作为原图加入' : '图片 URL 已作为参考图加入')
 }
 
 function addMaskUrlReference() {
@@ -786,9 +870,53 @@ async function copyCurrentPrompt() {
   }
 }
 
-function openImage(item) {
-  window.open(item.src, '_blank', 'noreferrer')
-  showNotice('已打开高清图片')
+function normalizePreviewImage(image, index = 0, fallbackTitle = '图片预览') {
+  const src = image?.src || image?.url || image
+  if (!src) return null
+  return {
+    src,
+    title: image?.title || image?.name || `${fallbackTitle} ${index + 1}`,
+    meta: image?.meta || [image?.model, image?.resolution, image?.ratio].filter(Boolean).join(' · '),
+    prompt: image?.prompt || '',
+  }
+}
+
+function openImagePreview(imageOrImages, startIndex = 0, fallbackTitle = '图片预览') {
+  const rawImages = Array.isArray(imageOrImages) ? imageOrImages : [imageOrImages]
+  const images = rawImages
+    .map((item, index) => normalizePreviewImage(item, index, fallbackTitle))
+    .filter(Boolean)
+  if (!images.length) return
+  const safeIndex = Math.min(Math.max(Number(startIndex) || 0, 0), images.length - 1)
+  imagePreview.value = {
+    images,
+    index: safeIndex,
+  }
+}
+
+function closeImagePreview() {
+  imagePreview.value = null
+}
+
+function setPreviewIndex(index) {
+  if (!imagePreview.value || !previewCount.value) return
+  imagePreview.value = {
+    ...imagePreview.value,
+    index: (index + previewCount.value) % previewCount.value,
+  }
+}
+
+function showPreviousPreviewImage() {
+  setPreviewIndex((imagePreview.value?.index || 0) - 1)
+}
+
+function showNextPreviewImage() {
+  setPreviewIndex((imagePreview.value?.index || 0) + 1)
+}
+
+function openPreviewSource() {
+  if (!currentPreviewImage.value?.src) return
+  window.open(currentPreviewImage.value.src, '_blank', 'noreferrer')
 }
 
 function getReferences() {
@@ -800,6 +928,20 @@ function getReferences() {
 
 function getMaskReference() {
   return maskImageUrl.value || maskUploads.value[0]?.remoteUrl || maskUploads.value[0]?.src || ''
+}
+
+function getReferencePreviewImages() {
+  return [
+    imageUrl.value ? { src: imageUrl.value, title: 'URL 参考图', meta: '参考图像' } : null,
+    ...uploads.value.map((item) => ({ src: item.src, title: item.name, meta: '参考图像' })),
+  ].filter(Boolean)
+}
+
+function getMaskPreviewImages() {
+  return [
+    maskImageUrl.value ? { src: maskImageUrl.value, title: 'URL 蒙版', meta: '蒙版' } : null,
+    ...maskUploads.value.map((item) => ({ src: item.src, title: item.name, meta: '蒙版' })),
+  ].filter(Boolean)
 }
 
 async function openGallery() {
@@ -821,6 +963,12 @@ function closeGallery() {
 function syncGalleryScrollLock(isOpen) {
   document.documentElement.classList.toggle('gallery-scroll-locked', isOpen)
   document.body.classList.toggle('gallery-scroll-locked', isOpen)
+}
+
+function syncModalScrollLock() {
+  const locked = galleryOpen.value || Boolean(imagePreview.value)
+  document.documentElement.classList.toggle('gallery-scroll-locked', locked)
+  document.body.classList.toggle('gallery-scroll-locked', locked)
 }
 
 function useGalleryRecord(record) {
@@ -847,10 +995,19 @@ async function copyGalleryPrompt(record) {
 }
 
 function openGalleryImage(record) {
-  const firstImage = record.images[0]
-  if (!firstImage?.url) return
-  window.open(firstImage.url, '_blank', 'noreferrer')
-  showNotice('已打开图库图片')
+  if (!record.images?.length) return
+  openImagePreview(
+    record.images.map((image, index) => ({
+      src: image.url,
+      title: image.title || `图库图片 ${index + 1}`,
+      prompt: record.prompt || image.prompt,
+      model: record.model || image.model,
+      resolution: record.resolution || image.resolution,
+      ratio: record.ratio || image.ratio,
+    })),
+    0,
+    '图库图片',
+  )
 }
 
 function removeGalleryRecord(recordId) {
@@ -904,17 +1061,19 @@ function galleryRecordMeta(record) {
     .join(' · ')
 }
 
-watch(galleryOpen, syncGalleryScrollLock)
+watch([galleryOpen, imagePreview], syncModalScrollLock)
 
 onMounted(() => {
   loadSiteData()
   gallery.value = loadLocalGallery()
   window.addEventListener('click', closeMenusOnOutside)
+  window.addEventListener('keydown', handleWindowKeydown)
 })
 
 onBeforeUnmount(() => {
   syncGalleryScrollLock(false)
   window.removeEventListener('click', closeMenusOnOutside)
+  window.removeEventListener('keydown', handleWindowKeydown)
   uploads.value.forEach((item) => {
     if (item.src) URL.revokeObjectURL(item.src)
   })
@@ -930,32 +1089,42 @@ onBeforeUnmount(() => {
       <div class="container">
         <div class="generate-hero">
           <div class="generate-hero-copy">
-            <span class="eyebrow">{{ batchMode ? '高级功能' : '图像生成' }}</span>
+            <span v-if="batchMode" class="batch-hero-badge">
+              <Images aria-hidden="true" />
+              高级功能
+            </span>
             <h1>{{ heroTitle }}</h1>
             <p>{{ heroDescription }}</p>
-            <div class="workflow-stat-grid" aria-label="当前生成配置摘要">
-              <div v-for="item in workflowStats" :key="item.label" class="workflow-stat">
-                <span>{{ item.label }}</span>
-                <strong>{{ item.value }}</strong>
+            <div class="tool-toolbar" aria-label="生成工具栏">
+              <div class="tool-toolbar-row tool-toolbar-row-primary">
+                <button v-if="!batchMode" class="btn hero-utility-button" type="button" @click="enableBatchMode">
+                  <Images aria-hidden="true" />
+                  <span>需要批量生成？试试高级批量生图功能</span>
+                </button>
+                <button v-else class="btn hero-utility-button" type="button" @click="disableBatchMode">
+                  <Wand aria-hidden="true" />
+                  <span>只需要单张？返回普通生图</span>
+                </button>
+                <button class="btn hero-utility-button" type="button" @click="openGallery">
+                  <GalleryHorizontal aria-hidden="true" />
+                  <span>我的图库</span><span v-if="gallery.length">{{ gallery.length }}</span>
+                </button>
+              </div>
+              <div class="tool-toolbar-row tool-toolbar-row-secondary">
+                <span v-if="!batchMode" class="toolbar-credit">
+                  <Wand aria-hidden="true" />
+                  游客可免费生成 1 次
+                </span>
+                <button class="btn hero-login-button" type="button" @click="openLoginFromGenerate">
+                  <LogIn aria-hidden="true" />
+                  <span>登录同步图库</span>
+                </button>
+                <button v-if="output.length" class="btn hero-save-button" type="button" @click="saveCurrentOutputToGallery">
+                  <Save aria-hidden="true" />
+                  <span>保存当前结果</span>
+                </button>
               </div>
             </div>
-          </div>
-
-          <div class="tool-toolbar" aria-label="生成工具栏">
-            <button v-if="!batchMode" class="btn btn-soft" type="button" @click="enableBatchMode">
-              高级批量生图
-            </button>
-            <button v-else class="btn btn-soft" type="button" @click="disableBatchMode">
-              返回普通生图
-            </button>
-            <button class="btn btn-ghost" type="button" @click="openGallery">
-              <GalleryHorizontal aria-hidden="true" />
-              我的图库<span v-if="gallery.length">{{ gallery.length }}</span>
-            </button>
-            <button v-if="output.length" class="btn btn-soft" type="button" @click="saveCurrentOutputToGallery">
-              保存当前结果
-            </button>
-            <span class="toolbar-credit">游客可免费生成 1 次</span>
           </div>
         </div>
 
@@ -981,34 +1150,57 @@ onBeforeUnmount(() => {
                 </button>
               </div>
             </div>
-            <div class="settings-summary-card">
-              <div>
-                <span>当前流程</span>
-                <strong>{{ batchMode ? '批量生成设置' : '单图生成设置' }}</strong>
-              </div>
-              <dl>
-                <template v-for="item in currentSetup" :key="item.label">
-                  <dt>{{ item.label }}</dt>
-                  <dd>{{ item.value }}</dd>
-                </template>
-              </dl>
-            </div>
             <div v-if="batchMode" class="batch-count-card" aria-label="批量生成数量">
               <div>
                 <span>生成数量</span>
                 <strong>{{ normalizedImageCount }} 张图片</strong>
               </div>
-              <div class="batch-count-options" role="radiogroup" aria-label="选择生成数量">
+              <div class="model-picker select-picker batch-count-picker">
                 <button
-                  v-for="count in batchCountOptions"
-                  :key="count"
+                  id="batch-count"
+                  class="model-picker-button select-picker-button"
                   type="button"
-                  :class="{ active: normalizedImageCount === count }"
-                  :aria-pressed="normalizedImageCount === count"
-                  @click="batchCount = count"
+                  :aria-label="`生成数量，当前为 ${selectedBatchCountLabel}`"
+                  :aria-expanded="selectMenuOpen === 'batchCount'"
+                  aria-haspopup="listbox"
+                  aria-controls="batch-count-menu"
+                  @click.stop="toggleSelectMenu('batchCount')"
+                  @keydown.escape="closeSelectMenu"
                 >
-                  {{ count }}
+                  <span class="model-picker-copy">
+                    <span class="model-preview-head">
+                      <strong>{{ selectedBatchCountLabel }}</strong>
+                    </span>
+                  </span>
+                  <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'batchCount' }" aria-hidden="true" />
                 </button>
+                <div
+                  v-if="selectMenuOpen === 'batchCount'"
+                  id="batch-count-menu"
+                  class="model-menu select-menu"
+                  role="listbox"
+                  aria-labelledby="batch-count"
+                >
+                  <button
+                    v-for="item in batchCountOptions"
+                    :key="item.value"
+                    class="model-option select-option batch-count-option"
+                    :class="{ active: item.value === normalizedImageCount }"
+                    type="button"
+                    role="option"
+                    :aria-selected="item.value === normalizedImageCount"
+                    @click.stop="selectSimpleOption('batchCount', item.value)"
+                    @keydown.escape="closeSelectMenu"
+                  >
+                    <span>
+                      <span class="model-option-head">
+                        <strong>{{ item.label }}</strong>
+                        <em v-if="item.recommended">推荐</em>
+                      </span>
+                    </span>
+                    <Check v-if="item.value === normalizedImageCount" aria-hidden="true" />
+                  </button>
+                </div>
               </div>
               <small>需要 {{ creditCost }} 积分</small>
             </div>
@@ -1160,33 +1352,10 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <div class="field">
-              <div class="prompt-field-head">
-                <label for="prompt">{{ promptLabel }}</label>
-                <button class="btn btn-soft" type="button" @click="randomizePrompt">随机提示词</button>
-              </div>
-              <textarea
-                id="prompt"
-                v-model.trim="prompt"
-                :placeholder="promptPlaceholder"
-                spellcheck="false"
-              />
-              <div class="quality-meter" aria-live="polite">
-                <div class="quality-meter-head">
-                  <span>{{ promptQualityLabel }}</span>
-                  <span>{{ promptQualityScore }}%</span>
-                </div>
-                <div class="quality-track" aria-hidden="true">
-                  <span class="quality-fill" :style="{ width: `${promptQualityScore}%` }"></span>
-                </div>
-              </div>
-              <small>不知道怎么写？试试下方的「AI 反推提示词」功能</small>
-            </div>
-
             <div v-if="showReferenceSection" class="field reference-section">
-              <label>{{ referenceLabel }} <span v-if="requiresReference">({{ referenceCount }}/4)</span></label>
+              <label>{{ referenceLabel }} <span v-if="requiresReference">({{ referenceCount }}/{{ maxReferenceCount }})</span></label>
               <div class="field">
-                <label for="image-url">上传参考图片或输入图片 URL</label>
+                <label for="image-url">{{ referenceInputLabel }}</label>
                 <div class="control-row">
                   <input
                     id="image-url"
@@ -1212,23 +1381,53 @@ onBeforeUnmount(() => {
                 <ImagePlus aria-hidden="true" />
                 <strong>点击上传</strong>
                 <span>或拖拽图片</span>
-                <span>支持 PNG, JPEG, WEBP（最大 10MB）</span>
-                <input type="file" accept="image/png,image/jpeg,image/webp" multiple hidden @change="onFileChange" />
+                <span>{{ referenceUploadHint }}</span>
+                <input type="file" accept="image/png,image/jpeg,image/webp" :multiple="mode !== 'edit'" hidden @change="onFileChange" />
               </label>
               <div v-if="referenceCount" class="reference-grid">
                 <div v-if="imageUrl" class="reference-thumb">
-                  <img :src="imageUrl" alt="URL 参考图" />
+                  <button class="thumb-preview" type="button" aria-label="预览 URL 参考图" @click="openImagePreview(getReferencePreviewImages(), 0, '参考图像')">
+                    <img :src="imageUrl" alt="URL 参考图" />
+                  </button>
                   <button class="icon-button thumb-remove" type="button" aria-label="移除 URL 参考图" @click="removeUrlReference">
                     <X aria-hidden="true" />
                   </button>
                 </div>
                 <div v-for="(item, index) in uploads" :key="item.src" class="reference-thumb">
-                  <img :src="item.src" :alt="item.name" />
+                  <button class="thumb-preview" type="button" :aria-label="`预览 ${item.name}`" @click="openImagePreview(getReferencePreviewImages(), imageUrl ? index + 1 : index, '参考图像')">
+                    <img :src="item.src" :alt="item.name" />
+                  </button>
                   <button class="icon-button thumb-remove" type="button" :aria-label="`移除 ${item.name}`" @click="removeUpload(index)">
                     <Trash2 aria-hidden="true" />
                   </button>
                 </div>
               </div>
+            </div>
+
+            <div class="field">
+              <div class="prompt-field-head">
+                <label for="prompt">{{ promptLabel }}</label>
+                <button class="btn btn-soft" type="button" @click="randomizePrompt">
+                  <Shuffle aria-hidden="true" />
+                  随机提示词
+                </button>
+              </div>
+              <textarea
+                id="prompt"
+                v-model.trim="prompt"
+                :placeholder="promptPlaceholder"
+                spellcheck="false"
+              />
+              <div class="quality-meter" aria-live="polite">
+                <div class="quality-meter-head">
+                  <span>{{ promptQualityLabel }}</span>
+                  <span>{{ promptQualityScore }}%</span>
+                </div>
+                <div class="quality-track" aria-hidden="true">
+                  <span class="quality-fill" :style="{ width: `${promptQualityScore}%` }"></span>
+                </div>
+              </div>
+              <small>不知道怎么写？试试下方的「AI 反推提示词」功能</small>
             </div>
 
             <details class="advanced-panel" :open="advancedOpen" @toggle="advancedOpen = $event.target.open">
@@ -1469,13 +1668,17 @@ onBeforeUnmount(() => {
                 </label>
                 <div v-if="maskCount" class="reference-grid mask-grid">
                   <div v-if="maskImageUrl" class="reference-thumb">
-                    <img :src="maskImageUrl" alt="URL 蒙版" />
+                    <button class="thumb-preview" type="button" aria-label="预览 URL 蒙版" @click="openImagePreview(getMaskPreviewImages(), 0, '蒙版')">
+                      <img :src="maskImageUrl" alt="URL 蒙版" />
+                    </button>
                     <button class="icon-button thumb-remove" type="button" aria-label="移除 URL 蒙版" @click="removeMaskUrlReference">
                       <X aria-hidden="true" />
                     </button>
                   </div>
                   <div v-for="(item, index) in maskUploads" :key="item.src" class="reference-thumb">
-                    <img :src="item.src" :alt="item.name" />
+                    <button class="thumb-preview" type="button" :aria-label="`预览 ${item.name}`" @click="openImagePreview(getMaskPreviewImages(), maskImageUrl ? index + 1 : index, '蒙版')">
+                      <img :src="item.src" :alt="item.name" />
+                    </button>
                     <button class="icon-button thumb-remove" type="button" :aria-label="`移除 ${item.name}`" @click="removeMaskUpload(index)">
                       <Trash2 aria-hidden="true" />
                     </button>
@@ -1514,9 +1717,12 @@ onBeforeUnmount(() => {
 
           <aside class="card output-panel">
             <div class="output-panel-head">
-              <div>
-                <h2>{{ batchMode ? '生成结果' : 'AI生成结果' }}</h2>
-                <p>{{ batchMode ? '批量生成的图像将显示在这里' : `${activeMode.label} · ${resolutionLabel}` }}</p>
+              <div class="output-title">
+                <Layers3 aria-hidden="true" />
+                <div>
+                  <h2>{{ batchMode ? '生成结果' : 'AI生成结果' }}</h2>
+                  <p>{{ batchMode ? '批量生成的图像将显示在这里' : `${activeMode.label} · ${resolutionLabel}` }}</p>
+                </div>
               </div>
               <div class="output-meta-row">
                 <span>{{ selectedModel.name }}</span>
@@ -1535,26 +1741,12 @@ onBeforeUnmount(() => {
               >
                 <template v-if="hasPartialImages">
                   <div class="generated-output partial-output output-canvas" :class="outputGridClass" :style="outputAspectStyle">
-                    <figure v-for="item in partialImages" :key="item.id" class="output-item partial-output-item">
-                      <img :src="item.src" :alt="item.title" />
+                    <figure v-for="(item, index) in partialImages" :key="item.id" class="output-item partial-output-item">
+                      <button class="image-preview-trigger" type="button" :aria-label="`预览 ${item.title}`" @click="openImagePreview(partialImages, index, '生成预览')">
+                        <img :src="item.src" :alt="item.title" />
+                      </button>
                       <figcaption class="partial-badge">{{ item.title }}</figcaption>
                     </figure>
-                  </div>
-                </template>
-                <template v-else-if="normalizedImageCount > 1">
-                  <div class="loading-output-grid output-canvas" :class="outputGridClass" :style="outputAspectStyle">
-                    <div
-                      v-for="index in loadingTileCount"
-                      :key="index"
-                      class="loading-image-tile"
-                      :style="{ '--tile-delay': `${(index - 1) * 160}ms` }"
-                      aria-hidden="true"
-                    >
-                      <div class="loading-image-surface">
-                        <span class="loading-image-glow"></span>
-                        <span class="loading-image-scan"></span>
-                      </div>
-                    </div>
                   </div>
                 </template>
                 <template v-else-if="loadingVariant === 'gpt-image-2'">
@@ -1619,11 +1811,13 @@ onBeforeUnmount(() => {
                 :class="outputGridClass"
                 :style="outputAspectStyle"
               >
-                <figure v-for="item in output" :key="item.src" class="output-item">
-                  <img :src="item.src" :alt="item.title" />
+                <figure v-for="(item, index) in output" :key="item.src" class="output-item">
+                  <button class="image-preview-trigger" type="button" :aria-label="`预览 ${item.title}`" @click="openImagePreview(output, index, '生成图片')">
+                    <img :src="item.src" :alt="item.title" />
+                  </button>
                   <figcaption class="output-actions">
-                    <button class="icon-button" type="button" :aria-label="`打开 ${item.title}`" @click="openImage(item)">
-                      <Download aria-hidden="true" />
+                    <button class="icon-button" type="button" :aria-label="`预览 ${item.title}`" @click="openImagePreview(output, index, '生成图片')">
+                      <Eye aria-hidden="true" />
                     </button>
                     <button class="icon-button" type="button" aria-label="复制当前提示词" @click="copyCurrentPrompt">
                       <Copy aria-hidden="true" />
@@ -1633,8 +1827,7 @@ onBeforeUnmount(() => {
               </div>
               <div
                 v-else
-                class="empty-output output-canvas"
-                :class="outputGridClass"
+                class="empty-output output-canvas output-grid--single"
                 :style="outputAspectStyle"
               >
                 <div
@@ -1642,7 +1835,7 @@ onBeforeUnmount(() => {
                   :key="slot"
                   class="empty-output-slot"
                 >
-                  <Layers3 v-if="slot === 1" aria-hidden="true" />
+                  <ImagePlus v-if="slot === 1" aria-hidden="true" />
                   <strong>{{ batchMode ? '批量生成的图像将显示在这里' : '生成的图像将显示在这里' }}</strong>
                   <span>{{ batchMode ? '选择数量并点击“批量生成”' : '输入提示词并点击“开始生成”' }}</span>
                 </div>
@@ -1679,12 +1872,15 @@ onBeforeUnmount(() => {
 
         <div class="gallery-toolbar">
           <span>本地自动保存最近 {{ maxLocalGalleryRecords }} 组，打开时会尝试同步云端记录。</span>
-          <button class="btn btn-ghost" type="button" :disabled="!gallery.length" @click="clearGallery">清空本地</button>
+          <button class="btn btn-ghost" type="button" :disabled="!gallery.length" @click="clearGallery">
+            <Trash2 aria-hidden="true" />
+            清空本地
+          </button>
         </div>
 
         <div v-if="gallery.length" class="gallery-grid">
           <article v-for="record in gallery" :key="record.id" class="gallery-card">
-            <button class="gallery-cover" type="button" :aria-label="`载入 ${record.prompt || '图库记录'}`" @click="useGalleryRecord(record)">
+            <button class="gallery-cover" type="button" :aria-label="`预览 ${record.prompt || '图库图片'}`" @click="openGalleryImage(record)">
               <img :src="galleryRecordCover(record)" :alt="record.prompt || '图库图片'" />
               <span class="thumb-chip">{{ galleryRecordMode(record) }}</span>
             </button>
@@ -1695,9 +1891,12 @@ onBeforeUnmount(() => {
               </div>
               <p>{{ record.prompt || '无提示词记录' }}</p>
               <div class="gallery-actions">
-                <button class="btn btn-soft" type="button" @click="useGalleryRecord(record)">复用</button>
-                <button class="icon-button" type="button" aria-label="打开图片" @click="openGalleryImage(record)">
-                  <Download aria-hidden="true" />
+                <button class="btn btn-soft" type="button" @click="useGalleryRecord(record)">
+                  <Save aria-hidden="true" />
+                  复用
+                </button>
+                <button class="icon-button" type="button" aria-label="预览图片" @click="openGalleryImage(record)">
+                  <Eye aria-hidden="true" />
                 </button>
                 <button class="icon-button" type="button" aria-label="复制提示词" @click="copyGalleryPrompt(record)">
                   <Copy aria-hidden="true" />
@@ -1714,6 +1913,68 @@ onBeforeUnmount(() => {
           <strong>还没有本地生成记录</strong>
           <p>完成一次生成后，结果会显示在这里。</p>
         </div>
+      </div>
+    </div>
+
+    <div
+      v-if="imagePreview"
+      class="modal-backdrop preview-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="image-preview-title"
+      @click.self="closeImagePreview"
+    >
+      <div class="modal-card image-preview-modal">
+        <div class="modal-head image-preview-head">
+          <div>
+            <h2 id="image-preview-title">{{ currentPreviewImage?.title }}</h2>
+            <p>{{ [previewPosition, currentPreviewImage?.meta].filter(Boolean).join(' · ') }}</p>
+          </div>
+          <div class="image-preview-actions">
+            <button class="icon-button" type="button" aria-label="打开原图" @click="openPreviewSource">
+              <ExternalLink aria-hidden="true" />
+            </button>
+            <button class="icon-button" type="button" aria-label="关闭预览" @click="closeImagePreview">
+              <X aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+        <div class="image-preview-stage">
+          <button
+            v-if="previewCount > 1"
+            class="icon-button image-preview-nav image-preview-nav-prev"
+            type="button"
+            aria-label="上一张"
+            @click="showPreviousPreviewImage"
+          >
+            <ChevronLeft aria-hidden="true" />
+          </button>
+          <img :src="currentPreviewImage?.src" :alt="currentPreviewImage?.title" />
+          <button
+            v-if="previewCount > 1"
+            class="icon-button image-preview-nav image-preview-nav-next"
+            type="button"
+            aria-label="下一张"
+            @click="showNextPreviewImage"
+          >
+            <ChevronRight aria-hidden="true" />
+          </button>
+        </div>
+        <div v-if="previewCount > 1" class="image-preview-strip" aria-label="预览缩略图">
+          <button
+            v-for="(item, index) in previewImages"
+            :key="`${item.src}-${index}`"
+            class="image-preview-thumb"
+            :class="{ active: index === imagePreview.index }"
+            type="button"
+            :aria-label="`查看第 ${index + 1} 张`"
+            :aria-current="index === imagePreview.index"
+            @click="setPreviewIndex(index)"
+          >
+            <img :src="item.src" :alt="item.title" />
+          </button>
+        </div>
+        <p v-if="currentPreviewImage?.prompt" class="image-preview-prompt">{{ currentPreviewImage.prompt }}</p>
       </div>
     </div>
 

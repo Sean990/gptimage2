@@ -1,5 +1,4 @@
 export const assets = {
-  logo: 'https://gptimage2.asia/logo.svg',
   cnpay: 'https://gptimage2.asia/imgs/cnpay.png',
 }
 

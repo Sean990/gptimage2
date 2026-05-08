@@ -65,6 +65,7 @@ onMounted(loadSiteData)
     <section class="section-tight">
       <div class="container showcase-head">
         <SectionTitle
+          level="h1"
           align="left"
           title="AI 图像生成作品展示"
           description="探索由 Nano Banana AI 创造的精美图像，从人像写真到创意场景，每一张都附带完整的 AI 提示词。"

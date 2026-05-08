@@ -44,6 +44,7 @@ function isFeatureGroup(feature) {
       </div>
       <button class="btn btn-primary" type="button" @click="emit('select', plan)">
         {{ plan.cta }}
+        <ArrowRight aria-hidden="true" />
       </button>
       <div class="unit-note">{{ plan.unit }}</div>
     </article>

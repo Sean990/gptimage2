@@ -7,11 +7,13 @@ import {
   BriefcaseBusiness,
   CheckCircle2,
   Download,
+  FileQuestion,
   ImagePlus,
   Layers,
   MessageSquareText,
   PenTool,
   Sparkles,
+  Upload,
   Wand2,
 } from 'lucide-vue-next'
 import PricingCards from '../components/PricingCards.vue'
@@ -33,6 +35,7 @@ function showNotice(text) {
 }
 
 const featureIcons = [MessageSquareText, Wand2, Sparkles, Layers, PenTool, BadgeCheck]
+const workflowIcons = [Upload, Wand2, Sparkles, Download]
 
 onMounted(loadSiteData)
 </script>
@@ -43,7 +46,10 @@ onMounted(loadSiteData)
       <div class="container hero-grid">
         <div class="hero-copy">
           <span class="eyebrow">基于 OpenAI 最新 GPT Image 能力</span>
-          <h1>GPT Image 2 AI 图片生成平台</h1>
+          <h1>
+            <span>GPT Image 2</span>
+            <span>AI 图片生成平台</span>
+          </h1>
           <p>
             GPT Image 2 是一个围绕最新 GPT Image 能力打造的 AI 图片生成与编辑产品形态。它更强调商业落地：
             更强的文字渲染、更稳的图像编辑、更逼真的真实感画质，以及更适合海报、电商和品牌视觉的工作流。
@@ -62,7 +68,7 @@ onMounted(loadSiteData)
           <div class="hero-frame">
             <img :src="homeImages[0].src" :alt="homeImages[0].title" />
             <div class="floating-stat">
-              <strong>2K</strong>
+              <strong>4K</strong>
               <span>商业级输出</span>
             </div>
           </div>
@@ -156,28 +162,36 @@ onMounted(loadSiteData)
           />
           <div class="step-list">
             <article class="card step-card">
-              <span class="step-number">1</span>
+              <span class="step-number">
+                <component :is="workflowIcons[0]" aria-hidden="true" />
+              </span>
               <div>
                 <h3>Step 1 上传照片</h3>
                 <p>上传自拍、证件照或参考图，系统会保留人物身份与主要五官特征。</p>
               </div>
             </article>
             <article class="card step-card">
-              <span class="step-number">2</span>
+              <span class="step-number">
+                <component :is="workflowIcons[1]" aria-hidden="true" />
+              </span>
               <div>
                 <h3>Step 2 AI 反推提示词</h3>
                 <p>自动分析服装、光线、表情、镜头和氛围，生成专业摄影提示词。</p>
               </div>
             </article>
             <article class="card step-card">
-              <span class="step-number">3</span>
+              <span class="step-number">
+                <component :is="workflowIcons[2]" aria-hidden="true" />
+              </span>
               <div>
                 <h3>Step 3 生成写真</h3>
                 <p>选择风格后生成多张高质量 AI 写真，用于头像、社媒、电商或活动素材。</p>
               </div>
             </article>
             <article class="card step-card">
-              <span class="step-number">4</span>
+              <span class="step-number">
+                <component :is="workflowIcons[3]" aria-hidden="true" />
+              </span>
               <div>
                 <h3>Step 4 下载分享</h3>
                 <p>保存高清图片，复制提示词再次生成，也可以一键分享到作品社区。</p>
@@ -244,7 +258,10 @@ onMounted(loadSiteData)
         />
         <div class="faq-grid">
           <article v-for="([question, answer], index) in faqItems" :key="question" class="card faq-item">
-            <span class="tag">{{ index + 1 }}</span>
+            <span class="tag">
+              <FileQuestion aria-hidden="true" />
+              {{ index + 1 }}
+            </span>
             <h3>{{ question }}</h3>
             <p>{{ answer }}</p>
           </article>

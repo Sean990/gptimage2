@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { CreditCard, ShieldCheck, Sparkles, X } from 'lucide-vue-next'
+import { CreditCard, ShieldCheck, Sparkles, Tag, X } from 'lucide-vue-next'
 import PricingCards from '../components/PricingCards.vue'
 import SectionTitle from '../components/SectionTitle.vue'
 import { api } from '../services/api'
@@ -60,6 +60,7 @@ onMounted(loadSiteData)
     <section class="section-tight">
       <div class="container">
         <article class="card sale-banner">
+          <Tag aria-hidden="true" />
           <h2>新年特惠 · 限时折扣</h2>
           <p>活动时间：2024.12.25 - 2025.1.31 | 全场低至 3 折，错过再等一年。</p>
         </article>

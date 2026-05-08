@@ -1,9 +1,6 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import { Github, Mail, MessageCircle } from 'lucide-vue-next'
-import { useSiteStore } from '../services/siteStore'
-
-const { siteData } = useSiteStore()
+import { Github, Images, Mail, MessageCircle } from 'lucide-vue-next'
 </script>
 
 <template>
@@ -12,7 +9,9 @@ const { siteData } = useSiteStore()
       <div class="footer-grid">
         <div class="footer-brand">
           <RouterLink class="brand" to="/" aria-label="GPT Image 2 首页">
-            <img :src="siteData.assets.logo" alt="GPT Image 2 - AI 图片生成平台" />
+            <span class="brand-mark" aria-hidden="true">
+              <Images />
+            </span>
             <span>GPT Image 2</span>
           </RouterLink>
           <p>基于 OpenAI 最新 GPT Image 能力的 AI 图像生成与编辑平台，适用于海报、品牌、电商和社媒视觉。</p>

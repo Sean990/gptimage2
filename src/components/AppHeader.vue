@@ -1,12 +1,10 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { CheckCircle2, Image, LogIn, Menu, Moon, Sun, X } from 'lucide-vue-next'
+import { CheckCircle2, Image, Images, LogIn, Menu, Moon, Sun, X } from 'lucide-vue-next'
 import { api } from '../services/api'
-import { useSiteStore } from '../services/siteStore'
 
 const route = useRoute()
-const { siteData, loadSiteData } = useSiteStore()
 const open = ref(false)
 const loginOpen = ref(false)
 const email = ref('')
@@ -129,11 +127,11 @@ watch(
 )
 
 onMounted(() => {
-  loadSiteData()
   themeMedia = window.matchMedia('(prefers-color-scheme: dark)')
   applyTheme(localStorage.getItem('theme') || (themeMedia.matches ? 'dark' : 'light'))
   themeMedia.addEventListener('change', syncSystemTheme)
   onScroll()
+  window.addEventListener('open-login', openLogin)
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('scroll', onScroll, { passive: true })
 })
@@ -141,6 +139,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.body.classList.remove('no-scroll')
   themeMedia?.removeEventListener('change', syncSystemTheme)
+  window.removeEventListener('open-login', openLogin)
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('scroll', onScroll)
 })
@@ -151,7 +150,9 @@ onBeforeUnmount(() => {
   <header class="site-header" :class="{ 'is-scrolled': scrolled }">
     <div class="nav-shell">
       <RouterLink class="brand" to="/" aria-label="GPT Image 2 首页">
-        <img :src="siteData.assets.logo" alt="GPT Image 2 - AI 图片生成平台" />
+        <span class="brand-mark" aria-hidden="true">
+          <Images />
+        </span>
         <span>GPT Image 2</span>
       </RouterLink>
 
