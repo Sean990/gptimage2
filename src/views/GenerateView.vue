@@ -17,7 +17,6 @@ import {
   Wand2,
   X,
 } from 'lucide-vue-next'
-import SectionTitle from '../components/SectionTitle.vue'
 import { api, resolveApiUrl } from '../services/api'
 import { useSiteStore } from '../services/siteStore'
 
@@ -172,6 +171,7 @@ const mode = ref('generate')
 const aspectRatio = ref('3:4')
 const resolution = ref('4K')
 const batchMode = ref(false)
+const batchCount = ref(4)
 const quality = ref('auto')
 const outputFormat = ref('png')
 const background = ref('auto')
@@ -205,8 +205,12 @@ const canAddReference = computed(() => referenceCount.value < 4)
 const canAddMask = computed(() => maskCount.value < 1)
 const activeMode = computed(() => modes.find((item) => item.value === mode.value) || modes[0])
 const requiresReference = computed(() => activeMode.value.requiresReference)
-const showReferenceSection = computed(() => requiresReference.value || batchMode.value)
-const normalizedImageCount = computed(() => (batchMode.value ? 4 : 1))
+const batchCountOptions = [1, 2, 3, 4]
+const showReferenceSection = computed(() => requiresReference.value)
+const normalizedImageCount = computed(() => {
+  if (!batchMode.value) return 1
+  return Math.min(4, Math.max(1, Number(batchCount.value) || 4))
+})
 const loadingTileCount = computed(() => normalizedImageCount.value)
 const activeModelKey = computed(() => normalizeModelKey(model.value))
 const activeModelLabel = computed(() => formatModelLabel(activeModelKey.value, model.value))
@@ -253,6 +257,23 @@ const selectedQualityLabel = computed(() => getOptionLabel(qualities, quality.va
 const selectedOutputFormatLabel = computed(() => getOptionLabel(outputFormats, outputFormat.value))
 const selectedBackgroundLabel = computed(() => getOptionLabel(backgroundOptions, background.value))
 const selectedModerationLabel = computed(() => getOptionLabel(moderationOptions, moderation.value))
+const heroTitle = computed(() => (batchMode.value ? '批量 AI 生图工作台' : 'GPT Image 2 创作工作台'))
+const heroDescription = computed(() =>
+  batchMode.value
+    ? '并行生成多张候选图，统一管理画幅、质量和输出格式。'
+    : '把提示词、参考图和输出参数集中到一个清晰的创作流程里。',
+)
+const workflowStats = computed(() => [
+  { label: '模型', value: selectedModel.value.name },
+  { label: '画幅', value: selectedAspectRatioLabel.value },
+  { label: '输出', value: `${normalizedImageCount.value} 张 ${outputFormat.value.toUpperCase()}` },
+])
+const currentSetup = computed(() => [
+  { label: '模式', value: activeMode.value.label },
+  { label: '尺寸', value: resolutionLabel.value },
+  { label: '质量', value: selectedQualityLabel.value },
+  { label: '参考', value: requiresReference.value ? `${referenceCount.value}/4` : '无需' },
+])
 const galleryImageCount = computed(() => gallery.value.reduce((total, record) => total + record.images.length, 0))
 const gallerySummary = computed(() => {
   if (!gallery.value.length) return '暂无生成记录'
@@ -293,13 +314,11 @@ const promptLabel = computed(() => {
   return '提示词 *'
 })
 const promptPlaceholder = computed(() => {
-  if (batchMode.value) return '输入批量生图提示词，例如：一组高级商业摄影海报，分别探索不同构图、光线和色彩方案。'
   if (mode.value === 'image') return '描述如何基于参考图生成新图，例如：保持人物身份，替换为高级摄影棚背景，增强服装质感。'
   if (mode.value === 'edit') return '描述要精修的局部或整体，例如：只替换背景为高级摄影棚，主体保持不变。'
   return '详细描述你想要生成的图像，包括主体、风格、光线、色调等...'
 })
 const referenceLabel = computed(() => {
-  if (batchMode.value && !requiresReference.value) return '参考图像（可选）'
   return mode.value === 'edit' ? '原图 / 参考图像' : '参考图像'
 })
 const advancedSummary = computed(() => {
@@ -390,7 +409,6 @@ function randomizePrompt() {
 
 function enableBatchMode() {
   batchMode.value = true
-  mode.value = 'generate'
   showNotice('已切换到高级批量生图')
 }
 
@@ -910,29 +928,35 @@ onBeforeUnmount(() => {
   <main class="page generate-page" :class="{ 'batch-mode-page': batchMode }">
     <section class="section-tight">
       <div class="container">
-        <SectionTitle
-          align="left"
-          level="h1"
-          :eyebrow="batchMode ? '高级功能' : ''"
-          :title="batchMode ? '批量 AI 生图' : 'GPT Image 2 照片生成'"
-          :description="batchMode ? '一次生成多张图片，提高创作效率。' : '结合参考图和提示词，快速生成高质量 AI 写真与视觉内容。'"
-        />
+        <div class="generate-hero">
+          <div class="generate-hero-copy">
+            <span class="eyebrow">{{ batchMode ? '高级功能' : '图像生成' }}</span>
+            <h1>{{ heroTitle }}</h1>
+            <p>{{ heroDescription }}</p>
+            <div class="workflow-stat-grid" aria-label="当前生成配置摘要">
+              <div v-for="item in workflowStats" :key="item.label" class="workflow-stat">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+              </div>
+            </div>
+          </div>
 
-        <div class="tool-toolbar">
-          <button v-if="!batchMode" class="btn btn-soft" type="button" @click="enableBatchMode">
-            需要批量生成？试试高级批量生图功能
-          </button>
-          <button v-else class="btn btn-soft" type="button" @click="disableBatchMode">
-            只需要单张？返回普通生图
-          </button>
-          <button class="btn btn-ghost" type="button" @click="openGallery">
-            <GalleryHorizontal aria-hidden="true" />
-            我的图库<span v-if="gallery.length">{{ gallery.length }}</span>
-          </button>
-          <button v-if="output.length" class="btn btn-soft" type="button" @click="saveCurrentOutputToGallery">
-            保存当前结果
-          </button>
-          <span class="btn btn-ghost">游客可免费生成 1 次</span>
+          <div class="tool-toolbar" aria-label="生成工具栏">
+            <button v-if="!batchMode" class="btn btn-soft" type="button" @click="enableBatchMode">
+              高级批量生图
+            </button>
+            <button v-else class="btn btn-soft" type="button" @click="disableBatchMode">
+              返回普通生图
+            </button>
+            <button class="btn btn-ghost" type="button" @click="openGallery">
+              <GalleryHorizontal aria-hidden="true" />
+              我的图库<span v-if="gallery.length">{{ gallery.length }}</span>
+            </button>
+            <button v-if="output.length" class="btn btn-soft" type="button" @click="saveCurrentOutputToGallery">
+              保存当前结果
+            </button>
+            <span class="toolbar-credit">游客可免费生成 1 次</span>
+          </div>
         </div>
 
         <div class="generator-layout">
@@ -957,11 +981,34 @@ onBeforeUnmount(() => {
                 </button>
               </div>
             </div>
-            <h2>{{ batchMode ? '批量生成设置' : '参数设置' }}</h2>
+            <div class="settings-summary-card">
+              <div>
+                <span>当前流程</span>
+                <strong>{{ batchMode ? '批量生成设置' : '单图生成设置' }}</strong>
+              </div>
+              <dl>
+                <template v-for="item in currentSetup" :key="item.label">
+                  <dt>{{ item.label }}</dt>
+                  <dd>{{ item.value }}</dd>
+                </template>
+              </dl>
+            </div>
             <div v-if="batchMode" class="batch-count-card" aria-label="批量生成数量">
               <div>
                 <span>生成数量</span>
-                <strong>4 张图片</strong>
+                <strong>{{ normalizedImageCount }} 张图片</strong>
+              </div>
+              <div class="batch-count-options" role="radiogroup" aria-label="选择生成数量">
+                <button
+                  v-for="count in batchCountOptions"
+                  :key="count"
+                  type="button"
+                  :class="{ active: normalizedImageCount === count }"
+                  :aria-pressed="normalizedImageCount === count"
+                  @click="batchCount = count"
+                >
+                  {{ count }}
+                </button>
               </div>
               <small>需要 {{ creditCost }} 积分</small>
             </div>
