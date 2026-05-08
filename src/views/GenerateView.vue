@@ -8,7 +8,6 @@ import {
   Download,
   GalleryHorizontal,
   ImagePlus,
-  Images,
   Link as LinkIcon,
   Loader2,
   Square,
@@ -24,9 +23,9 @@ import { useSiteStore } from '../services/siteStore'
 const route = useRoute()
 const { loadSiteData } = useSiteStore()
 const modes = [
-  { value: 'generate', label: '文生图', requiresReference: false },
-  { value: 'image', label: '图生图', requiresReference: true },
-  { value: 'edit', label: '精修图', requiresReference: true },
+  { value: 'generate', label: '文生图', badge: '纯文本', requiresReference: false },
+  { value: 'image', label: '图生图', badge: '参考图', requiresReference: true },
+  { value: 'edit', label: '精修图', badge: '蒙版', requiresReference: true },
 ]
 const aspectRatios = [
   { label: '1:1', value: '1:1' },
@@ -116,6 +115,8 @@ const modelGroups = [
   },
 ]
 const modelOptions = modelGroups.flatMap((group) => group.models)
+const galleryStorageKey = 'gptImage2Gallery'
+const maxLocalGalleryRecords = 20
 const gptLoadingDots = Array.from({ length: 169 }, (_, index) => {
   const gridSize = 13
   const row = Math.floor(index / gridSize)
@@ -138,6 +139,20 @@ const gptLoadingDots = Array.from({ length: 169 }, (_, index) => {
     },
   }
 })
+const randomPrompts = [
+  '未来感城市夜景海报，霓虹灯雨夜街道，玻璃反射，高对比蓝紫色调，电影级构图，超清细节。',
+  '室内自然光人像摄影，暖色窗边光线，浅景深，真实肤质，柔和胶片质感，杂志封面风格。',
+  '东方幻想山水场景，云雾缭绕的悬崖寺庙，金色晨光，细腻笔触，史诗级远景构图。',
+  '极简产品摄影，透明香水瓶置于白色石材台面，柔和阴影，高级商业广告质感，干净背景。',
+  '可爱 3D 吉祥物角色，柔软毛绒材质，圆润造型，明亮渐变背景，皮克斯风格灯光。',
+  '复古科幻插画，宇航员站在红色荒漠星球，远处巨型环形飞船，颗粒胶片质感，宽银幕构图。',
+  '新中式庭院空间设计，月洞门、竹影、水面倒影，低饱和米白与墨绿配色，静谧高级感。',
+  '美食摄影，一碗热气腾腾的拉面，溏心蛋和葱花特写，暖色餐厅光线，真实诱人质感。',
+]
+
+function getRandomPrompt() {
+  return randomPrompts[Math.floor(Math.random() * randomPrompts.length)]
+}
 
 const model = ref('gpt-image-2')
 const mode = ref('generate')
@@ -148,11 +163,8 @@ const quality = ref('auto')
 const outputFormat = ref('png')
 const moderation = ref('auto')
 const outputCompression = ref(0)
-const advancedOpen = ref(false)
-const prompt = ref(
-  route.query.prompt ||
-    '室内柔光人像摄影，保留上传照片的人物身份与五官特征，白色蕾丝连衣裙，窗边自然光，暖色调，中景构图，真实肤质，杂志级质感。',
-)
+const advancedOpen = ref(true)
+const prompt = ref(route.query.prompt || getRandomPrompt())
 const urlInput = ref('')
 const imageUrl = ref('')
 const maskUrlInput = ref('')
@@ -191,6 +203,24 @@ const resolutionLabel = computed(() => {
   if (size.value !== 'auto') parts.push(size.value)
   return parts.join(' · ')
 })
+const activeOutputCount = computed(() => {
+  if (loading.value) return normalizedImageCount.value
+  return output.value.length || normalizedImageCount.value
+})
+const outputGridClass = computed(() => {
+  const count = activeOutputCount.value
+  if (count <= 1) return 'output-grid--single'
+  if (count === 2) return 'output-grid--two'
+  if (count === 3) return 'output-grid--three'
+  if (count === 4) return 'output-grid--four'
+  return 'output-grid--many'
+})
+const outputAspectStyle = computed(() => ({
+  '--output-ratio': aspectRatio.value === 'auto' ? '1 / 1' : aspectRatio.value.replace(':', ' / '),
+}))
+const outputPlaceholders = computed(() =>
+  Array.from({ length: normalizedImageCount.value }, (_, index) => index + 1),
+)
 const selectedModel = computed(
   () =>
     modelOptions.find((item) => item.value === model.value) || {
@@ -206,6 +236,11 @@ const selectedResolutionLabel = computed(() => getOptionLabel(resolutionOptions,
 const selectedQualityLabel = computed(() => getOptionLabel(qualities, quality.value))
 const selectedOutputFormatLabel = computed(() => getOptionLabel(outputFormats, outputFormat.value))
 const selectedModerationLabel = computed(() => getOptionLabel(moderationOptions, moderation.value))
+const galleryImageCount = computed(() => gallery.value.reduce((total, record) => total + record.images.length, 0))
+const gallerySummary = computed(() => {
+  if (!gallery.value.length) return '暂无生成记录'
+  return `${gallery.value.length} 组作品 · ${galleryImageCount.value} 张图片`
+})
 const loadingVariant = computed(() => {
   if (activeModelKey.value === 'gpt-image-2') return 'gpt-image-2'
   if (activeModelKey.value === 'nano-banana-2') return 'nano-banana-2'
@@ -227,7 +262,7 @@ const loadingHint = computed(() => {
 const loadingStatusText = computed(() => `正在创建图像 · ${loadingProgress.value}%`)
 const promptQualityScore = computed(() => {
   const lengthScore = Math.min(prompt.value.trim().length, 90) / 90
-  const referenceScore = Math.min(referenceCount.value, 2) * 0.16
+  const referenceScore = requiresReference.value ? Math.min(referenceCount.value, 2) * 0.16 : 0
   const qualityScore = quality.value === 'high' ? 0.1 : 0
   return Math.min(100, Math.round((0.12 + lengthScore * 0.62 + referenceScore + qualityScore) * 100))
 })
@@ -245,13 +280,13 @@ const promptPlaceholder = computed(() => {
   return '详细描述你想要生成的图像，包括主体、风格、光线、色调等...'
 })
 const referenceLabel = computed(() => {
-  return '参考图像'
+  return mode.value === 'edit' ? '原图 / 参考图像' : '参考图像'
 })
 const advancedSummary = computed(() => {
   const items = [
-    activeMode.value.label,
     `${normalizedImageCount.value} 张`,
     outputFormat.value.toUpperCase(),
+    selectedQualityLabel.value,
   ]
   if (mode.value === 'edit' && maskCount.value) items.push('含蒙版')
   return items.join(' · ')
@@ -322,6 +357,11 @@ function closeSelectMenu() {
   selectMenuOpen.value = ''
 }
 
+function randomizePrompt() {
+  prompt.value = getRandomPrompt()
+  showNotice('已随机生成提示词')
+}
+
 function normalizeGeneratedImage(item, index = 0, defaults = {}) {
   const imageUrl = item.url || item.src || item.image_url || item.image || ''
   return {
@@ -350,10 +390,13 @@ function compactPayload(payload) {
 function normalizeGenerationRecord(record, defaults = {}) {
   const recordDefaults = {
     ...defaults,
+    id: record?.id || defaults.id || `gallery-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     prompt: record?.prompt || defaults.prompt,
     model: record?.model || defaults.model,
     mode: record?.mode || defaults.mode,
     apiMode: record?.apiMode || defaults.apiMode,
+    ratio: record?.ratio || defaults.ratio,
+    resolution: record?.resolution || defaults.resolution,
     size: record?.size || defaults.size,
     quality: record?.quality || defaults.quality,
     output_format: record?.output_format || defaults.output_format,
@@ -363,10 +406,57 @@ function normalizeGenerationRecord(record, defaults = {}) {
   return {
     ...record,
     ...recordDefaults,
+    id: recordDefaults.id,
     images: Array.isArray(record?.images)
       ? record.images.map((item, index) => normalizeGeneratedImage(item, index, recordDefaults))
       : [],
   }
+}
+
+function loadLocalGallery() {
+  try {
+    const records = JSON.parse(localStorage.getItem(galleryStorageKey) || '[]')
+    return Array.isArray(records) ? records.map(normalizeGenerationRecord).filter((record) => record.images.length) : []
+  } catch {
+    return []
+  }
+}
+
+function persistLocalGallery(records = gallery.value) {
+  try {
+    localStorage.setItem(galleryStorageKey, JSON.stringify(records.slice(0, maxLocalGalleryRecords)))
+  } catch {
+    showNotice('图库本地存储空间不足，已保留当前页面记录')
+  }
+}
+
+function mergeGalleryRecords(...recordGroups) {
+  const seen = new Set()
+  return recordGroups
+    .flat()
+    .map((record) => normalizeGenerationRecord(record))
+    .filter((record) => {
+      if (!record.images.length) return false
+      const firstImageUrl = record.images[0]?.url || ''
+      const key = record.id || `${record.prompt}-${firstImageUrl}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    .slice(0, maxLocalGalleryRecords)
+}
+
+function formatGalleryDate(value) {
+  if (!value) return '刚刚生成'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '生成记录'
+  return date.toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 function showNotice(text) {
@@ -524,8 +614,8 @@ async function generate() {
       moderation: moderation.value,
       output_compression: outputCompression.value,
       response_format: 'b64_json',
-      references: getReferences(),
-      mask: getMaskReference(),
+      references: requiresReference.value ? getReferences() : [],
+      mask: mode.value === 'edit' ? getMaskReference() : '',
     })
     const result = await api.generateImages(requestPayload, {
       signal: controller.signal,
@@ -549,7 +639,8 @@ async function generate() {
       outputFormat: item.outputFormat,
       createdAt: item.createdAt,
     }))
-    gallery.value = [normalizedResult, ...gallery.value]
+    gallery.value = mergeGalleryRecords([normalizedResult], gallery.value)
+    persistLocalGallery()
     showNotice(normalizedImageCount.value > 1 ? '批量生成已完成' : '图像生成已完成')
   } catch (error) {
     output.value = []
@@ -624,12 +715,116 @@ function getMaskReference() {
 
 async function openGallery() {
   galleryOpen.value = true
+  gallery.value = mergeGalleryRecords(gallery.value, loadLocalGallery())
   try {
     const records = await api.getGallery()
-    gallery.value = Array.isArray(records) ? records.map(normalizeGenerationRecord) : []
-  } catch {
-    gallery.value = []
+    gallery.value = mergeGalleryRecords(gallery.value, Array.isArray(records) ? records : [])
+    persistLocalGallery()
+  } catch (error) {
+    if (!gallery.value.length) showNotice(error.message || '暂未读取到云端图库')
   }
+}
+
+function closeGallery() {
+  galleryOpen.value = false
+}
+
+function syncGalleryScrollLock(isOpen) {
+  document.documentElement.classList.toggle('gallery-scroll-locked', isOpen)
+  document.body.classList.toggle('gallery-scroll-locked', isOpen)
+}
+
+function useGalleryRecord(record) {
+  prompt.value = record.prompt || prompt.value
+  model.value = record.model || model.value
+  mode.value = record.mode || mode.value
+  aspectRatio.value = record.ratio || aspectRatio.value
+  resolution.value = record.resolution || resolution.value
+  quality.value = record.quality || quality.value
+  outputFormat.value = record.outputFormat || record.output_format || outputFormat.value
+  output.value = record.images.map((item) => ({
+    id: item.id,
+    title: item.title,
+    src: item.url,
+    prompt: item.prompt,
+    model: item.model,
+    mode: item.mode,
+    apiMode: item.apiMode,
+    ratio: item.ratio,
+    resolution: item.resolution,
+    size: item.size,
+    quality: item.quality,
+    outputFormat: item.outputFormat,
+    createdAt: item.createdAt,
+  }))
+  galleryOpen.value = false
+  showNotice('已载入图库记录')
+}
+
+async function copyGalleryPrompt(record) {
+  try {
+    await navigator.clipboard.writeText(record.prompt || '')
+    showNotice('图库提示词已复制')
+  } catch {
+    showNotice(record.prompt || '该记录没有提示词')
+  }
+}
+
+function openGalleryImage(record) {
+  const firstImage = record.images[0]
+  if (!firstImage?.url) return
+  window.open(firstImage.url, '_blank', 'noreferrer')
+  showNotice('已打开图库图片')
+}
+
+function removeGalleryRecord(recordId) {
+  gallery.value = gallery.value.filter((record) => record.id !== recordId)
+  persistLocalGallery()
+  showNotice('已从图库移除')
+}
+
+function clearGallery() {
+  gallery.value = []
+  persistLocalGallery([])
+  showNotice('已清空本地图库')
+}
+
+function saveCurrentOutputToGallery() {
+  if (!output.value.length) return
+  const record = normalizeGenerationRecord({
+    id: `manual-${Date.now()}`,
+    prompt: prompt.value,
+    model: model.value,
+    mode: mode.value,
+    apiMode: 'image',
+    ratio: aspectRatio.value,
+    resolution: resolution.value,
+    size: size.value,
+    quality: quality.value,
+    output_format: outputFormat.value,
+    createdAt: new Date().toISOString(),
+    images: output.value.map((item) => ({
+      ...item,
+      url: item.src,
+    })),
+  })
+  gallery.value = mergeGalleryRecords([record], gallery.value)
+  persistLocalGallery()
+  showNotice('当前结果已保存到图库')
+}
+
+function galleryRecordCover(record) {
+  return record.images[0]?.url || ''
+}
+
+function galleryRecordMode(record) {
+  return modes.find((item) => item.value === record.mode)?.label || record.mode || '文生图'
+}
+
+function galleryRecordMeta(record) {
+  return [galleryRecordMode(record), record.resolution, record.ratio, `${record.images.length} 张`]
+    .filter(Boolean)
+    .join(' · ')
 }
 
 watch(loading, (isLoading) => {
@@ -642,13 +837,17 @@ watch(loading, (isLoading) => {
   loadingProgress.value = 27
 })
 
+watch(galleryOpen, syncGalleryScrollLock)
+
 onMounted(() => {
   loadSiteData()
+  gallery.value = loadLocalGallery()
   window.addEventListener('click', closeMenusOnOutside)
 })
 
 onBeforeUnmount(() => {
   clearLoadingProgressTimer()
+  syncGalleryScrollLock(false)
   window.removeEventListener('click', closeMenusOnOutside)
   uploads.value.forEach((item) => {
     if (item.src) URL.revokeObjectURL(item.src)
@@ -671,19 +870,38 @@ onBeforeUnmount(() => {
         />
 
         <div class="tool-toolbar">
-          <button class="btn btn-soft" type="button" :aria-pressed="normalizedImageCount > 1" @click="imageCount = normalizedImageCount > 1 ? 1 : 4">
-            <Images aria-hidden="true" />
-            {{ normalizedImageCount > 1 ? `已开启批量生成（${normalizedImageCount} 张）` : '需要批量生成？试试一次生成 4 张' }}
-          </button>
           <button class="btn btn-ghost" type="button" @click="openGallery">
             <GalleryHorizontal aria-hidden="true" />
-            我的图库
+            我的图库<span v-if="gallery.length">{{ gallery.length }}</span>
+          </button>
+          <button v-if="output.length" class="btn btn-soft" type="button" @click="saveCurrentOutputToGallery">
+            保存当前结果
           </button>
           <span class="btn btn-ghost">游客可免费生成 1 次</span>
         </div>
 
         <div class="generator-layout">
           <section class="card tool-panel">
+            <div class="mode-switch-card">
+              <div class="settings-section-head">
+                <h2>生成模式</h2>
+                <span>{{ activeMode.badge }}</span>
+              </div>
+              <div class="mode-tabs" role="tablist" aria-label="图片生成模式">
+                <button
+                  v-for="item in modes"
+                  :key="item.value"
+                  type="button"
+                  role="tab"
+                  :aria-selected="mode === item.value"
+                  :class="{ active: mode === item.value }"
+                  @click="mode = item.value"
+                >
+                  <strong>{{ item.label }}</strong>
+                  <span>{{ item.badge }}</span>
+                </button>
+              </div>
+            </div>
             <h2>参数设置</h2>
             <div class="settings-grid">
               <div class="field model-field">
@@ -834,7 +1052,10 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="field">
-              <label for="prompt">{{ promptLabel }}</label>
+              <div class="prompt-field-head">
+                <label for="prompt">{{ promptLabel }}</label>
+                <button class="btn btn-soft" type="button" @click="randomizePrompt">随机提示词</button>
+              </div>
               <textarea
                 id="prompt"
                 v-model.trim="prompt"
@@ -853,7 +1074,7 @@ onBeforeUnmount(() => {
               <small>不知道怎么写？试试下方的「AI 反推提示词」功能</small>
             </div>
 
-            <div class="field">
+            <div v-if="requiresReference" class="field reference-section">
               <label>{{ referenceLabel }} ({{ referenceCount }}/4)</label>
               <div class="field">
                 <label for="image-url">上传参考图片或输入图片 URL</label>
@@ -903,27 +1124,11 @@ onBeforeUnmount(() => {
 
             <details class="advanced-panel" :open="advancedOpen" @toggle="advancedOpen = $event.target.open">
               <summary>
-                <span>高级设置</span>
+                <span>输出参数</span>
                 <small>{{ advancedSummary }}</small>
                 <ChevronDown aria-hidden="true" />
               </summary>
               <div class="advanced-grid">
-                <div class="field mode-field">
-                  <label>生成模式</label>
-                  <div class="mode-tabs" role="tablist" aria-label="图片生成模式">
-                    <button
-                      v-for="item in modes"
-                      :key="item.value"
-                      type="button"
-                      role="tab"
-                      :aria-selected="mode === item.value"
-                      :class="{ active: mode === item.value }"
-                      @click="mode = item.value"
-                    >
-                      {{ item.label }}
-                    </button>
-                  </div>
-                </div>
                 <div class="field">
                   <label for="image-count">数量</label>
                   <input id="image-count" v-model.number="imageCount" type="number" inputmode="numeric" min="1" max="10" />
@@ -1125,7 +1330,7 @@ onBeforeUnmount(() => {
               </div>
             </details>
 
-            <div class="reverse-box">
+            <div v-if="requiresReference" class="reverse-box">
               <h3>
                 <Wand2 aria-hidden="true" />
                 AI 反推提示词 <span class="tag">核心功能</span>
@@ -1154,95 +1359,137 @@ onBeforeUnmount(() => {
           </section>
 
           <aside class="card output-panel">
-            <h2>输出</h2>
-            <div class="output-meta-row">
-              <span>{{ activeMode.label }}</span>
-              <span>Image API</span>
-              <span>{{ normalizedImageCount }} 张</span>
+            <div class="output-panel-head">
+              <div>
+                <h2>输出</h2>
+                <p>{{ activeMode.label }} · {{ resolutionLabel }}</p>
+              </div>
+              <div class="output-meta-row">
+                <span>{{ activeMode.label }}</span>
+                <span>Image API</span>
+                <span>{{ normalizedImageCount }} 张</span>
+              </div>
             </div>
-            <div
-              v-if="loading"
-              class="model-loading-state"
-              :class="`model-loading-state--${loadingVariant}`"
-              role="status"
-              aria-live="polite"
-            >
-              <template v-if="loadingVariant === 'gpt-image-2'">
-                <div class="gpt-loading-card" aria-hidden="true">
-                  <div class="gpt-loading-dot-field">
-                    <span
-                      v-for="dot in gptLoadingDots"
-                      :key="dot.id"
-                      class="gpt-loading-dot"
-                      :style="dot.style"
-                    ></span>
-                    <span class="gpt-loading-dot-reveal">
-                      <span
-                        v-for="dot in gptLoadingDots"
-                        :key="`lit-${dot.id}`"
-                        class="gpt-loading-lit-dot"
-                        :style="dot.style"
-                      ></span>
-                    </span>
-                  </div>
-                </div>
-              </template>
-              <template v-else-if="loadingVariant === 'nano-banana-2'">
-                <div class="banana-thinking-loading" aria-hidden="true">
-                  <div class="banana-thinking-canvas"></div>
-                </div>
-              </template>
-              <template v-else-if="loadingVariant === 'nano-banana'">
-                <div class="banana-thinking-loading" aria-hidden="true">
-                  <div class="banana-thinking-canvas"></div>
-                </div>
-              </template>
-              <template v-else>
-                <div class="loading-output-grid">
-                  <div
-                    v-for="index in loadingTileCount"
-                    :key="index"
-                    class="loading-image-tile"
-                    :style="{ '--tile-delay': `${(index - 1) * 160}ms` }"
-                    aria-hidden="true"
-                  >
-                    <div class="loading-image-surface">
-                      <span class="loading-image-glow"></span>
-                      <span class="loading-image-scan"></span>
+
+            <div class="output-workbench">
+              <div
+                v-if="loading"
+                class="model-loading-state"
+                :class="`model-loading-state--${loadingVariant}`"
+                role="status"
+                aria-live="polite"
+              >
+                <template v-if="normalizedImageCount > 1">
+                  <div class="loading-output-grid output-canvas" :class="outputGridClass" :style="outputAspectStyle">
+                    <div
+                      v-for="index in loadingTileCount"
+                      :key="index"
+                      class="loading-image-tile"
+                      :style="{ '--tile-delay': `${(index - 1) * 160}ms` }"
+                      aria-hidden="true"
+                    >
+                      <div class="loading-image-surface">
+                        <span class="loading-image-glow"></span>
+                        <span class="loading-image-scan"></span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </template>
+                </template>
+                <template v-else-if="loadingVariant === 'gpt-image-2'">
+                  <div class="gpt-loading-card" aria-hidden="true">
+                    <div class="gpt-loading-dot-field">
+                      <span
+                        v-for="dot in gptLoadingDots"
+                        :key="dot.id"
+                        class="gpt-loading-dot"
+                        :style="dot.style"
+                      ></span>
+                      <span class="gpt-loading-dot-reveal">
+                        <span
+                          v-for="dot in gptLoadingDots"
+                          :key="`lit-${dot.id}`"
+                          class="gpt-loading-lit-dot"
+                          :style="dot.style"
+                        ></span>
+                      </span>
+                    </div>
+                  </div>
+                </template>
+                <template v-else-if="loadingVariant === 'nano-banana-2'">
+                  <div class="banana-thinking-loading" aria-hidden="true">
+                    <div class="banana-thinking-canvas"></div>
+                  </div>
+                </template>
+                <template v-else-if="loadingVariant === 'nano-banana'">
+                  <div class="banana-thinking-loading" aria-hidden="true">
+                    <div class="banana-thinking-canvas"></div>
+                  </div>
+                </template>
+                <template v-else>
+                  <div class="loading-output-grid output-canvas" :class="outputGridClass" :style="outputAspectStyle">
+                    <div
+                      v-for="index in loadingTileCount"
+                      :key="index"
+                      class="loading-image-tile"
+                      :style="{ '--tile-delay': `${(index - 1) * 160}ms` }"
+                      aria-hidden="true"
+                    >
+                      <div class="loading-image-surface">
+                        <span class="loading-image-glow"></span>
+                        <span class="loading-image-scan"></span>
+                      </div>
+                    </div>
+                  </div>
+                </template>
 
-              <div class="loading-status">
-                <span class="loading-status-dot" aria-hidden="true"></span>
-                <div>
-                  <strong>{{ loadingTitle }}</strong>
-                  <small>{{ activeModelLabel }} · {{ loadingStatusText }}</small>
-                  <p>{{ loadingHint }}</p>
+                <div class="loading-status">
+                  <span class="loading-status-dot" aria-hidden="true"></span>
+                  <div>
+                    <strong>{{ loadingTitle }}</strong>
+                    <small>{{ activeModelLabel }} · {{ loadingStatusText }}</small>
+                    <p>{{ loadingHint }}</p>
+                  </div>
+                </div>
+              </div>
+              <div
+                v-else-if="output.length"
+                class="generated-output output-canvas"
+                :class="outputGridClass"
+                :style="outputAspectStyle"
+              >
+                <figure v-for="item in output" :key="item.src" class="output-item">
+                  <img :src="item.src" :alt="item.title" />
+                  <figcaption class="output-actions">
+                    <button class="icon-button" type="button" :aria-label="`打开 ${item.title}`" @click="openImage(item)">
+                      <Download aria-hidden="true" />
+                    </button>
+                    <button class="icon-button" type="button" aria-label="复制当前提示词" @click="copyCurrentPrompt">
+                      <Copy aria-hidden="true" />
+                    </button>
+                  </figcaption>
+                </figure>
+              </div>
+              <div
+                v-else
+                class="empty-output output-canvas"
+                :class="outputGridClass"
+                :style="outputAspectStyle"
+              >
+                <div
+                  v-for="slot in outputPlaceholders"
+                  :key="slot"
+                  class="empty-output-slot"
+                >
+                  <ImagePlus v-if="slot === 1" aria-hidden="true" />
+                  <strong>{{ normalizedImageCount === 1 ? '等待生成' : `画布 ${slot}` }}</strong>
+                  <span>{{ activeMode.label }} · {{ selectedResolutionLabel }}</span>
                 </div>
               </div>
             </div>
-            <div v-else-if="output.length" class="generated-output">
-              <figure v-for="item in output" :key="item.src" class="output-item">
-                <img :src="item.src" :alt="item.title" />
-                <figcaption class="output-actions">
-                  <button class="icon-button" type="button" :aria-label="`打开 ${item.title}`" @click="openImage(item)">
-                    <Download aria-hidden="true" />
-                  </button>
-                  <button class="icon-button" type="button" aria-label="复制当前提示词" @click="copyCurrentPrompt">
-                    <Copy aria-hidden="true" />
-                  </button>
-                </figcaption>
-              </figure>
-            </div>
-            <div v-else class="empty-output">
-              <ImagePlus aria-hidden="true" />
-              <p>生成的图像将显示在这里<br />{{ requiresReference ? '添加参考图、输入提示词并点击“开始生成”' : '输入提示词并点击“开始生成”' }}</p>
-            </div>
-            <p class="tip">
+
+            <p class="tip output-tip">
               <Sparkles aria-hidden="true" />
-              <span>提示：先填写提示词和参考图即可开始生成，接口与格式等细项可在高级设置里调整。</span>
+              <span>{{ activeMode.label }} · {{ resolutionLabel }} · {{ selectedOutputFormatLabel }} · {{ normalizedImageCount }} 张</span>
             </p>
           </aside>
         </div>
@@ -1255,26 +1502,50 @@ onBeforeUnmount(() => {
       role="dialog"
       aria-modal="true"
       aria-labelledby="gallery-title"
-      @click.self="galleryOpen = false"
+      @click.self="closeGallery"
     >
-      <div class="modal-card">
+      <div class="modal-card gallery-modal">
         <div class="modal-head">
-          <h2 id="gallery-title">我的图库</h2>
-          <button class="icon-button" type="button" aria-label="关闭图库" @click="galleryOpen = false">
+          <div>
+            <h2 id="gallery-title">我的图库</h2>
+            <p>{{ gallerySummary }}</p>
+          </div>
+          <button class="icon-button" type="button" aria-label="关闭图库" @click="closeGallery">
             <X aria-hidden="true" />
           </button>
         </div>
-        <p>登录后可同步云端图库。当前展示后端记录的最近生成结果。</p>
-        <div v-if="output.length" class="reference-grid">
-          <div v-for="item in output" :key="item.src" class="reference-thumb">
-            <img :src="item.src" :alt="item.title" />
-          </div>
+
+        <div class="gallery-toolbar">
+          <span>本地自动保存最近 {{ maxLocalGalleryRecords }} 组，打开时会尝试同步云端记录。</span>
+          <button class="btn btn-ghost" type="button" :disabled="!gallery.length" @click="clearGallery">清空本地</button>
         </div>
-        <div v-else-if="gallery.length" class="reference-grid">
-          <div v-for="record in gallery" :key="record.id" class="reference-thumb">
-            <img :src="record.images[0]?.url" :alt="record.prompt" />
-            <span class="thumb-chip">{{ record.mode || 'generate' }}</span>
-          </div>
+
+        <div v-if="gallery.length" class="gallery-grid">
+          <article v-for="record in gallery" :key="record.id" class="gallery-card">
+            <button class="gallery-cover" type="button" :aria-label="`载入 ${record.prompt || '图库记录'}`" @click="useGalleryRecord(record)">
+              <img :src="galleryRecordCover(record)" :alt="record.prompt || '图库图片'" />
+              <span class="thumb-chip">{{ galleryRecordMode(record) }}</span>
+            </button>
+            <div class="gallery-card-body">
+              <div class="gallery-card-meta">
+                <span>{{ formatGalleryDate(record.createdAt) }}</span>
+                <span>{{ galleryRecordMeta(record) }}</span>
+              </div>
+              <p>{{ record.prompt || '无提示词记录' }}</p>
+              <div class="gallery-actions">
+                <button class="btn btn-soft" type="button" @click="useGalleryRecord(record)">复用</button>
+                <button class="icon-button" type="button" aria-label="打开图片" @click="openGalleryImage(record)">
+                  <Download aria-hidden="true" />
+                </button>
+                <button class="icon-button" type="button" aria-label="复制提示词" @click="copyGalleryPrompt(record)">
+                  <Copy aria-hidden="true" />
+                </button>
+                <button class="icon-button" type="button" aria-label="删除记录" @click="removeGalleryRecord(record.id)">
+                  <Trash2 aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </article>
         </div>
         <div v-else class="empty-state">
           <ImagePlus aria-hidden="true" />
