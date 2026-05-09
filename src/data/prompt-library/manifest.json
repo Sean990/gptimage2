@@ -1,0 +1,27 @@
+{
+  "libraryVersion": "2026-05-09",
+  "generatedAt": "2026-05-09T05:27:51.471Z",
+  "upstream": {
+    "name": "awesome-gpt-image-2",
+    "repo": "https://github.com/freestylefly/awesome-gpt-image-2",
+    "ref": "main",
+    "commit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+    "payloadHash": "540cd34a833b287d38b55f0c37cc8729536c5bc9d82ac2fece6108b4d20dd29f",
+    "source": "/tmp/awesome-gpt-image-2"
+  },
+  "counts": {
+    "cases": 402,
+    "templates": 22,
+    "categories": 13,
+    "styles": 19,
+    "scenes": 10
+  },
+  "assets": {
+    "mirrored": false,
+    "basePath": "/prompt-assets/awesome-gpt-image-2/images"
+  },
+  "licensing": {
+    "defaultStatus": "needs-review",
+    "note": "Imported community prompt examples require source review before commercial promotional use."
+  }
+}

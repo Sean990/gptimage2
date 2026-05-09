@@ -1,0 +1,1383 @@
+{
+  "manifest": {
+    "name": "awesome-gpt-image-2",
+    "repo": "https://github.com/freestylefly/awesome-gpt-image-2",
+    "ref": "main",
+    "commit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+    "payloadHash": "540cd34a833b287d38b55f0c37cc8729536c5bc9d82ac2fece6108b4d20dd29f",
+    "source": "/tmp/awesome-gpt-image-2"
+  },
+  "total": 22,
+  "templates": [
+    {
+      "id": "awesome-gpt-image-2:template:ui-screenshot-system",
+      "upstreamId": "ui-screenshot-system",
+      "anchor": "tpl-ui",
+      "title": {
+        "zh": "UI 截图系统",
+        "en": "UI Screenshot System"
+      },
+      "description": {
+        "zh": "生成 App、网页、仪表盘、社媒截图等高保真界面。",
+        "en": "High-fidelity app, web, dashboard, and social interface prompts."
+      },
+      "useWhen": {
+        "zh": "用于 App 截图、仪表盘、社媒截图和直播界面。",
+        "en": "Use for app screens, dashboards, social screenshots, and live interface mockups."
+      },
+      "guidance": {
+        "zh": [
+          "锁定平台、比例、层级和画面文字。",
+          "明确状态栏、Tab、操作区、评论层等 UI 元素。"
+        ],
+        "en": [
+          "Lock platform, aspect ratio, layout hierarchy, and exact visible text.",
+          "Specify UI chrome such as status bars, tabs, action rows, or comment layers."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免平台描述过泛。",
+          "约束文字可读性和平台特征。"
+        ],
+        "en": [
+          "Avoid vague platform names and generic app mockups.",
+          "Constrain text readability and platform-specific details."
+        ]
+      },
+      "category": "UI & Interfaces",
+      "styles": [
+        "UI"
+      ],
+      "scenes": [
+        "Tech",
+        "Social"
+      ],
+      "tags": [
+        "UI",
+        "Dashboard",
+        "Screenshot"
+      ],
+      "exampleCases": [
+        17,
+        2,
+        4
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case17.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case17.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case17.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:infographic-engine",
+      "upstreamId": "infographic-engine",
+      "anchor": "tpl-infographic",
+      "title": {
+        "zh": "信息图引擎",
+        "en": "Infographic Engine"
+      },
+      "description": {
+        "zh": "生成结构化图解、时间线、知识图谱和技术解释图。",
+        "en": "Structured diagrams, timelines, knowledge maps, and explainers."
+      },
+      "useWhen": {
+        "zh": "用于解释图、技术图解、时间线和知识卡片。",
+        "en": "Use for explainer graphics, technical diagrams, timelines, and knowledge cards."
+      },
+      "guidance": {
+        "zh": [
+          "定义 3-5 个模块、信息流、层级和短标签。",
+          "用色块、箭头、图标和留白控制复杂度。"
+        ],
+        "en": [
+          "Define 3-5 modules, information flow, visual hierarchy, and short labels.",
+          "Use color groups, arrows, icons, and clean spacing to reduce clutter."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免把长段正文塞进画面。",
+          "先限制模块数量，再补视觉细节。"
+        ],
+        "en": [
+          "Avoid long paragraphs inside the image.",
+          "Limit module count before adding visual detail."
+        ]
+      },
+      "category": "Charts & Infographics",
+      "styles": [
+        "Infographic",
+        "Charts"
+      ],
+      "scenes": [
+        "Education",
+        "Tech"
+      ],
+      "tags": [
+        "Infographic",
+        "Chart",
+        "Education"
+      ],
+      "exampleCases": [
+        334,
+        1,
+        8
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case334.png",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case334.png",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case334.png",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:scientific-scale-diagram",
+      "upstreamId": "scientific-scale-diagram",
+      "anchor": "tpl-infographic",
+      "title": {
+        "zh": "科学尺度缩放图",
+        "en": "Scientific Scale Diagram"
+      },
+      "description": {
+        "zh": "生成多尺度科学信息图，强调层级、标签和可读性。",
+        "en": "Multi-scale science visuals with readable labels and hierarchy."
+      },
+      "useWhen": {
+        "zh": "用于需要从微观到宏观展示尺度变化的科普主题。",
+        "en": "Use when the topic needs micro-to-macro scale comparison and labeled detail windows."
+      },
+      "guidance": {
+        "zh": [
+          "使用 6-8 个尺度框，每个标签保持短句。",
+          "展示单位、倍率和不同尺度的细节。"
+        ],
+        "en": [
+          "Use 6-8 scale frames and keep each label short.",
+          "Show units, magnification, and distinct scale detail."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免所有尺度框长得一样。",
+          "避免通用放大镜式布局。"
+        ],
+        "en": [
+          "Avoid making every scale frame visually identical.",
+          "Avoid generic magnifying glass icon layouts."
+        ]
+      },
+      "category": "Charts & Infographics",
+      "styles": [
+        "Infographic",
+        "Charts",
+        "Realistic"
+      ],
+      "scenes": [
+        "Education",
+        "Tech"
+      ],
+      "tags": [
+        "Infographic",
+        "Chart",
+        "Education"
+      ],
+      "exampleCases": [
+        341
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case341.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case341.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case341.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:poster-layout-system",
+      "upstreamId": "poster-layout-system",
+      "anchor": "tpl-poster",
+      "title": {
+        "zh": "海报排版系统",
+        "en": "Poster Layout System"
+      },
+      "description": {
+        "zh": "生成活动、产品、电影和社媒传播海报。",
+        "en": "Event, product, movie, and social poster compositions."
+      },
+      "useWhen": {
+        "zh": "用于活动海报、电影海报、封面和社媒传播视觉。",
+        "en": "Use for event posters, movie posters, covers, and social campaign visuals."
+      },
+      "guidance": {
+        "zh": [
+          "锁定主体、标题、版式、配色和比例。",
+          "突出标题层级和主视觉。"
+        ],
+        "en": [
+          "Lock subject, headline, layout, palette, and aspect ratio.",
+          "Make the title hierarchy and primary visual clear."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "需要成品海报时，避免生成拼贴展示板。",
+          "约束多余文字和装饰符号。"
+        ],
+        "en": [
+          "Avoid mixed moodboards or process sheets when asking for one finished poster.",
+          "Constrain extra text and decorative symbols."
+        ]
+      },
+      "category": "Posters & Typography",
+      "styles": [
+        "Poster"
+      ],
+      "scenes": [
+        "Commerce",
+        "Social"
+      ],
+      "tags": [
+        "Poster",
+        "Typography",
+        "Campaign"
+      ],
+      "exampleCases": [
+        345,
+        5,
+        10
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case345.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case345.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case345.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:sports-campaign-poster",
+      "upstreamId": "sports-campaign-poster",
+      "anchor": "tpl-poster",
+      "title": {
+        "zh": "运动商业 Campaign",
+        "en": "Sports Campaign Poster"
+      },
+      "description": {
+        "zh": "生成运动员、道具、品牌色统一的商业运动海报。",
+        "en": "Commercial sports visuals with athletes, props, and brand color."
+      },
+      "useWhen": {
+        "zh": "用于运动品牌 Campaign、运动员海报和运动产品视觉。",
+        "en": "Use for sports brand campaigns, athlete posters, and product-led sport visuals."
+      },
+      "guidance": {
+        "zh": [
+          "定义运动项目、姿态、核心道具、标题和品牌色。",
+          "使用强光影、干净构图和可读数据层。"
+        ],
+        "en": [
+          "Define sport, athlete pose, hero prop, title, and brand palette.",
+          "Use dramatic light, clean composition, and readable data overlays."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免错误运动器材和杂乱拼贴。",
+          "让运动员和核心道具占据主导。"
+        ],
+        "en": [
+          "Avoid wrong equipment and noisy collage.",
+          "Keep the athlete and hero prop visually dominant."
+        ]
+      },
+      "category": "Posters & Typography",
+      "styles": [
+        "Poster",
+        "Realistic"
+      ],
+      "scenes": [
+        "Commerce",
+        "Fashion"
+      ],
+      "tags": [
+        "Poster",
+        "Campaign",
+        "Typography"
+      ],
+      "exampleCases": [
+        350,
+        3
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case350.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case350.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case350.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:conceptual-typography-poster",
+      "upstreamId": "conceptual-typography-poster",
+      "anchor": "tpl-poster",
+      "title": {
+        "zh": "概念字体海报",
+        "en": "Conceptual Typography Poster"
+      },
+      "description": {
+        "zh": "生成以标题文字为主视觉的高级字体海报。",
+        "en": "Premium title-led posters with strong typographic systems."
+      },
+      "useWhen": {
+        "zh": "用于标题文字需要成为主视觉结构的海报。",
+        "en": "Use when the exact title must become the main visual structure."
+      },
+      "guidance": {
+        "zh": [
+          "让字体成为画面主角，并保证标题拼写准确。",
+          "人物、物体或风景需要服务标题含义。"
+        ],
+        "en": [
+          "Make typography the hero and spell the title exactly.",
+          "Tie human figures, objects, or landscapes to the title meaning."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免默认字效、无关图标和标题错字。",
+          "控制配色数量，保持克制。"
+        ],
+        "en": [
+          "Avoid default word art, unrelated icons, and misspelled title text.",
+          "Limit the color system to a restrained palette."
+        ]
+      },
+      "category": "Posters & Typography",
+      "styles": [
+        "Poster"
+      ],
+      "scenes": [
+        "Creative",
+        "Social"
+      ],
+      "tags": [
+        "Typography",
+        "Poster",
+        "Style"
+      ],
+      "exampleCases": [
+        355
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case355.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case355.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case355.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:ink-double-exposure-poster",
+      "upstreamId": "ink-double-exposure-poster",
+      "anchor": "tpl-poster",
+      "title": {
+        "zh": "水墨双重曝光海报",
+        "en": "Ink Double Exposure Poster"
+      },
+      "description": {
+        "zh": "生成水墨、人像与层叠氛围结合的视觉海报。",
+        "en": "Chinese ink, portrait, and layered atmosphere composition."
+      },
+      "useWhen": {
+        "zh": "用于诗意人像海报、水墨氛围和文化主题视觉。",
+        "en": "Use for poetic portrait posters, ink atmospheres, and layered cultural visuals."
+      },
+      "guidance": {
+        "zh": [
+          "融合人像剪影、水墨质感、氛围和留白。",
+          "保持构图克制、高级、可读。"
+        ],
+        "en": [
+          "Blend portrait silhouette, ink texture, atmosphere, and negative space.",
+          "Keep composition quiet, premium, and readable."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免廉价奇幻拼贴和景物堆叠。",
+          "非必要时减少文字。"
+        ],
+        "en": [
+          "Avoid cheap fantasy collage and overloaded scenery.",
+          "Use subtle text or no text unless required."
+        ]
+      },
+      "category": "Posters & Typography",
+      "styles": [
+        "Poster",
+        "Illustration",
+        "Classical"
+      ],
+      "scenes": [
+        "Story",
+        "History"
+      ],
+      "tags": [
+        "Poster",
+        "Classical",
+        "Style"
+      ],
+      "exampleCases": [
+        359
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case359.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case359.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case359.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:nature-science-poster",
+      "upstreamId": "nature-science-poster",
+      "anchor": "tpl-poster",
+      "title": {
+        "zh": "自然科普海报",
+        "en": "Nature Science Poster"
+      },
+      "description": {
+        "zh": "生成极简产品感自然科普海报。",
+        "en": "Minimal product-style science posters for natural subjects."
+      },
+      "useWhen": {
+        "zh": "用于自然主题的高级、干净科普海报。",
+        "en": "Use for natural subjects that need a premium, clean science poster feel."
+      },
+      "guidance": {
+        "zh": [
+          "使用清晰主体、少量文案、柔和阴影和充足留白。",
+          "让科普标签短而清楚。"
+        ],
+        "en": [
+          "Use a clear subject, minimal copy, soft shadows, and disciplined whitespace.",
+          "Keep the scientific label short and visible."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免广告感太重。",
+          "避免密集百科正文。"
+        ],
+        "en": [
+          "Avoid heavy advertising language.",
+          "Avoid dense encyclopedia blocks."
+        ]
+      },
+      "category": "Posters & Typography",
+      "styles": [
+        "Poster",
+        "Infographic"
+      ],
+      "scenes": [
+        "Education"
+      ],
+      "tags": [
+        "Poster",
+        "Education",
+        "Style"
+      ],
+      "exampleCases": [
+        339
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case339.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case339.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case339.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:product-commerce-visual",
+      "upstreamId": "product-commerce-visual",
+      "anchor": "tpl-product",
+      "title": {
+        "zh": "商品商业视觉",
+        "en": "Product Commerce Visual"
+      },
+      "description": {
+        "zh": "生成商品图、包装、详情页和卖点排版。",
+        "en": "Product shots, packaging, detail pages, and selling-point layouts."
+      },
+      "useWhen": {
+        "zh": "用于商品主图、包装视觉、详情页和销售卖点排版。",
+        "en": "Use for product hero shots, packaging visuals, detail pages, and sales layouts."
+      },
+      "guidance": {
+        "zh": [
+          "定义商品、卖点、材质、场景、光线和版块。",
+          "区分主商品、卖点标签和辅助道具。"
+        ],
+        "en": [
+          "Define product, selling points, material, scene, lighting, and layout blocks.",
+          "Separate hero product, benefit labels, and supporting props."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免无关道具削弱商品识别。",
+          "约束包装文字和卖点表达。"
+        ],
+        "en": [
+          "Avoid random props that weaken product recognition.",
+          "Constrain packaging text and claim wording."
+        ]
+      },
+      "category": "Products & E-commerce",
+      "styles": [
+        "Product",
+        "Realistic"
+      ],
+      "scenes": [
+        "Commerce",
+        "Food"
+      ],
+      "tags": [
+        "Product",
+        "Commerce",
+        "Packaging"
+      ],
+      "exampleCases": [
+        373,
+        358
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case373.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case373.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case373.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:personalized-beauty-report",
+      "upstreamId": "personalized-beauty-report",
+      "anchor": "tpl-product",
+      "title": {
+        "zh": "个性化美妆报告",
+        "en": "Personalized Beauty Report"
+      },
+      "description": {
+        "zh": "生成美妆与生活方式产品的推荐报告版式。",
+        "en": "Recommendation-report layouts for beauty and lifestyle products."
+      },
+      "useWhen": {
+        "zh": "用于美妆推荐、肤质报告、导购助手和生活方式商品卡片。",
+        "en": "Use for beauty recommendations, skin reports, shopping assistants, and lifestyle product cards."
+      },
+      "guidance": {
+        "zh": [
+          "使用诊断、推荐和商品卡片的报告层级。",
+          "对齐商品图、标签和评分。"
+        ],
+        "en": [
+          "Use a report-like hierarchy with diagnosis, recommendation, and product cards.",
+          "Keep product images, labels, and ratings aligned."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免医疗化结论和难读小字。",
+          "保持推荐逻辑清楚。"
+        ],
+        "en": [
+          "Avoid medical claims and unreadable dense notes.",
+          "Keep recommendation logic simple."
+        ]
+      },
+      "category": "Products & E-commerce",
+      "styles": [
+        "Product",
+        "UI"
+      ],
+      "scenes": [
+        "Commerce",
+        "Fashion"
+      ],
+      "tags": [
+        "Product",
+        "Layout",
+        "Style"
+      ],
+      "exampleCases": [
+        353
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case353.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case353.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case353.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:brand-identity-package",
+      "upstreamId": "brand-identity-package",
+      "anchor": "tpl-brand",
+      "title": {
+        "zh": "品牌身份包",
+        "en": "Brand Identity Package"
+      },
+      "description": {
+        "zh": "生成 Logo、配色、字体、应用触点与品牌系统。",
+        "en": "Logo, palette, typography, applications, and brand touchpoints."
+      },
+      "useWhen": {
+        "zh": "用于 Logo 系统、品牌板、VI 套件和应用样机。",
+        "en": "Use for logo systems, brand boards, visual identity kits, and application mockups."
+      },
+      "guidance": {
+        "zh": [
+          "定义品牌名、定位、配色、字体、Logo 用法和触点。",
+          "要求视觉板中的应用统一对齐。"
+        ],
+        "en": [
+          "Define brand name, positioning, palette, typography, logo usage, and touchpoints.",
+          "Ask for a coherent board with aligned applications."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免无关 Logo 变体和混乱配色。",
+          "保持品牌文字准确。"
+        ],
+        "en": [
+          "Avoid unrelated logo variants and inconsistent palettes.",
+          "Keep brand text accurate."
+        ]
+      },
+      "category": "Brand & Logos",
+      "styles": [
+        "Brand"
+      ],
+      "scenes": [
+        "Commerce"
+      ],
+      "tags": [
+        "Brand",
+        "Logo",
+        "Identity"
+      ],
+      "exampleCases": [
+        354
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case354.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case354.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case354.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:brand-touchpoint-board",
+      "upstreamId": "brand-touchpoint-board",
+      "anchor": "tpl-brand",
+      "title": {
+        "zh": "品牌触点视觉板",
+        "en": "Brand Touchpoint Board"
+      },
+      "description": {
+        "zh": "生成包装、社媒、网页和展示场景里的品牌触点板。",
+        "en": "Campaign boards across packaging, social, web, and display contexts."
+      },
+      "useWhen": {
+        "zh": "用于多触点 Campaign 展示和品牌落地预览。",
+        "en": "Use for multi-touchpoint campaign boards and brand rollout previews."
+      },
+      "guidance": {
+        "zh": [
+          "指定触点清单、统一视觉规则和样机排列。",
+          "让所有面板共享配色和字体逻辑。"
+        ],
+        "en": [
+          "Specify touchpoint list, shared visual rules, and mockup arrangement.",
+          "Use one palette and one typography logic across all panels."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免混入多个无关 Campaign 风格。",
+          "可读性下降时减少触点数量。"
+        ],
+        "en": [
+          "Avoid mixing many unrelated campaign styles.",
+          "Limit touchpoints if readability drops."
+        ]
+      },
+      "category": "Brand & Logos",
+      "styles": [
+        "Brand",
+        "Product"
+      ],
+      "scenes": [
+        "Commerce",
+        "Social"
+      ],
+      "tags": [
+        "Brand",
+        "Identity",
+        "Campaign"
+      ],
+      "exampleCases": [
+        362
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case362.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case362.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case362.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:architecture-space",
+      "upstreamId": "architecture-space",
+      "anchor": "tpl-architecture",
+      "title": {
+        "zh": "建筑与空间",
+        "en": "Architecture & Space"
+      },
+      "description": {
+        "zh": "生成室内、建筑、城市地图和空间概念视觉。",
+        "en": "Interior, exterior, city, map, and spatial concept visuals."
+      },
+      "useWhen": {
+        "zh": "用于室内、建筑表现、城市地图、空间规划和环境概念图。",
+        "en": "Use for interiors, architecture renders, city maps, spatial plans, and environment concepts."
+      },
+      "guidance": {
+        "zh": [
+          "定义视角、尺度、材质、光线和空间功能。",
+          "地图需要指定地标、标签、边框装饰和准确度。"
+        ],
+        "en": [
+          "Define viewpoint, scale, material, lighting, and spatial function.",
+          "For maps, specify landmarks, labels, border decoration, and visual accuracy level."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "概念图之外要避免不合理透视。",
+          "锁定地图标签语言和相对位置。"
+        ],
+        "en": [
+          "Avoid impossible perspectives unless the output is conceptual.",
+          "Lock map label language and relative placement."
+        ]
+      },
+      "category": "Architecture & Spaces",
+      "styles": [
+        "Architecture"
+      ],
+      "scenes": [
+        "Travel",
+        "Commerce"
+      ],
+      "tags": [
+        "Architecture",
+        "Interior",
+        "Map"
+      ],
+      "exampleCases": [
+        331,
+        11
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case331.png",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case331.png",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case331.png",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:realistic-photography",
+      "upstreamId": "realistic-photography",
+      "anchor": "tpl-photo",
+      "title": {
+        "zh": "写实摄影",
+        "en": "Realistic Photography"
+      },
+      "description": {
+        "zh": "控制镜头、光线、胶片质感和纪实摄影效果。",
+        "en": "Lens, lighting, film texture, and documentary-style photo prompts."
+      },
+      "useWhen": {
+        "zh": "用于人像、街拍、商品摄影和电影感写实。",
+        "en": "Use for portraits, street photos, product photography, and cinematic realism."
+      },
+      "guidance": {
+        "zh": [
+          "指定机位、镜头、光源、质感、背景和动作。",
+          "加入可信的小瑕疵增强纪实感。"
+        ],
+        "en": [
+          "Specify camera distance, lens, light source, texture, background, and motion.",
+          "Use believable imperfections for documentary realism."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "商业美妆之外，避免过度磨皮。",
+          "需要时加入手部、文字、结构类负面约束。"
+        ],
+        "en": [
+          "Avoid over-polished plastic skin unless commercial beauty is required.",
+          "Add negative constraints for hands, text, and anatomy when needed."
+        ]
+      },
+      "category": "Photography & Realism",
+      "styles": [
+        "Photography",
+        "Realistic"
+      ],
+      "scenes": [
+        "Fashion",
+        "Commerce"
+      ],
+      "tags": [
+        "Photography",
+        "Realistic",
+        "Lens"
+      ],
+      "exampleCases": [
+        377
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case377.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case377.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case377.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:street-accident-moment",
+      "upstreamId": "street-accident-moment",
+      "anchor": "tpl-photo",
+      "title": {
+        "zh": "街头意外瞬间摄影",
+        "en": "Street Accident Moment"
+      },
+      "description": {
+        "zh": "生成手机纪实风街头瞬间，并加入负面约束。",
+        "en": "Realistic phone-photo scenes with negative constraints."
+      },
+      "useWhen": {
+        "zh": "用于街头抓拍、意外泼洒、手机纪实和快速动作。",
+        "en": "Use for candid street moments, accidental spills, documentary phone shots, and fast action."
+      },
+      "guidance": {
+        "zh": [
+          "描述具体瞬间、机位高度、运动模糊和街景。",
+          "加入避免摆拍和广告棚拍感的限制。"
+        ],
+        "en": [
+          "Describe the exact moment, camera height, motion blur, and street context.",
+          "Add negative constraints for staged poses and fake ad lighting."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免画面过于干净。",
+          "让事件看起来可信。"
+        ],
+        "en": [
+          "Avoid too-clean compositions.",
+          "Keep the event plausible and grounded."
+        ]
+      },
+      "category": "Photography & Realism",
+      "styles": [
+        "Photography",
+        "Realistic"
+      ],
+      "scenes": [
+        "Travel",
+        "Social"
+      ],
+      "tags": [
+        "Photography",
+        "Realistic",
+        "Scene"
+      ],
+      "exampleCases": [
+        376
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case376.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case376.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case376.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:illustration-art-style",
+      "upstreamId": "illustration-art-style",
+      "anchor": "tpl-illustration",
+      "title": {
+        "zh": "插画与艺术风格",
+        "en": "Illustration & Art Style"
+      },
+      "description": {
+        "zh": "生成动漫、水彩、水墨、材质实验和艺术风格图。",
+        "en": "Anime, watercolor, ink, material experiments, and art direction."
+      },
+      "useWhen": {
+        "zh": "用于动漫、水彩、水墨、装饰画和风格实验。",
+        "en": "Use for anime, watercolor, ink, decorative art, and style experiments."
+      },
+      "guidance": {
+        "zh": [
+          "定义构图、主体、配色、笔触材质、情绪和完成度。",
+          "参考图任务需要说明保留哪些特征。"
+        ],
+        "en": [
+          "Define composition, subject, palette, brush material, mood, and rendering depth.",
+          "For reference images, state what must be preserved."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免只写风格，不写构图。",
+          "使用参考图时锁定角色识别。"
+        ],
+        "en": [
+          "Avoid style-only prompts without composition.",
+          "Lock character identity when using references."
+        ]
+      },
+      "category": "Illustration & Art",
+      "styles": [
+        "Illustration"
+      ],
+      "scenes": [
+        "Story",
+        "Creative"
+      ],
+      "tags": [
+        "Illustration",
+        "Art",
+        "Style"
+      ],
+      "exampleCases": [
+        346,
+        6
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case346.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case346.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case346.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:character-design-sheet",
+      "upstreamId": "character-design-sheet",
+      "anchor": "tpl-character",
+      "title": {
+        "zh": "角色设定表",
+        "en": "Character Design Sheet"
+      },
+      "description": {
+        "zh": "生成角色设定、动作分解和一致性参考。",
+        "en": "Characters, pose sheets, action grids, and identity consistency."
+      },
+      "useWhen": {
+        "zh": "用于角色设定表、动作网格、动作拆解和一致性参考。",
+        "en": "Use for character sheets, pose grids, action breakdowns, and identity references."
+      },
+      "guidance": {
+        "zh": [
+          "定义身份锚点、服装、比例、动作数量和版式。",
+          "保持脸、发型和服装细节一致。"
+        ],
+        "en": [
+          "Define identity anchors, outfit, proportions, pose count, and sheet layout.",
+          "Keep face, hairstyle, and costume details consistent."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免不同动作里服装细节变化。",
+          "画面拥挤时减少动作数量。"
+        ],
+        "en": [
+          "Avoid changing costume details between poses.",
+          "Limit pose count if the sheet becomes crowded."
+        ]
+      },
+      "category": "Characters & People",
+      "styles": [
+        "Character",
+        "Illustration"
+      ],
+      "scenes": [
+        "Story"
+      ],
+      "tags": [
+        "Character",
+        "Pose",
+        "Style"
+      ],
+      "exampleCases": [
+        347
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case347.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case347.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case347.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:3d-collectible-toy",
+      "upstreamId": "3d-collectible-toy",
+      "anchor": "tpl-character",
+      "title": {
+        "zh": "3D 收藏玩具",
+        "en": "3D Collectible Toy"
+      },
+      "description": {
+        "zh": "把参考图转换成高级 3D 收藏玩具效果。",
+        "en": "Reference photo to premium 3D collectible figure prompts."
+      },
+      "useWhen": {
+        "zh": "用于高级收藏玩具、头像公仔、潮玩角色和 3D 展示图。",
+        "en": "Use for premium collectible figures, avatar toys, blind-box characters, and 3D display renders."
+      },
+      "guidance": {
+        "zh": [
+          "保留参考图中的脸和服装锚点。",
+          "指定材质、包装、底座、光线和收藏比例。"
+        ],
+        "en": [
+          "Preserve face and outfit anchors from the reference.",
+          "Specify material, packaging, base, lighting, and collectible scale."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免没有身份细节的通用玩具。",
+          "包装文字保持少量且准确。"
+        ],
+        "en": [
+          "Avoid generic toy bodies without identity details.",
+          "Keep packaging text minimal and accurate."
+        ]
+      },
+      "category": "Characters & People",
+      "styles": [
+        "3D",
+        "Character"
+      ],
+      "scenes": [
+        "Commerce",
+        "Creative"
+      ],
+      "tags": [
+        "Character",
+        "3D",
+        "Style"
+      ],
+      "exampleCases": [
+        378
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case378.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case378.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case378.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:scene-storytelling",
+      "upstreamId": "scene-storytelling",
+      "anchor": "tpl-scene",
+      "title": {
+        "zh": "场景叙事",
+        "en": "Scene Storytelling"
+      },
+      "description": {
+        "zh": "生成分镜、世界观、故事场景和情绪节奏。",
+        "en": "Storyboards, worldbuilding, narrative scenes, and emotional pacing."
+      },
+      "useWhen": {
+        "zh": "用于分镜、世界观、直播场景和情绪叙事画面。",
+        "en": "Use for storyboards, worldbuilding, live scenes, and emotional narrative frames."
+      },
+      "guidance": {
+        "zh": [
+          "定义人物、地点、时间、冲突、情绪和机位。",
+          "让场景细节服务故事。"
+        ],
+        "en": [
+          "Define who, where, when, conflict, emotion, and camera framing.",
+          "Use scene details to support narrative rather than decoration."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免通用幻想背景。",
+          "让故事线索在画面里可见。"
+        ],
+        "en": [
+          "Avoid generic fantasy backgrounds.",
+          "Keep narrative cues visible in the frame."
+        ]
+      },
+      "category": "Scenes & Storytelling",
+      "styles": [
+        "Scenes",
+        "Illustration"
+      ],
+      "scenes": [
+        "Story",
+        "Social"
+      ],
+      "tags": [
+        "Scene",
+        "Story",
+        "Storyboard"
+      ],
+      "exampleCases": [
+        330
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case330.png",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case330.png",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case330.png",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:history-classical-themes",
+      "upstreamId": "history-classical-themes",
+      "anchor": "tpl-history",
+      "title": {
+        "zh": "历史与古风题材",
+        "en": "History & Classical Themes"
+      },
+      "description": {
+        "zh": "生成朝代服饰、长卷叙事、诗词和传统题材。",
+        "en": "Dynasty clothing, scroll narrative, poetry, and traditional motifs."
+      },
+      "useWhen": {
+        "zh": "用于古风题材、长卷、朝代服饰、诗词视觉和历史场景。",
+        "en": "Use for ancient Chinese themes, scrolls, dynasty clothing, poetry visuals, and historical scenes."
+      },
+      "guidance": {
+        "zh": [
+          "指定朝代、服饰制度、器物参考、版式和文化气质。",
+          "明确长卷、册页或海报形式。"
+        ],
+        "en": [
+          "Specify dynasty, clothing system, object references, layout format, and cultural mood.",
+          "Use scroll, album page, or poster format deliberately."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "需要历史准确时，避免朝代混搭。",
+          "约束随机现代物件。"
+        ],
+        "en": [
+          "Avoid mixing dynasties when historical accuracy matters.",
+          "Constrain random modern props."
+        ]
+      },
+      "category": "History & Classical Themes",
+      "styles": [
+        "History",
+        "Classical",
+        "Illustration"
+      ],
+      "scenes": [
+        "History",
+        "Story"
+      ],
+      "tags": [
+        "History",
+        "Classical",
+        "Scroll"
+      ],
+      "exampleCases": [
+        375,
+        338
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case375.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case375.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case375.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:document-publishing",
+      "upstreamId": "document-publishing",
+      "anchor": "tpl-document",
+      "title": {
+        "zh": "文档与出版物",
+        "en": "Document & Publishing"
+      },
+      "description": {
+        "zh": "生成白皮书、手册、百科图鉴和页面系统。",
+        "en": "White papers, manuals, encyclopedic plates, and page systems."
+      },
+      "useWhen": {
+        "zh": "用于白皮书、手册、百科图鉴、报告页面和出版系统。",
+        "en": "Use for white papers, manuals, encyclopedic plates, report pages, and publication systems."
+      },
+      "guidance": {
+        "zh": [
+          "定义页面尺寸、分栏、目录、图表系统和字体层级。",
+          "使用可读标题、表格、标签和页面节奏。"
+        ],
+        "en": [
+          "Define page size, columns, table of contents, figure system, and typography hierarchy.",
+          "Use readable headings, tables, labels, and page rhythm."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免密集小字。",
+          "让图表和说明对齐页面网格。"
+        ],
+        "en": [
+          "Avoid tiny dense text.",
+          "Keep charts and captions aligned to the page grid."
+        ]
+      },
+      "category": "Documents & Publishing",
+      "styles": [
+        "Documents",
+        "Infographic"
+      ],
+      "scenes": [
+        "Education",
+        "Tech"
+      ],
+      "tags": [
+        "Document",
+        "Publishing",
+        "Layout"
+      ],
+      "exampleCases": [
+        360
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case360.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case360.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case360.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:template:concept-product-breakdown",
+      "upstreamId": "concept-product-breakdown",
+      "anchor": "tpl-other",
+      "title": {
+        "zh": "概念产品研发拆解",
+        "en": "Concept Product Breakdown"
+      },
+      "description": {
+        "zh": "生成研发板、拆解图、混合任务和特殊输出。",
+        "en": "R&D boards, exploded views, mixed tasks, and special outputs."
+      },
+      "useWhen": {
+        "zh": "用于实验型任务、研发视觉板、拆解图和特殊视觉系统。",
+        "en": "Use for experimental prompt tasks, R&D boards, exploded diagrams, and unusual visual systems."
+      },
+      "guidance": {
+        "zh": [
+          "定义产物类型、组件、标签、材质逻辑和展示格式。",
+          "使用清晰标注和受控技术风格。"
+        ],
+        "en": [
+          "Define the artifact type, components, labels, material logic, and final presentation format.",
+          "Use clear callouts and a controlled technical style."
+        ]
+      },
+      "pitfalls": {
+        "zh": [
+          "避免任务边界过泛。",
+          "标签要短，组件关系要清楚。"
+        ],
+        "en": [
+          "Avoid unspecified mixed tasks.",
+          "Keep labels short and component relationships visible."
+        ]
+      },
+      "category": "Other Use Cases",
+      "styles": [
+        "Other Use Cases",
+        "Product"
+      ],
+      "scenes": [
+        "Creative",
+        "Tech"
+      ],
+      "tags": [
+        "Creative",
+        "R&D",
+        "Special"
+      ],
+      "exampleCases": [
+        370,
+        361
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case370.jpg",
+      "coverRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case370.jpg",
+      "coverLocal": "/prompt-assets/awesome-gpt-image-2/images/case370.jpg",
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/data/style-library.json",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    }
+  ]
+}

@@ -1,0 +1,907 @@
+{
+  "manifest": {
+    "upstream": "awesome-gpt-image-2",
+    "upstreamRepo": "https://github.com/freestylefly/awesome-gpt-image-2",
+    "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+    "syncedAt": "2026-05-09T05:27:51.471Z"
+  },
+  "categories": [
+    {
+      "id": "cat-ui",
+      "value": "UI & Interfaces",
+      "anchor": "cat-ui",
+      "templateAnchor": "tpl-ui",
+      "title": {
+        "zh": "UI 与界面",
+        "en": "UI & Interfaces"
+      },
+      "description": {
+        "zh": "App、网页、仪表盘、社媒截图与产品界面。",
+        "en": "Apps, websites, dashboards, social screenshots, and product interfaces."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/ui.jpg"
+    },
+    {
+      "id": "cat-infographic",
+      "value": "Charts & Infographics",
+      "anchor": "cat-infographic",
+      "templateAnchor": "tpl-infographic",
+      "title": {
+        "zh": "图表与信息可视化",
+        "en": "Charts & Infographics"
+      },
+      "description": {
+        "zh": "信息图、知识图谱、技术解释与结构化图解。",
+        "en": "Infographics, knowledge maps, technical explainers, and structured diagrams."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/infographic.jpg"
+    },
+    {
+      "id": "cat-poster",
+      "value": "Posters & Typography",
+      "anchor": "cat-poster",
+      "templateAnchor": "tpl-poster",
+      "title": {
+        "zh": "海报与排版",
+        "en": "Posters & Typography"
+      },
+      "description": {
+        "zh": "活动海报、封面、字体视觉和强排版画面。",
+        "en": "Event posters, covers, type-driven visuals, and strong layout compositions."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/poster.jpg"
+    },
+    {
+      "id": "cat-product",
+      "value": "Products & E-commerce",
+      "anchor": "cat-product",
+      "templateAnchor": "tpl-product",
+      "title": {
+        "zh": "商品与电商",
+        "en": "Products & E-commerce"
+      },
+      "description": {
+        "zh": "商品图、详情页、包装卖点和商业广告。",
+        "en": "Product shots, detail pages, packaging, selling points, and ads."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/product.jpg"
+    },
+    {
+      "id": "cat-brand",
+      "value": "Brand & Logos",
+      "anchor": "cat-brand",
+      "templateAnchor": "tpl-brand",
+      "title": {
+        "zh": "品牌与标志",
+        "en": "Brand & Logos"
+      },
+      "description": {
+        "zh": "Logo、VI、品牌触点和 Campaign 视觉系统。",
+        "en": "Logos, identity systems, brand touchpoints, and campaign visuals."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/brand.jpg"
+    },
+    {
+      "id": "cat-architecture",
+      "value": "Architecture & Spaces",
+      "anchor": "cat-architecture",
+      "templateAnchor": "tpl-architecture",
+      "title": {
+        "zh": "建筑与空间",
+        "en": "Architecture & Spaces"
+      },
+      "description": {
+        "zh": "建筑表现、室内空间、城市地图和空间概念。",
+        "en": "Architecture renders, interiors, city maps, and spatial concepts."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/architecture.jpg"
+    },
+    {
+      "id": "cat-photo",
+      "value": "Photography & Realism",
+      "anchor": "cat-photo",
+      "templateAnchor": "tpl-photo",
+      "title": {
+        "zh": "摄影与写实",
+        "en": "Photography & Realism"
+      },
+      "description": {
+        "zh": "人像、手机纪实、胶片质感和商业摄影。",
+        "en": "Portraits, phone photography, film texture, and commercial photography."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/photo.jpg"
+    },
+    {
+      "id": "cat-illustration",
+      "value": "Illustration & Art",
+      "anchor": "cat-illustration",
+      "templateAnchor": "tpl-illustration",
+      "title": {
+        "zh": "插画与艺术",
+        "en": "Illustration & Art"
+      },
+      "description": {
+        "zh": "插画、艺术风格、材质实验和装饰画面。",
+        "en": "Illustration, art styles, material experiments, and decorative images."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/illustration.jpg"
+    },
+    {
+      "id": "cat-character",
+      "value": "Characters & People",
+      "anchor": "cat-character",
+      "templateAnchor": "tpl-character",
+      "title": {
+        "zh": "人物与角色",
+        "en": "Characters & People"
+      },
+      "description": {
+        "zh": "角色设定、动作参考、卡牌和 3D 玩具。",
+        "en": "Character design, pose references, cards, and 3D toys."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/character.jpg"
+    },
+    {
+      "id": "cat-scene",
+      "value": "Scenes & Storytelling",
+      "anchor": "cat-scene",
+      "templateAnchor": "tpl-scene",
+      "title": {
+        "zh": "场景与叙事",
+        "en": "Scenes & Storytelling"
+      },
+      "description": {
+        "zh": "分镜、故事场景、直播画面和世界观叙事。",
+        "en": "Storyboards, narrative scenes, livestream frames, and worldbuilding."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/scene.jpg"
+    },
+    {
+      "id": "cat-history",
+      "value": "History & Classical Themes",
+      "anchor": "cat-history",
+      "templateAnchor": "tpl-history",
+      "title": {
+        "zh": "历史与古风题材",
+        "en": "History & Classical Themes"
+      },
+      "description": {
+        "zh": "古风长卷、历史人物、传统题材和诗词画面。",
+        "en": "Classical scrolls, historical figures, traditional themes, and poetry visuals."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/history.jpg"
+    },
+    {
+      "id": "cat-document",
+      "value": "Documents & Publishing",
+      "anchor": "cat-document",
+      "templateAnchor": "tpl-document",
+      "title": {
+        "zh": "文档与出版物",
+        "en": "Documents & Publishing"
+      },
+      "description": {
+        "zh": "白皮书、手册、百科图鉴和出版页设计。",
+        "en": "White papers, manuals, encyclopedic plates, and publishing layouts."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/document.jpg"
+    },
+    {
+      "id": "cat-other",
+      "value": "Other Use Cases",
+      "anchor": "cat-other",
+      "templateAnchor": "tpl-other",
+      "title": {
+        "zh": "其他应用场景",
+        "en": "Other Use Cases"
+      },
+      "description": {
+        "zh": "创意实验、特殊任务、混合玩法和实用场景。",
+        "en": "Creative experiments, special tasks, mixed workflows, and practical cases."
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/category-covers/other.jpg"
+    }
+  ],
+  "styles": [
+    {
+      "id": "3d",
+      "value": "3D",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "3D",
+        "en": "3D"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "3d",
+        "toy",
+        "render",
+        "玩具"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "architecture",
+      "value": "Architecture",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "建筑",
+        "en": "Architecture"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "brand",
+      "value": "Brand",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "品牌",
+        "en": "Brand"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "brand",
+        "logo",
+        "identity",
+        "品牌",
+        "标志"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "character",
+      "value": "Character",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "角色",
+        "en": "Character"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "character",
+        "avatar",
+        "pose",
+        "角色",
+        "人物"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "characters",
+      "value": "Characters",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "人物",
+        "en": "Characters"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "charts",
+      "value": "Charts",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "图表",
+        "en": "Charts"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "classical",
+      "value": "Classical",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "古典",
+        "en": "Classical"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "classical",
+        "dynasty",
+        "history",
+        "古风",
+        "历史"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "documents",
+      "value": "Documents",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "文档",
+        "en": "Documents"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "history",
+      "value": "History",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "历史",
+        "en": "History"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "illustration",
+      "value": "Illustration",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "插画",
+        "en": "Illustration"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "illustration",
+        "painting",
+        "watercolor",
+        "插画",
+        "绘画"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "infographic",
+      "value": "Infographic",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "信息图",
+        "en": "Infographic"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "infographic",
+        "diagram",
+        "信息图",
+        "图解"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "other",
+      "value": "Other Use Cases",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "其他应用场景",
+        "en": "Other Use Cases"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "photography",
+      "value": "Photography",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "摄影",
+        "en": "Photography"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "poster",
+      "value": "Poster",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "海报",
+        "en": "Poster"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "poster",
+        "cover",
+        "typography",
+        "海报",
+        "封面"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "product",
+      "value": "Product",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "商品",
+        "en": "Product"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "product",
+        "packaging",
+        "商品",
+        "包装"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "products",
+      "value": "Products",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "商品",
+        "en": "Products"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "realistic",
+      "value": "Realistic",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "写实",
+        "en": "Realistic"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "photo",
+        "realistic",
+        "camera",
+        "写真",
+        "写实"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "scenes",
+      "value": "Scenes",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "场景",
+        "en": "Scenes"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "ui",
+      "value": "UI",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "界面",
+        "en": "UI"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "ui",
+        "interface",
+        "dashboard",
+        "界面",
+        "截图"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "creative",
+      "value": "Creative",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "创意",
+        "en": "Creative"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "tech",
+      "value": "Tech",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "科技",
+        "en": "Tech"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "ai",
+        "rag",
+        "tech",
+        "data",
+        "技术",
+        "数据"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "commerce",
+      "value": "Commerce",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "商业",
+        "en": "Commerce"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "product",
+        "brand",
+        "ad",
+        "campaign",
+        "商品",
+        "商业",
+        "广告"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "education",
+      "value": "Education",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "教育",
+        "en": "Education"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "guide",
+        "atlas",
+        "science",
+        "learning",
+        "学习",
+        "科普"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "social",
+      "value": "Social",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "社媒",
+        "en": "Social"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "social",
+        "x ",
+        "wechat",
+        "朋友圈",
+        "社媒"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "fashion",
+      "value": "Fashion",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "时尚",
+        "en": "Fashion"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "fashion",
+        "clothing",
+        "portrait",
+        "服饰",
+        "写真"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "food",
+      "value": "Food",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "食品饮品",
+        "en": "Food"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "food",
+        "drink",
+        "coffee",
+        "tea",
+        "餐厅",
+        "咖啡",
+        "茶"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "travel",
+      "value": "Travel",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "旅行",
+        "en": "Travel"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "city",
+        "map",
+        "street",
+        "城市",
+        "地图",
+        "街头"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "story",
+      "value": "Story",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "叙事",
+        "en": "Story"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "story",
+        "scene",
+        "world",
+        "故事",
+        "场景"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    },
+    {
+      "id": "history",
+      "value": "History",
+      "anchor": "",
+      "templateAnchor": "",
+      "title": {
+        "zh": "历史",
+        "en": "History"
+      },
+      "description": {
+        "zh": "",
+        "en": ""
+      },
+      "keywords": [
+        "history",
+        "dynasty",
+        "ancient",
+        "历史",
+        "古希腊",
+        "唐"
+      ],
+      "cover": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/"
+    }
+  ],
+  "tagLabels": {
+    "Art": {
+      "en": "Art",
+      "zh": "艺术"
+    },
+    "Campaign": {
+      "en": "Campaign",
+      "zh": "商业 Campaign"
+    },
+    "Chart": {
+      "en": "Chart",
+      "zh": "图表"
+    },
+    "Classical": {
+      "en": "Classical",
+      "zh": "古典"
+    },
+    "Creative": {
+      "en": "Creative",
+      "zh": "创意"
+    },
+    "Dashboard": {
+      "en": "Dashboard",
+      "zh": "仪表盘"
+    },
+    "Document": {
+      "en": "Document",
+      "zh": "文档"
+    },
+    "Education": {
+      "en": "Education",
+      "zh": "教育"
+    },
+    "Identity": {
+      "en": "Identity",
+      "zh": "身份系统"
+    },
+    "Interior": {
+      "en": "Interior",
+      "zh": "室内"
+    },
+    "Layout": {
+      "en": "Layout",
+      "zh": "版式"
+    },
+    "Lens": {
+      "en": "Lens",
+      "zh": "镜头"
+    },
+    "Logo": {
+      "en": "Logo",
+      "zh": "Logo"
+    },
+    "Map": {
+      "en": "Map",
+      "zh": "地图"
+    },
+    "Packaging": {
+      "en": "Packaging",
+      "zh": "包装"
+    },
+    "Pose": {
+      "en": "Pose",
+      "zh": "动作"
+    },
+    "Publishing": {
+      "en": "Publishing",
+      "zh": "出版"
+    },
+    "R&D": {
+      "en": "R&D",
+      "zh": "研发"
+    },
+    "Scene": {
+      "en": "Scene",
+      "zh": "场景"
+    },
+    "Screenshot": {
+      "en": "Screenshot",
+      "zh": "截图"
+    },
+    "Scroll": {
+      "en": "Scroll",
+      "zh": "长卷"
+    },
+    "Special": {
+      "en": "Special",
+      "zh": "特殊输出"
+    },
+    "Storyboard": {
+      "en": "Storyboard",
+      "zh": "分镜"
+    },
+    "Style": {
+      "en": "Style",
+      "zh": "风格"
+    },
+    "Typography": {
+      "en": "Typography",
+      "zh": "字体"
+    }
+  }
+}
