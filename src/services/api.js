@@ -1,6 +1,15 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'
 const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '')
 
+function getToken() {
+  return localStorage.getItem('token') || ''
+}
+
+function authHeaders() {
+  const token = getToken()
+  return token ? { authorization: `Bearer ${token}` } : {}
+}
+
 function normalizePayload(payload) {
   return payload?.success === false ? payload : (payload?.data ?? payload)
 }
@@ -9,6 +18,7 @@ async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       'content-type': 'application/json',
+      ...authHeaders(),
       ...(options.headers || {}),
     },
     ...options,
@@ -28,6 +38,7 @@ async function requestGenerateImages(payload, options = {}) {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
+      ...authHeaders(),
     },
     body: JSON.stringify(payload),
     signal: options.signal,
@@ -56,9 +67,28 @@ export const api = {
   getPricing: () => request('/pricing'),
   getShowcase: (params = {}) => request(`/showcase?${new URLSearchParams(params)}`),
   getLegal: (type) => request(`/legal/${encodeURIComponent(type)}`),
-  login: (email) => request('/auth/login', {
+  getMe: () => request('/me'),
+  sendEmailCode: (payload) => request('/auth/email-code', {
     method: 'POST',
-    body: JSON.stringify({ email }),
+    body: JSON.stringify(payload),
+  }),
+  register: (payload) => request('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
+  login: (payload) => request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
+  logout: () => request('/auth/logout', {
+    method: 'POST',
+    body: JSON.stringify({}),
+  }),
+  getCreditLedger: () => request('/me/credits'),
+  getInvites: () => request('/me/invites'),
+  updateProfile: (payload) => request('/me/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
   }),
   reversePrompt: (payload) => request('/generate/reverse-prompt', {
     method: 'POST',
@@ -69,13 +99,22 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
+  getOrders: () => request('/orders'),
   getGallery: () => request('/gallery'),
+  getGenerationTask: (id) => request(`/generate/tasks/${encodeURIComponent(id)}`),
+  cancelGenerationTask: (id) => request(`/generate/tasks/${encodeURIComponent(id)}/cancel`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  }),
   uploadFiles: async (files) => {
     const formData = new FormData()
     files.forEach((file) => formData.append('files', file))
 
     const response = await fetch(`${API_BASE_URL}/uploads`, {
       method: 'POST',
+      headers: {
+        ...authHeaders(),
+      },
       body: formData,
     })
     const payload = await response.json().catch(() => null)

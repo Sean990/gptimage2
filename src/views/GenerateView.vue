@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   Check,
   ChevronDown,
@@ -9,10 +9,14 @@ import {
   Copy,
   ExternalLink,
   Eye,
+  Gem,
   GalleryHorizontal,
+  Coins,
+  CreditCard,
   ImagePlus,
   Layers3,
   Link as LinkIcon,
+  Lightbulb,
   LogIn,
   Loader2,
   Save,
@@ -24,11 +28,15 @@ import {
   Trash2,
   Wand2,
   X,
+  Zap,
 } from 'lucide-vue-next'
 import { api, resolveApiUrl } from '../services/api'
+import { useAuthStore } from '../services/authStore'
 import { useSiteStore } from '../services/siteStore'
 
 const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
 const { loadSiteData } = useSiteStore()
 const modes = [
   { value: 'generate', label: '文生图', badge: '纯文本', requiresReference: false },
@@ -197,6 +205,7 @@ const output = ref([])
 const loading = ref(false)
 const loadingStage = ref('准备提交生成任务')
 const generationAbortController = ref(null)
+const activeTaskId = ref('')
 const reversing = ref(false)
 const notice = ref('')
 const galleryOpen = ref(false)
@@ -205,6 +214,7 @@ const imagePreview = ref(null)
 const modelPicker = ref(null)
 const modelMenuOpen = ref(false)
 const selectMenuOpen = ref('')
+let taskPollTimer = null
 
 const referenceCount = computed(() => uploads.value.length + (imageUrl.value ? 1 : 0))
 const maskCount = computed(() => maskUploads.value.length + (maskImageUrl.value ? 1 : 0))
@@ -344,7 +354,18 @@ const advancedSummary = computed(() => {
   if (mode.value === 'edit' && maskCount.value) items.push('含蒙版')
   return items.join(' · ')
 })
-const creditCost = computed(() => normalizedImageCount.value * 2)
+const creditCost = computed(() => {
+  const base = requiresReference.value ? 6 : 5
+  const qualityExtra = quality.value === 'high' ? 5 : 0
+  return normalizedImageCount.value * (base + qualityExtra)
+})
+const footerTipText = computed(() =>
+  batchMode.value
+    ? `批量生成会按 ${normalizedImageCount.value} 张图片预扣 ${creditCost.value} 积分，适合需要多个创意方案的场景。`
+    : '提示：提供越详细的描述，生成效果越好。可以包含风格、光线、色调、构图等信息。',
+)
+const isAuthenticated = computed(() => auth.isAuthenticated.value)
+const userCredits = computed(() => auth.credits.value)
 
 function normalizeModelKey(value = '') {
   const normalized = value.trim().toLowerCase().replace(/[_\s]+/g, '-')
@@ -479,6 +500,10 @@ function disableBatchMode() {
 
 function openLoginFromGenerate() {
   window.dispatchEvent(new CustomEvent('open-login'))
+}
+
+function openPricingFromGenerate() {
+  router.push('/pricing')
 }
 
 function normalizeGeneratedImage(item, index = 0, defaults = {}) {
@@ -723,9 +748,17 @@ async function generate() {
     showNotice(mode.value === 'edit' ? '请先添加原图或参考图' : '请先添加参考图')
     return
   }
-  generationAbortController.value?.abort()
-  const controller = new AbortController()
-  generationAbortController.value = controller
+  if (!isAuthenticated.value) {
+    logGenerationDuration()
+    showNotice('请先登录后再提交生成任务')
+    openLoginFromGenerate()
+    return
+  }
+  if (userCredits.value < creditCost.value) {
+    logGenerationDuration()
+    showNotice(`积分不足，本次需要 ${creditCost.value} 积分`)
+    return
+  }
   loading.value = true
   output.value = []
   loadingStage.value = '准备提交生成任务'
@@ -749,10 +782,12 @@ async function generate() {
       references: showReferenceSection.value ? getReferences() : [],
       mask: mode.value === 'edit' ? getMaskReference() : '',
     })
-    loadingStage.value = '正在等待生成结果'
-    const result = await api.generateImages(requestPayload, {
-      signal: controller.signal,
-    })
+    loadingStage.value = '任务已提交，后台生成中'
+    const task = await api.generateImages(requestPayload)
+    activeTaskId.value = task.id
+    gallery.value = mergeGalleryRecords([normalizeGenerationRecord(task, requestPayload)], gallery.value)
+    await auth.refreshMe().catch(() => {})
+    const result = await waitForGenerationTask(task.id)
     const normalizedResult = normalizeGenerationRecord(result, {
       ...requestPayload,
       createdAt: new Date().toISOString(),
@@ -763,22 +798,69 @@ async function generate() {
     showNotice(batchMode.value ? '批量生成已完成' : '图像生成已完成')
   } catch (error) {
     output.value = []
-    showNotice(error.name === 'AbortError' ? '已停止生成' : (error.message || '图像生成失败，请稍后重试'))
+    showNotice(error.message || '图像生成失败，请稍后重试')
   } finally {
     logGenerationDuration()
-    if (generationAbortController.value === controller) {
-      generationAbortController.value = null
-      loading.value = false
-      loadingStage.value = '准备提交生成任务'
-    }
+    activeTaskId.value = ''
+    generationAbortController.value = null
+    loading.value = false
+    loadingStage.value = '准备提交生成任务'
+    await auth.refreshMe().catch(() => {})
   }
 }
 
 watch(mode, trimReferencesForMode)
 
-function stopGeneration() {
+function clearTaskPollTimer() {
+  if (!taskPollTimer) return
+  window.clearTimeout(taskPollTimer)
+  taskPollTimer = null
+}
+
+async function waitForGenerationTask(taskId) {
+  clearTaskPollTimer()
+  return new Promise((resolve, reject) => {
+    const poll = async () => {
+      try {
+        const task = await api.getGenerationTask(taskId)
+        gallery.value = mergeGalleryRecords([normalizeGenerationRecord(task, task)], gallery.value)
+        const statusText = {
+          queued: '任务排队中',
+          running: '后台生成中',
+          saving: '正在保存图片',
+          cancel_requested: '正在取消任务',
+        }[task.status]
+        loadingStage.value = statusText || '后台生成中'
+
+        if (task.status === 'completed') {
+          clearTaskPollTimer()
+          resolve(task)
+          return
+        }
+        if (['failed', 'canceled'].includes(task.status)) {
+          clearTaskPollTimer()
+          reject(new Error(task.errorMessage || (task.status === 'canceled' ? '生成已取消' : '生成失败')))
+          return
+        }
+        taskPollTimer = window.setTimeout(poll, 1800)
+      } catch (error) {
+        clearTaskPollTimer()
+        reject(error)
+      }
+    }
+    poll()
+  })
+}
+
+async function stopGeneration() {
   if (!loading.value) return
-  generationAbortController.value?.abort()
+  if (!activeTaskId.value) return
+  try {
+    await api.cancelGenerationTask(activeTaskId.value)
+    showNotice('已请求取消生成')
+  } catch (error) {
+    showNotice(error.message || '取消失败')
+  }
 }
 
 function addUrlReference() {
@@ -908,7 +990,8 @@ async function openGallery() {
     gallery.value = mergeGalleryRecords(gallery.value, Array.isArray(records) ? records : [])
     persistLocalGallery()
   } catch (error) {
-    if (!gallery.value.length) showNotice(error.message || '暂未读取到云端图库')
+    if (!isAuthenticated.value) showNotice('登录后可查看云端图库和生成进度')
+    else if (!gallery.value.length) showNotice(error.message || '暂未读取到云端图库')
   }
 }
 
@@ -1021,12 +1104,14 @@ watch([galleryOpen, imagePreview], syncModalScrollLock)
 
 onMounted(() => {
   loadSiteData()
+  auth.refreshMe().catch(() => {})
   gallery.value = loadLocalGallery()
   window.addEventListener('click', closeMenusOnOutside)
   window.addEventListener('keydown', handleWindowKeydown)
 })
 
 onBeforeUnmount(() => {
+  clearTaskPollTimer()
   syncGalleryScrollLock(false)
   window.removeEventListener('click', closeMenusOnOutside)
   window.removeEventListener('keydown', handleWindowKeydown)
@@ -1067,14 +1152,26 @@ onBeforeUnmount(() => {
                 </button>
               </div>
               <div class="tool-toolbar-row tool-toolbar-row-secondary">
-                <span v-if="!batchMode" class="toolbar-credit">
-                  <Wand aria-hidden="true" />
-                  游客可免费生成 1 次
-                </span>
-                <button class="btn hero-login-button" type="button" @click="openLoginFromGenerate">
-                  <LogIn aria-hidden="true" />
-                  <span>登录同步图库</span>
-                </button>
+                <div v-if="isAuthenticated" class="hero-credit-group" aria-label="账户积分">
+                  <span class="toolbar-credit hero-balance-pill">
+                    <Coins aria-hidden="true" />
+                    {{ userCredits }} 积分
+                  </span>
+                  <button class="btn hero-recharge-button" type="button" @click="openPricingFromGenerate">
+                    <CreditCard aria-hidden="true" />
+                    <span>充值积分</span>
+                  </button>
+                </div>
+                <template v-else>
+                  <span class="toolbar-credit">
+                    <Wand aria-hidden="true" />
+                    注册即送 50 积分
+                  </span>
+                  <button class="btn hero-login-button" type="button" @click="openLoginFromGenerate">
+                    <LogIn aria-hidden="true" />
+                    <span>登录同步图库</span>
+                  </button>
+                </template>
                 <button v-if="output.length" class="btn hero-save-button" type="button" @click="saveCurrentOutputToGallery">
                   <Save aria-hidden="true" />
                   <span>保存当前结果</span>
@@ -1106,7 +1203,7 @@ onBeforeUnmount(() => {
                 </button>
               </div>
             </div>
-            <div v-if="batchMode" class="batch-count-card" aria-label="批量生成数量">
+            <div v-if="batchMode" class="batch-count-card" :class="{ 'menu-open': selectMenuOpen === 'batchCount' }" aria-label="批量生成数量">
               <div>
                 <span>生成数量</span>
                 <strong>{{ normalizedImageCount }} 张图片</strong>
@@ -1644,17 +1741,27 @@ onBeforeUnmount(() => {
             </details>
 
             <div v-if="requiresReference" class="reverse-box">
-              <h3>
-                <Wand2 aria-hidden="true" />
-                AI 反推提示词 <span class="tag">核心功能</span>
-              </h3>
-              <p>上传照片，自动生成专业摄影提示词。AI 自动分析照片并生成包含人物特征、服装细节、光线描述、镜头参数等完整信息的专业级提示词。</p>
-              <button class="btn btn-soft" type="button" :disabled="!canReverse || reversing" @click="reversePrompt">
+              <div class="reverse-head">
+                <span class="reverse-icon" aria-hidden="true">
+                  <Wand2 />
+                </span>
+                <div class="reverse-copy">
+                  <h3>
+                    <Sparkles aria-hidden="true" />
+                    AI 反推提示词 <span class="tag">核心功能</span>
+                  </h3>
+                  <span>上传照片，自动生成专业摄影提示词</span>
+                </div>
+              </div>
+              <p>AI 自动分析照片并生成包含人物特征、服装细节、光线描述、镜头参数等完整信息的专业级提示词。</p>
+              <button class="btn btn-soft reverse-action" type="button" :disabled="!canReverse || reversing" @click="reversePrompt">
+                <Loader2 v-if="reversing" class="spinner" aria-hidden="true" />
+                <Wand2 v-else aria-hidden="true" />
                 {{ reversing ? '反推中...' : canReverse ? '生成反推提示词' : '请先上传图片' }}
               </button>
               <div class="reverse-meta">
-                <span>消耗 2 积分</span>
-                <span>10 秒生成</span>
+                <span><Gem aria-hidden="true" />消耗 2 积分</span>
+                <span><Zap aria-hidden="true" />10 秒生成</span>
               </div>
             </div>
 
@@ -1788,12 +1895,13 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <p class="tip output-tip">
-              <Sparkles aria-hidden="true" />
-              <span>{{ batchMode ? '批量生成功能每张图片消耗 2 积分，适合需要多个创意方案的场景。' : '提示：提供越详细的描述，生成效果越好。可以包含风格、光线、色调、构图等信息。' }}</span>
-            </p>
           </aside>
         </div>
+
+        <p class="tip generate-footer-tip">
+          <Lightbulb aria-hidden="true" />
+          <span>{{ footerTipText }}</span>
+        </p>
       </div>
     </section>
 

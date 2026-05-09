@@ -4,9 +4,11 @@ import { CreditCard, ShieldCheck, Sparkles, Tag, X } from 'lucide-vue-next'
 import PricingCards from '../components/PricingCards.vue'
 import SectionTitle from '../components/SectionTitle.vue'
 import { api } from '../services/api'
+import { useAuthStore } from '../services/authStore'
 import { useSiteStore } from '../services/siteStore'
 
 const { siteData, loadSiteData } = useSiteStore()
+const auth = useAuthStore()
 const activeMode = ref('monthly')
 const selectedPlan = ref(null)
 const orderLoading = ref(false)
@@ -36,6 +38,11 @@ function selectPlan(plan) {
 
 async function submitOrder() {
   if (!selectedPlan.value) return
+  if (!auth.isAuthenticated.value) {
+    orderMessage.value = '请先登录后购买积分套餐'
+    window.dispatchEvent(new CustomEvent('open-login'))
+    return
+  }
   orderLoading.value = true
   orderMessage.value = ''
 
@@ -44,7 +51,8 @@ async function submitOrder() {
       mode: activeMode.value,
       planName: selectedPlan.value.name,
     })
-    orderMessage.value = `订单 ${order.id} 已创建`
+    await auth.refreshMe().catch(() => {})
+    orderMessage.value = `订单 ${order.id} 已完成，已到账 ${order.credits} 积分`
   } catch (error) {
     orderMessage.value = error.message || '订单创建失败，请稍后重试'
   } finally {
@@ -52,7 +60,10 @@ async function submitOrder() {
   }
 }
 
-onMounted(loadSiteData)
+onMounted(() => {
+  loadSiteData()
+  auth.refreshMe().catch(() => {})
+})
 </script>
 
 <template>
@@ -134,7 +145,7 @@ onMounted(loadSiteData)
             <X aria-hidden="true" />
           </button>
         </div>
-        <p>你选择了 {{ selectedPlan.name }}，复刻版不会发起真实支付。</p>
+        <p>你选择了 {{ selectedPlan.name }}，当前演示支付会直接创建订单并发放积分。</p>
         <p v-if="orderMessage" class="form-message" aria-live="polite">
           <ShieldCheck aria-hidden="true" />
           {{ orderMessage }}
