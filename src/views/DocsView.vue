@@ -10,7 +10,7 @@ import SectionTitle from '../components/SectionTitle.vue'
         <SectionTitle
           level="h1"
           title="GPT Image 2 文档"
-          description="原站中文文档页当前出现客户端异常；这里复刻为可用的中文文档入口，覆盖快速开始、生成器参数、图库、支付和部署说明。"
+          description="原站中文文档页当前出现客户端异常；这里复刻为可用的中文文档入口，覆盖快速开始、生成器参数、案例库、支付和部署说明。"
         />
 
         <div class="docs-layout">
@@ -26,7 +26,7 @@ import SectionTitle from '../components/SectionTitle.vue'
             <section id="intro" class="card doc-section">
               <BookOpen aria-hidden="true" />
               <h2>介绍</h2>
-              <p>GPT Image 2 是面向商业视觉生产的 AI 图像生成与编辑平台，核心页面包含首页、生成器、价格、案例画廊与法律文本。</p>
+              <p>GPT Image 2 是面向商业视觉生产的 AI 图像生成与编辑平台，核心页面包含首页、生成器、价格、案例库与法律文本。</p>
             </section>
 
             <section id="quickstart" class="card doc-section">

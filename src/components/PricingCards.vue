@@ -1,5 +1,5 @@
 <script setup>
-import { ArrowRight, CheckCircle2 } from 'lucide-vue-next'
+import { ArrowRight, CheckCircle2, Flame } from 'lucide-vue-next'
 import { useSiteStore } from '../services/siteStore'
 
 const { siteData } = useSiteStore()
@@ -23,8 +23,13 @@ function isFeatureGroup(feature) {
       class="card price-card"
       :class="{ featured: plan.badge }"
     >
-      <span v-if="plan.badge" class="badge">{{ plan.badge }}</span>
-      <h3>{{ plan.name }}</h3>
+      <div class="plan-head">
+        <h3>{{ plan.name }}</h3>
+        <span v-if="plan.badge" class="badge">
+          <Flame aria-hidden="true" />
+          {{ plan.badge }}
+        </span>
+      </div>
       <div class="price-line">
         <span class="old-price">{{ plan.oldPrice }}</span>
         <span class="new-price">{{ plan.price }}</span>
@@ -40,7 +45,9 @@ function isFeatureGroup(feature) {
       <div class="pay-row">
         <span>人民币支付</span>
         <ArrowRight aria-hidden="true" />
-        <img :src="siteData.assets.cnpay" alt="人民币支付" />
+        <span class="pay-logo">
+          <img :src="siteData.assets.cnpay" alt="人民币支付" />
+        </span>
       </div>
       <button class="btn btn-primary" type="button" @click="emit('select', plan)">
         {{ plan.cta }}

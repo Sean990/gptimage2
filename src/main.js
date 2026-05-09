@@ -18,7 +18,7 @@ const routes = [
   { path: '/batch-generate', redirect: '/generate' },
   { path: '/prompt-optimizer', name: 'prompt-optimizer', component: PromptOptimizerView, meta: { title: 'AI 提示词优化器 - 一键优化 Prompt | GPT Image 2' } },
   { path: '/pricing', name: 'pricing', component: PricingView, meta: { title: 'GPT Image 2 定价 - AI 图片生成积分与套餐' } },
-  { path: '/showcase', name: 'showcase', component: ShowcaseView, meta: { title: 'AI 图片案例展示 - 查看真实提示词和生成效果 | GPT Image 2' } },
+  { path: '/showcase', name: 'showcase', component: ShowcaseView, meta: { title: 'AI 图片案例库 - 查看真实提示词和生成效果 | GPT Image 2' } },
   { path: '/tutorial', redirect: '/showcase' },
   { path: '/docs', name: 'docs', component: DocsView, meta: { title: 'GPT Image 2 文档' } },
   { path: '/posts', redirect: '/showcase' },

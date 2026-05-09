@@ -196,7 +196,6 @@ const maskUploads = ref([])
 const output = ref([])
 const loading = ref(false)
 const loadingStage = ref('准备提交生成任务')
-const partialImages = ref([])
 const generationAbortController = ref(null)
 const reversing = ref(false)
 const notice = ref('')
@@ -308,7 +307,6 @@ const loadingHint = computed(() => {
   return '正在准备当前模型的输出结果'
 })
 const loadingStatusText = computed(() => loadingStage.value)
-const hasPartialImages = computed(() => partialImages.value.length > 0)
 const promptQualityScore = computed(() => {
   const lengthScore = Math.min(prompt.value.trim().length, 90) / 90
   const referenceScore = requiresReference.value ? Math.min(referenceCount.value, 2) * 0.16 : 0
@@ -608,35 +606,6 @@ function showNotice(text) {
   }, 2600)
 }
 
-function handleGenerationStreamEvent(event) {
-  if (event.type === 'started') {
-    loadingStage.value = '已提交生成任务'
-    return
-  }
-
-  if (event.type === 'status') {
-    loadingStage.value = event.message || '正在生成图像'
-    return
-  }
-
-  if (event.type === 'partial_image' && event.image) {
-    partialImages.value = [
-      ...partialImages.value,
-      {
-        id: `partial-${event.index || partialImages.value.length + 1}`,
-        title: `生成预览 ${event.index || partialImages.value.length + 1}`,
-        src: event.image,
-      },
-    ].slice(-normalizedImageCount.value)
-    loadingStage.value = `已收到预览 ${event.index || partialImages.value.length}${event.total ? `/${event.total}` : ''}`
-    return
-  }
-
-  if (event.type === 'completed') {
-    loadingStage.value = '生成完成，正在载入结果'
-  }
-}
-
 async function onFileChange(event) {
   if (!canAddReference.value) {
     showNotice(mode.value === 'edit' ? '精修图仅支持 1 张原图' : `最多添加 ${maxReferenceCount.value} 张参考图`)
@@ -759,7 +728,6 @@ async function generate() {
   generationAbortController.value = controller
   loading.value = true
   output.value = []
-  partialImages.value = []
   loadingStage.value = '准备提交生成任务'
 
   try {
@@ -781,20 +749,9 @@ async function generate() {
       references: showReferenceSection.value ? getReferences() : [],
       mask: mode.value === 'edit' ? getMaskReference() : '',
     })
-    const streamableRequestPayload = compactPayload({
-      ...requestPayload,
-      response_format: 'b64_json',
-    })
-    const result = await api.generateImagesStream(streamableRequestPayload, {
-      onEvent: handleGenerationStreamEvent,
-    }, {
+    loadingStage.value = '正在等待生成结果'
+    const result = await api.generateImages(requestPayload, {
       signal: controller.signal,
-    }).catch(async (error) => {
-      if (error.name === 'AbortError') throw error
-      loadingStage.value = '正在等待最终结果'
-      return api.generateImages(requestPayload, {
-        signal: controller.signal,
-      })
     })
     const normalizedResult = normalizeGenerationRecord(result, {
       ...requestPayload,
@@ -812,7 +769,6 @@ async function generate() {
     if (generationAbortController.value === controller) {
       generationAbortController.value = null
       loading.value = false
-      partialImages.value = []
       loadingStage.value = '准备提交生成任务'
     }
   }
@@ -1739,17 +1695,7 @@ onBeforeUnmount(() => {
                 role="status"
                 aria-live="polite"
               >
-                <template v-if="hasPartialImages">
-                  <div class="generated-output partial-output output-canvas" :class="outputGridClass" :style="outputAspectStyle">
-                    <figure v-for="(item, index) in partialImages" :key="item.id" class="output-item partial-output-item">
-                      <button class="image-preview-trigger" type="button" :aria-label="`预览 ${item.title}`" @click="openImagePreview(partialImages, index, '生成预览')">
-                        <img :src="item.src" :alt="item.title" />
-                      </button>
-                      <figcaption class="partial-badge">{{ item.title }}</figcaption>
-                    </figure>
-                  </div>
-                </template>
-                <template v-else-if="loadingVariant === 'gpt-image-2'">
+                <template v-if="loadingVariant === 'gpt-image-2'">
                   <div class="gpt-loading-card" aria-hidden="true">
                     <div class="gpt-loading-dot-field">
                       <span

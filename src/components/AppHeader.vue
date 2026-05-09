@@ -22,7 +22,7 @@ const navItems = [
   { label: '功能亮点', to: '/#feature', path: '/', hash: '#feature' },
   { label: '定价', to: '/pricing', path: '/pricing' },
   { label: '常见问题', to: '/#faq', path: '/', hash: '#faq' },
-  { label: '案例', to: '/showcase', path: '/showcase' },
+  { label: '画廊', to: '/showcase', path: '/showcase' },
 ]
 
 const loginDisabled = computed(() => !email.value.includes('@') || email.value.length < 6)

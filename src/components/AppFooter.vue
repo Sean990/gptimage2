@@ -1,6 +1,8 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import { Github, Images, Mail, MessageCircle } from 'lucide-vue-next'
+
+const currentYear = new Date().getFullYear()
 </script>
 
 <template>
@@ -32,19 +34,18 @@ import { Github, Images, Mail, MessageCircle } from 'lucide-vue-next'
           <strong>产品</strong>
           <RouterLink to="/generate">AI 生图</RouterLink>
           <RouterLink to="/prompt-optimizer">提示词优化</RouterLink>
-          <RouterLink to="/showcase">画廊</RouterLink>
           <RouterLink to="/pricing">定价</RouterLink>
         </div>
 
         <div class="footer-links">
           <strong>资源</strong>
-          <RouterLink to="/docs">文档</RouterLink>
-          <RouterLink to="/showcase">案例</RouterLink>
+          <RouterLink to="/showcase">画廊</RouterLink>
+          <!-- <RouterLink to="/docs">文档</RouterLink> -->
         </div>
       </div>
 
       <div class="footer-bottom">
-        <span>© 2025 • GPT Image 2 保留所有权利。</span>
+        <span>© {{ currentYear }} • GPT Image 2 保留所有权利。</span>
         <div class="footer-bottom-links">
           <RouterLink to="/privacy-policy">隐私政策</RouterLink>
           <RouterLink to="/terms-of-service">服务条款</RouterLink>

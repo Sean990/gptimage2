@@ -311,7 +311,7 @@ onMounted(loadSiteData)
               立即上传照片
               <ArrowRight aria-hidden="true" />
             </RouterLink>
-            <RouterLink class="btn btn-ghost dark-ghost" to="/showcase">查看案例库</RouterLink>
+            <RouterLink class="btn btn-ghost dark-ghost" to="/showcase">查看画廊</RouterLink>
           </div>
         </div>
       </div>
@@ -321,7 +321,7 @@ onMounted(loadSiteData)
       <div class="container browse-more">
         <RouterLink class="browse-more-link" to="/showcase">
           <BriefcaseBusiness aria-hidden="true" />
-          浏览更多案例
+          浏览更多画廊内容
         </RouterLink>
       </div>
     </section>

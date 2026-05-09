@@ -61,8 +61,8 @@ onMounted(loadSiteData)
       <div class="container">
         <article class="card sale-banner">
           <Tag aria-hidden="true" />
-          <h2>新年特惠 · 限时折扣</h2>
-          <p>活动时间：2024.12.25 - 2025.1.31 | 全场低至 3 折，错过再等一年。</p>
+          <h2>创作者优惠 · 演示套餐</h2>
+          <p>复刻版展示积分包、月付和年付三种购买路径，便于对比不同创作频率下的成本。</p>
         </article>
 
         <SectionTitle

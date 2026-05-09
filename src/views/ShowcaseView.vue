@@ -202,14 +202,14 @@ onMounted(loadLocalLibrary)
         <SectionTitle
           level="h1"
           align="left"
-          title="GPT Image 2 Prompt 内容中台"
+          title="GPT Image 2 画廊"
           :description="`已本地镜像 awesome-gpt-image-2 的 Prompt 案例与工业模板。${sourceSummary}，Prompt 数据运行时不依赖对方站点。`"
         />
 
         <div class="library-tabs" role="tablist" aria-label="内容类型">
           <button type="button" :class="{ active: activeTab === 'cases' }" @click="activeTab = 'cases'">
             <Images aria-hidden="true" />
-            案例库
+            画廊
             <span>{{ filteredItems.length }}</span>
           </button>
           <button type="button" :class="{ active: activeTab === 'templates' }" @click="activeTab = 'templates'">
@@ -242,7 +242,7 @@ onMounted(loadLocalLibrary)
 
         <section v-if="activeTab === 'cases'">
           <div class="section-title align-left" style="margin-bottom: 18px">
-            <h2>案例库</h2>
+            <h2>画廊</h2>
             <p>当前显示 {{ filteredItems.length }} 个案例。每条都保留完整 Prompt、来源链接和上游快照信息。</p>
           </div>
           <div v-if="loading" class="empty-state">
