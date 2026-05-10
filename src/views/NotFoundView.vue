@@ -9,7 +9,7 @@ import { ArrowLeft, SearchX } from 'lucide-vue-next'
       <SearchX class="not-found-icon" aria-hidden="true" />
       <span class="eyebrow">404</span>
       <h1>页面未找到</h1>
-      <p>这个路由不在 GPT Image 2 站点中。</p>
+      <p>这个路由不在 ImgsGen 站点中。</p>
       <RouterLink class="btn btn-primary" to="/">
         <ArrowLeft aria-hidden="true" />
         返回首页

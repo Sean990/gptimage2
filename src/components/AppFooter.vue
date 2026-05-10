@@ -10,13 +10,13 @@ const currentYear = new Date().getFullYear()
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <RouterLink class="brand" to="/" aria-label="GPT Image 2 首页">
+          <RouterLink class="brand" to="/" aria-label="ImgsGen 首页">
             <span class="brand-mark" aria-hidden="true">
               <Images />
             </span>
-            <span>GPT Image 2</span>
+            <span>ImgsGen</span>
           </RouterLink>
-          <p>基于 OpenAI 最新 GPT Image 能力的 AI 图像生成与编辑平台，适用于海报、品牌、电商和社媒视觉。</p>
+          <p>面向国内内容发布场景的 AI 图像生成与编辑工具，适用于海报、品牌、电商和社媒视觉的方案创作与发布前复核。</p>
           <div class="header-actions">
             <a class="icon-button" href="https://x.com" aria-label="X">
               <MessageCircle aria-hidden="true" />
@@ -40,12 +40,12 @@ const currentYear = new Date().getFullYear()
         <div class="footer-links">
           <strong>资源</strong>
           <RouterLink to="/showcase">画廊</RouterLink>
-          <!-- <RouterLink to="/docs">文档</RouterLink> -->
+          <RouterLink to="/docs">文档</RouterLink>
         </div>
       </div>
 
       <div class="footer-bottom">
-        <span>© {{ currentYear }} • GPT Image 2 保留所有权利。</span>
+        <span>© {{ currentYear }} • ImgsGen 保留所有权利。</span>
         <div class="footer-bottom-links">
           <RouterLink to="/privacy-policy">隐私政策</RouterLink>
           <RouterLink to="/terms-of-service">服务条款</RouterLink>

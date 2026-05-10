@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Copy, ExternalLink, Eye, Images, LayoutTemplate, RotateCcw, Search, Sparkles, X } from 'lucide-vue-next'
 import SectionTitle from '../components/SectionTitle.vue'
+import SelectPicker from '../components/SelectPicker.vue'
 import {
   formatTemplatePrompt,
   localizePromptLabel,
@@ -35,6 +36,29 @@ const selectedTemplate = ref(null)
 const categories = computed(() => ['全部分类', ...promptTaxonomy.value.categories.map((item) => item.value)])
 const styles = computed(() => ['全部风格', ...promptTaxonomy.value.styles.map((item) => item.value)])
 const scenes = computed(() => ['全部场景', ...promptTaxonomy.value.scenes.map((item) => item.value)])
+const sortOptions = [
+  { label: '最新发布', value: '最新发布' },
+  { label: '精选优先', value: '精选优先' },
+  { label: '标题排序', value: '标题排序' },
+]
+const categoryOptions = computed(() =>
+  categories.value.map((item) => ({
+    label: item === '全部分类' ? item : categoryLabel(item),
+    value: item,
+  }))
+)
+const styleOptions = computed(() =>
+  styles.value.map((item) => ({
+    label: item === '全部风格' ? item : styleLabel(item),
+    value: item,
+  }))
+)
+const sceneOptions = computed(() =>
+  scenes.value.map((item) => ({
+    label: item === '全部场景' ? item : sceneLabel(item),
+    value: item,
+  }))
+)
 const activeTemplatePrompt = computed(() => (selectedTemplate.value ? formatTemplatePrompt(selectedTemplate.value) : ''))
 const activeModalOpen = computed(() => Boolean(selectedCase.value || selectedTemplate.value))
 const sourceSummary = computed(() => {
@@ -202,8 +226,8 @@ onMounted(loadLocalLibrary)
         <SectionTitle
           level="h1"
           align="left"
-          title="GPT Image 2 画廊"
-          :description="`已本地镜像 awesome-gpt-image-2 的 Prompt 案例与工业模板。${sourceSummary}，Prompt 数据运行时不依赖对方站点。`"
+          title="ImgsGen 画廊"
+          :description="`内置 Prompt 案例与模板快照。${sourceSummary}，内容仅供学习参考，复用前请自行核验来源、授权和发布合规。`"
         />
 
         <div class="library-tabs" role="tablist" aria-label="内容类型">
@@ -224,26 +248,16 @@ onMounted(loadLocalLibrary)
             <span class="sr-only">搜索作品</span>
             <input id="showcase-search" v-model.trim="query" class="search-input" placeholder="搜索案例、模板、来源、Prompt..." />
           </label>
-          <select v-model="category" class="select-button" aria-label="分类筛选">
-            <option v-for="item in categories" :key="item" :value="item">{{ item === '全部分类' ? item : categoryLabel(item) }}</option>
-          </select>
-          <select v-model="style" class="select-button" aria-label="风格筛选">
-            <option v-for="item in styles" :key="item" :value="item">{{ item === '全部风格' ? item : styleLabel(item) }}</option>
-          </select>
-          <select v-model="scene" class="select-button" aria-label="场景筛选">
-            <option v-for="item in scenes" :key="item" :value="item">{{ item === '全部场景' ? item : sceneLabel(item) }}</option>
-          </select>
-          <select v-model="sort" class="select-button" aria-label="排序">
-            <option>最新发布</option>
-            <option>精选优先</option>
-            <option>标题排序</option>
-          </select>
+          <SelectPicker id="showcase-category" v-model="category" :options="categoryOptions" aria-label="分类筛选" />
+          <SelectPicker id="showcase-style" v-model="style" :options="styleOptions" aria-label="风格筛选" />
+          <SelectPicker id="showcase-scene" v-model="scene" :options="sceneOptions" aria-label="场景筛选" />
+          <SelectPicker id="showcase-sort" v-model="sort" :options="sortOptions" aria-label="排序" />
         </div>
 
         <section v-if="activeTab === 'cases'">
           <div class="section-title align-left" style="margin-bottom: 18px">
             <h2>画廊</h2>
-            <p>当前显示 {{ filteredItems.length }} 个案例。每条都保留完整 Prompt、来源链接和上游快照信息。</p>
+            <p>当前显示 {{ filteredItems.length }} 个案例。每条保留 Prompt、来源链接和快照信息，仅供学习提示词结构。</p>
           </div>
           <div v-if="loading" class="empty-state">
             <Search aria-hidden="true" />
@@ -263,7 +277,7 @@ onMounted(loadLocalLibrary)
                 </button>
                 <button class="btn btn-accent image-action" type="button" @click="generateSimilar(item)">
                   <Sparkles aria-hidden="true" />
-                  生成同款
+                  参考生成
                 </button>
               </div>
               <div class="showcase-body">
@@ -280,7 +294,7 @@ onMounted(loadLocalLibrary)
                   </button>
                   <button class="btn btn-soft" type="button" @click="generateSimilar(item)">
                     <Search aria-hidden="true" />
-                    生成同款
+                    参考生成
                   </button>
                   <button class="btn btn-ghost" type="button" @click="copyPrompt(item)">
                     <Copy aria-hidden="true" />
@@ -304,7 +318,7 @@ onMounted(loadLocalLibrary)
         <section v-else>
           <div class="section-title align-left" style="margin-bottom: 18px">
             <h2>工业模板库</h2>
-            <p>当前显示 {{ filteredTemplates.length }} 个模板。模板会被转换成结构化 GPT Image 2 Prompt，可直接带入生成器。</p>
+            <p>当前显示 {{ filteredTemplates.length }} 个模板。模板会被转换成结构化 ImgsGen Prompt 草稿，使用前请按业务和合规要求修改。</p>
           </div>
           <div v-if="loading" class="empty-state">
             <Search aria-hidden="true" />
@@ -389,11 +403,11 @@ onMounted(loadLocalLibrary)
               <span v-for="tag in itemTags(selectedCase)" :key="`modal-${tag}`">{{ localizeTagLabel(tag) }}</span>
             </div>
             <pre class="prompt-block">{{ selectedCase.prompt }}</pre>
-            <p class="license-note">来源内容已本地建档，默认标记为需授权复核；商业宣传位建议只使用已确认授权素材。</p>
+            <p class="license-note">来源内容仅供学习参考，默认标记为需授权复核；公开传播或商业使用前请确认图片、文字、品牌和人物权益。</p>
             <div class="card-actions">
               <button class="btn btn-primary" type="button" @click="generateSimilar(selectedCase)">
                 <Sparkles aria-hidden="true" />
-                用这个 Prompt 生成
+                参考这个 Prompt
               </button>
               <button class="btn btn-soft" type="button" @click="copyPrompt(selectedCase)">
                 <Copy aria-hidden="true" />

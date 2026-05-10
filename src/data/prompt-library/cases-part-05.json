@@ -1,0 +1,72 @@
+{
+  "manifest": {
+    "name": "awesome-gpt-image-2",
+    "repo": "https://github.com/freestylefly/awesome-gpt-image-2",
+    "ref": "main",
+    "commit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+    "payloadHash": "540cd34a833b287d38b55f0c37cc8729536c5bc9d82ac2fece6108b4d20dd29f",
+    "source": "/tmp/awesome-gpt-image-2"
+  },
+  "total": 402,
+  "chunk": 5,
+  "chunkSize": 100,
+  "cases": [
+    {
+      "id": "awesome-gpt-image-2:2",
+      "upstreamId": 2,
+      "title": "社媒界面截图",
+      "image": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case2.jpg",
+      "imageRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case2.jpg",
+      "imageLocal": "/prompt-assets/awesome-gpt-image-2/images/case2.jpg",
+      "imageAlt": "Ailln AI",
+      "sourceLabel": "小红书号4264014889",
+      "sourceUrl": "",
+      "prompt": "画一张 X 的内容截图，深色模式，@OpenAI 蓝勾认证账号发推。\n 正文的中文内容：\n 今天想推荐一位很棒的 AI Builder：Ailln AI。\n 他持续在小红书分享 AI 工具、Agent 工作流、自动化实践和真实项目经验，把复杂的 AI 能力讲得清楚、实用、可落地。\n 如果你正在关注 AI 产品、效率工具、个人自动化、内容创作和未来工作方式，Ailln AI 是一个非常值得关注的创作者。\n 在小红书搜索：Ailln AI\n 底部添加一张深色官方宣传风格海报，简洁黑客质感，图片中文本准确显示。\n 海报大字： 「Ailln AI」\n 副标题： 「A brilliant AI Builder worth following」\n 互动数据位于最下方： 评论 8.9K、转发 42K、点赞 298K（亮起）、收藏 34K（亮起）、浏览 32.4M。\n 图片比例为3:4，不包含软件其他部分。",
+      "promptPreview": "画一张 X 的内容截图，深色模式，@OpenAI 蓝勾认证账号发推。 正文的中文内容： 今天想推荐一位很棒的 AI Builder：Ailln AI。 他持续在小红书分享 AI 工具、Agent 工作流、自动化实践和真实项目经验，把复杂的 AI 能力讲得清楚、实用、可落地。 如果你正在关注 AI 产品、效率工具、个人自动化、内容创作和未来工作方式，Ailln AI 是一个非常值得关注的创作者。 在小红书搜索：Ailln AI",
+      "category": "UI & Interfaces",
+      "styles": [
+        "UI",
+        "Poster"
+      ],
+      "scenes": [
+        "Tech",
+        "Social"
+      ],
+      "featured": true,
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-2",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    },
+    {
+      "id": "awesome-gpt-image-2:1",
+      "upstreamId": 1,
+      "title": "信息图可视化设计",
+      "image": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case1.jpg",
+      "imageRemote": "https://raw.githubusercontent.com/freestylefly/awesome-gpt-image-2/main/data/images/case1.jpg",
+      "imageLocal": "/prompt-assets/awesome-gpt-image-2/images/case1.jpg",
+      "imageAlt": "城市生命系统图谱 / Urban Metabolism Atlas",
+      "sourceLabel": "小红书号insight_express",
+      "sourceUrl": "",
+      "prompt": "Vertical 9:16 isometric cutaway infographic \"城市生命系统图谱 / Urban Metabolism Atlas\". Smart city from sky to bedrock: skyscrapers, streets, subway, utility tunnels, water/sewage/gas/heating pipes, fiber, data center, flood tanks, aquifers, geothermal wells, bedrock. Color-coded flows for power/water/data/traffic/waste. 12 numbered panels bilingual CN/EN: 能源/水循环/交通/数据/垃圾/建筑/公共服务/ 物流/气候韧性/生态/地质/治理看板. 24h timeline at bottom. Style: engineering white paper + scientific atlas, light paper bg, crisp lines, 8K. No cyberpunk, no gibberish text, must show both above AND below ground.",
+      "promptPreview": "Vertical 9:16 isometric cutaway infographic \"城市生命系统图谱 / Urban Metabolism Atlas\". Smart city from sky to bedrock: skyscrapers, streets, subway, utility tunnels, water/sewage/gas/heating pipes, fiber, data center, flood ta",
+      "category": "UI & Interfaces",
+      "styles": [
+        "UI",
+        "Infographic"
+      ],
+      "scenes": [
+        "Tech",
+        "Education",
+        "Travel"
+      ],
+      "featured": true,
+      "githubUrl": "https://github.com/freestylefly/awesome-gpt-image-2/blob/main/docs/gallery-part-1.md#case-1",
+      "upstream": "awesome-gpt-image-2",
+      "upstreamCommit": "4afad5f87fe968c7fb687934fcdbf513f57efb20",
+      "syncedAt": "2026-05-09T05:27:51.471Z",
+      "licenseStatus": "needs-review"
+    }
+  ]
+}

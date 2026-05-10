@@ -23,5 +23,27 @@
   "licensing": {
     "defaultStatus": "needs-review",
     "note": "Imported community prompt examples require source review before commercial promotional use."
-  }
+  },
+  "caseChunks": [
+    {
+      "file": "cases-part-01.json",
+      "count": 100
+    },
+    {
+      "file": "cases-part-02.json",
+      "count": 100
+    },
+    {
+      "file": "cases-part-03.json",
+      "count": 100
+    },
+    {
+      "file": "cases-part-04.json",
+      "count": 100
+    },
+    {
+      "file": "cases-part-05.json",
+      "count": 2
+    }
+  ]
 }

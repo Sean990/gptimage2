@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api')
 const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '')
 
 function getToken() {
@@ -15,19 +15,23 @@ function normalizePayload(payload) {
 }
 
 async function request(path, options = {}) {
+  const { headers = {}, ...requestOptions } = options
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...requestOptions,
     headers: {
       'content-type': 'application/json',
       ...authHeaders(),
-      ...(options.headers || {}),
+      ...headers,
     },
-    ...options,
   })
 
   const payload = await response.json().catch(() => null)
 
   if (!response.ok || payload?.success === false) {
-    throw new Error(payload?.message || `接口请求失败：${response.status}`)
+    const error = new Error(payload?.message || `接口请求失败：${response.status}`)
+    error.status = response.status
+    error.payload = payload
+    throw error
   }
 
   return normalizePayload(payload)
@@ -61,7 +65,32 @@ async function requestGenerateImages(payload, options = {}) {
   return normalizePayload(body)
 }
 
+async function requestPromptOptimization(payload, options = {}) {
+  const paths = [
+    '/prompt/optimize',
+    '/prompt-optimizer/optimize',
+    '/generate/optimize-prompt',
+  ]
+  let lastError = null
+
+  for (const path of paths) {
+    try {
+      return await request(path, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        signal: options.signal,
+      })
+    } catch (error) {
+      lastError = error
+      if (error.status !== 404) throw error
+    }
+  }
+
+  throw lastError || new Error('提示词优化接口不可用')
+}
+
 export const api = {
+  getModels: () => request('/models'),
   getSite: () => request('/site'),
   getHome: () => request('/home'),
   getPricing: () => request('/pricing'),
@@ -72,11 +101,19 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
+  sendPasswordResetCode: (payload) => request('/auth/reset-password-code', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
   register: (payload) => request('/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
   login: (payload) => request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
+  resetPassword: (payload) => request('/auth/reset-password', {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
@@ -94,6 +131,7 @@ export const api = {
     method: 'POST',
     body: JSON.stringify(payload),
   }),
+  optimizePrompt: requestPromptOptimization,
   generateImages: requestGenerateImages,
   createOrder: (payload) => request('/orders', {
     method: 'POST',

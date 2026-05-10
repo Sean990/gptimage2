@@ -13,6 +13,12 @@ const emit = defineEmits(['select'])
 function isFeatureGroup(feature) {
   return feature === '包含功能' || feature.includes('所有功能')
 }
+
+function formatCredits(credits) {
+  const value = Number(credits || 0)
+  if (!Number.isFinite(value) || value <= 0) return ''
+  return new Intl.NumberFormat('zh-CN').format(value)
+}
 </script>
 
 <template>
@@ -36,6 +42,10 @@ function isFeatureGroup(feature) {
         <span class="cycle">{{ plan.cycle }}</span>
       </div>
       <p class="note">{{ plan.note }}</p>
+      <div v-if="formatCredits(plan.credits)" class="plan-credit-line">
+        <strong>{{ formatCredits(plan.credits) }}</strong>
+        <span>积分额度</span>
+      </div>
       <ul class="plan-features">
         <li v-for="feature in plan.features" :key="feature" :class="{ 'feature-group': isFeatureGroup(feature) }">
           <CheckCircle2 v-if="!isFeatureGroup(feature)" aria-hidden="true" />

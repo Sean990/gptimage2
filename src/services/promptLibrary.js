@@ -5,16 +5,26 @@ let labelMaps = {
   styles: {},
   scenes: {},
 }
+const caseModuleLoaders = import.meta.glob('../data/prompt-library/cases-part-*.json')
+
+async function loadCaseChunks() {
+  const modules = await Promise.all(
+    Object.entries(caseModuleLoaders)
+      .sort(([left], [right]) => left.localeCompare(right, 'en'))
+      .map(([, loader]) => loader()),
+  )
+  return modules.flatMap((item) => item.default?.cases || [])
+}
 
 export async function loadPromptLibrary() {
   if (activeLibrary) return activeLibrary
   if (!libraryPromise) {
     libraryPromise = Promise.all([
-      import('../data/prompt-library/cases.json'),
+      loadCaseChunks(),
       import('../data/prompt-library/manifest.json'),
       import('../data/prompt-library/taxonomy.json'),
       import('../data/prompt-library/templates.json'),
-    ]).then(([casesModule, manifestModule, taxonomyModule, templatesModule]) => {
+    ]).then(([cases, manifestModule, taxonomyModule, templatesModule]) => {
       const promptTaxonomy = taxonomyModule.default
       labelMaps = {
         categories: buildLabelMap(promptTaxonomy.categories),
@@ -24,7 +34,7 @@ export async function loadPromptLibrary() {
 
       activeLibrary = {
         manifest: manifestModule.default,
-        cases: casesModule.default.cases,
+        cases,
         templates: templatesModule.default.templates,
         taxonomy: promptTaxonomy,
       }
@@ -79,7 +89,7 @@ export function formatTemplatePrompt(template, language = 'zh') {
       `用途：${useWhen}`,
       `视觉方向：${[...new Set(tags)].join(' / ')}`,
       '',
-      '请基于以下结构生成一条可直接用于 GPT Image 2 的图片 Prompt：',
+      '请基于以下结构生成一条可复制后继续修改的 ImgsGen 图片 Prompt 草稿：',
       '- 主体：[要生成的产品、人物、空间、界面或信息主题]',
       '- 场景：[使用环境、叙事背景、受众语境]',
       '- 构图：[画面比例、镜头距离、主体位置、层级关系]',
@@ -101,7 +111,7 @@ export function formatTemplatePrompt(template, language = 'zh') {
     `Use case: ${useWhen}`,
     `Visual direction: ${[...new Set(tags)].join(' / ')}`,
     '',
-    'Create a copy-ready GPT Image 2 prompt with this structure:',
+    'Create an editable ImgsGen prompt draft with this structure:',
     '- Subject: [product, person, space, interface, or information topic]',
     '- Scene: [context, audience, narrative setting]',
     '- Composition: [aspect ratio, camera distance, focal hierarchy, placement]',

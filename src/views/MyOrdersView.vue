@@ -18,13 +18,13 @@ import {
 } from 'lucide-vue-next'
 import { api } from '../services/api'
 import { useAuthStore } from '../services/authStore'
+import { useSiteStore } from '../services/siteStore'
 
 const auth = useAuthStore()
+const { siteData, loadSiteData } = useSiteStore()
 const route = useRoute()
 const router = useRouter()
-const orders = ref([])
-const ledger = ref([])
-const inviteOverview = ref({
+const createInviteOverview = () => ({
   inviteCode: '',
   inviteLink: '',
   rewardCredits: 0,
@@ -34,6 +34,9 @@ const inviteOverview = ref({
   totalRewardCredits: 0,
   records: [],
 })
+const orders = ref([])
+const ledger = ref([])
+const inviteOverview = ref(createInviteOverview())
 const loading = ref(false)
 const message = ref('')
 const activeTab = ref('orders')
@@ -58,8 +61,38 @@ const tabPaths = {
   profile: '/profile',
 }
 
-const totalPurchasedCredits = computed(() => orders.value.reduce((sum, order) => sum + Number(order.credits || 0), 0))
+const totalPurchasedCredits = computed(() => orders.value
+  .filter(order => order.status === 'paid')
+  .reduce((sum, order) => sum + Number(order.credits || 0), 0))
 const currentPanelTitle = computed(() => tabs.find((tab) => tab.key === activeTab.value)?.label || '个人中心')
+const profileRewardCredits = computed(() => Number(siteData.value.rewardCredits?.profileCompletion || 0))
+const profileRewardRequirements = computed(() => siteData.value.rewardCredits?.profileCompletionRequirements || {})
+const profileMinNameLength = computed(() => Number(profileRewardRequirements.value.minNameLength || 2))
+const profileRequiresAvatar = computed(() => profileRewardRequirements.value.requireAvatar !== false)
+const profileRewardCheckEnabled = computed(() => !user.value?.profileCompleted && profileRewardCredits.value > 0)
+const profileInputMinNameLength = computed(() => (profileRewardCheckEnabled.value ? profileMinNameLength.value : 1))
+const profileAvatarRequired = computed(() => profileRewardCheckEnabled.value && profileRequiresAvatar.value)
+const profileRewardRequirementText = computed(() => {
+  if (!profileRewardCredits.value) return '填写昵称即可保存资料。'
+  return profileRewardRequirements.value.description || `填写至少 ${profileMinNameLength.value} 个字符昵称，并设置有效头像 URL 后，仅可领取一次。`
+})
+const isProfileAvatarValid = computed(() => {
+  const avatar = String(profileAvatarUrl.value || '').trim()
+  if (!avatar) return false
+  if (avatar.startsWith('/uploads/')) return true
+  return /^https?:\/\/\S+$/i.test(avatar)
+})
+const canClaimProfileReward = computed(() => {
+  if (user.value?.profileCompleted) return true
+  if (!profileRewardCredits.value) return true
+  if (String(profileName.value || '').trim().length < profileMinNameLength.value) return false
+  return !profileRequiresAvatar.value || isProfileAvatarValid.value
+})
+const profileRewardStatusText = computed(() => {
+  if (user.value?.profileCompleted) return '资料已完善'
+  if (!profileRewardCredits.value) return '完善资料'
+  return `完善资料可领取 ${profileRewardCredits.value} 积分`
+})
 
 function tabFromRoute(path, queryTab) {
   if (tabs.some((tab) => tab.key === queryTab)) return queryTab
@@ -78,8 +111,20 @@ function openLogin() {
   window.dispatchEvent(new CustomEvent('open-login'))
 }
 
+function resetAccountState() {
+  orders.value = []
+  ledger.value = []
+  inviteOverview.value = createInviteOverview()
+  profileName.value = ''
+  profileAvatarUrl.value = ''
+  message.value = ''
+  profileMessage.value = ''
+  copyMessage.value = ''
+}
+
 async function loadAccount() {
   if (!isAuthenticated.value) return
+  if (loading.value) return
   loading.value = true
   message.value = ''
   try {
@@ -157,20 +202,48 @@ function formatDate(value) {
 }
 
 function formatLedgerType(type) {
+  const normalizedType = String(type || '').trim().toLowerCase()
   const typeMap = {
+    admin_adjustment: '管理员调整',
+    adjustment: '积分调整',
     purchase: '充值',
+    recharge: '充值',
+    credit_purchase: '积分充值',
+    order_purchase: '套餐充值',
     signup_bonus: '注册奖励',
     profile_bonus: '资料奖励',
     invite_bonus: '邀请奖励',
-    generation_reserve: '生成扣除',
+    prompt_reverse: '提示词反推',
+    generation_consume: '生成消耗',
+    generation_reserve: '生成预扣',
     generation_refund: '生成退款',
+    generation_delete: '生成删除',
+    refund: '退款返还',
+    consume: '积分消耗',
   }
-  return typeMap[type] || type || '积分变动'
+  return typeMap[normalizedType] || '积分变更'
+}
+
+function formatLedgerDescription(item) {
+  return item?.description || formatLedgerType(item?.type)
+}
+
+function formatOrderStatus(status) {
+  const statusMap = {
+    paid: '已充值',
+    pending: '待管理员确认',
+    canceled: '已取消',
+    refunded: '已退款',
+  }
+  return statusMap[status] || status || '-'
 }
 
 onMounted(async () => {
   activeTab.value = tabFromRoute(route.path, route.query.tab)
-  await auth.refreshMe().catch(() => {})
+  await Promise.all([
+    loadSiteData(),
+    auth.refreshMe().catch(() => {}),
+  ])
   await loadAccount()
 })
 
@@ -180,6 +253,14 @@ watch(
     activeTab.value = tabFromRoute(path, queryTab)
   },
 )
+
+watch(isAuthenticated, (authenticated) => {
+  if (authenticated) {
+    loadAccount()
+  } else {
+    resetAccountState()
+  }
+})
 </script>
 
 <template>
@@ -189,7 +270,7 @@ watch(
         <section v-if="!isAuthenticated" class="card auth-required-panel">
           <LogIn aria-hidden="true" />
           <h1>登录后查看个人中心</h1>
-          <p>订单、积分、邀请奖励和生成记录都会同步到你的账户。游客不赠送免费次数。</p>
+          <p>订单、积分、邀请奖励和生成记录都会同步到你的账户。登录后才能提交生图任务。</p>
           <button class="btn btn-primary" type="button" @click="openLogin">
             <LogIn aria-hidden="true" />
             登录 / 注册
@@ -200,7 +281,7 @@ watch(
           <section class="account-hero" aria-label="账户概览">
             <div>
               <span class="eyebrow">个人中心</span>
-              <h1>{{ user.name || 'GPT Image 2 用户' }}</h1>
+              <h1>{{ user.name || 'ImgsGen 用户' }}</h1>
               <p>{{ user.email }}</p>
             </div>
             <div class="account-hero-actions">
@@ -278,20 +359,20 @@ watch(
                     <thead>
                       <tr>
                         <th>订单号</th>
-                        <th>邮箱</th>
                         <th>产品名称</th>
                         <th>金额</th>
                         <th>周期</th>
-                        <th>支付时间</th>
+                        <th>状态</th>
+                        <th>创建时间</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr v-for="order in orders" :key="order.id">
                         <td>{{ order.id }}</td>
-                        <td>{{ user.email }}</td>
                         <td>{{ order.planName }} · {{ order.credits }} 积分</td>
                         <td>{{ order.amountText }}</td>
                         <td>{{ order.modeLabel }}</td>
+                        <td>{{ formatOrderStatus(order.status) }}</td>
                         <td>{{ formatDate(order.createdAt) }}</td>
                       </tr>
                     </tbody>
@@ -313,24 +394,22 @@ watch(
                   <table class="account-table">
                     <thead>
                       <tr>
-                        <th>交易号</th>
-                        <th>交易类型</th>
+                        <th>变更类型</th>
+                        <th>描述</th>
                         <th>积分</th>
-                        <th>创建时间</th>
-                        <th>过期时间</th>
+                        <th>变更时间</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr v-for="item in ledger" :key="item.id">
-                        <td>{{ item.id }}</td>
                         <td>{{ formatLedgerType(item.type) }}</td>
+                        <td class="ledger-description-cell">{{ formatLedgerDescription(item) }}</td>
                         <td>
                           <span :class="['credit-change', { positive: item.amount > 0 }]">
                             {{ item.amount > 0 ? '+' : '' }}{{ item.amount }}
                           </span>
                         </td>
                         <td>{{ formatDate(item.createdAt) }}</td>
-                        <td>长期有效</td>
                       </tr>
                     </tbody>
                   </table>
@@ -412,7 +491,7 @@ watch(
                   <div>
                     <strong>{{ user.name }}</strong>
                     <span>{{ user.email }}</span>
-                    <em>{{ user.profileCompleted ? '资料已完善' : '完善资料可领取奖励积分' }}</em>
+                    <em>{{ profileRewardStatusText }}</em>
                   </div>
                 </div>
 
@@ -437,15 +516,15 @@ watch(
                 <form class="profile-form" @submit.prevent="submitProfile">
                   <div class="field">
                     <label for="profile-name">昵称</label>
-                    <input id="profile-name" v-model.trim="profileName" type="text" autocomplete="name" required />
+                    <input id="profile-name" v-model.trim="profileName" type="text" autocomplete="name" :minlength="profileInputMinNameLength" required />
                   </div>
                   <div class="field">
                     <label for="profile-avatar">头像 URL</label>
-                    <input id="profile-avatar" v-model.trim="profileAvatarUrl" type="url" placeholder="https://..." autocomplete="off" />
-                    <small>完善资料可领取一次资料奖励积分。</small>
+                    <input id="profile-avatar" v-model.trim="profileAvatarUrl" type="url" placeholder="https://..." autocomplete="off" :required="profileAvatarRequired" />
+                    <small>{{ profileRewardRequirementText }}</small>
                   </div>
                   <p v-if="profileMessage" class="form-message" aria-live="polite">{{ profileMessage }}</p>
-                  <button class="btn btn-primary" type="submit" :disabled="profileSaving">
+                  <button class="btn btn-primary" type="submit" :disabled="profileSaving || !canClaimProfileReward">
                     <ShieldCheck aria-hidden="true" />
                     {{ profileSaving ? '保存中...' : '保存资料' }}
                   </button>

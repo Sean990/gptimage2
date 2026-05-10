@@ -40,8 +40,20 @@ async function register(payload) {
   return result
 }
 
+async function resetPassword(payload) {
+  const result = await api.resetPassword(payload)
+  persistToken(result.token)
+  user.value = result.user
+  initialized.value = true
+  return result
+}
+
 async function sendEmailCode(payload) {
   return api.sendEmailCode(payload)
+}
+
+async function sendPasswordResetCode(payload) {
+  return api.sendPasswordResetCode(payload)
 }
 
 async function logout() {
@@ -66,7 +78,9 @@ export function useAuthStore() {
     refreshMe,
     login,
     register,
+    resetPassword,
     sendEmailCode,
+    sendPasswordResetCode,
     logout,
   }
 }

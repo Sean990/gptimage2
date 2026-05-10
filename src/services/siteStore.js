@@ -16,6 +16,8 @@ const fallbackSiteData = {
   features: fallbackFeatures,
   faqItems: fallbackFaqItems,
   pricingModes: fallbackPricingModes,
+  usageCosts: null,
+  rewardCredits: null,
   showcaseItems: fallbackShowcaseItems,
   legalSections: fallbackLegalSections,
 }

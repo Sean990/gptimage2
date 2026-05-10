@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   CheckCircle2,
   ClipboardList,
@@ -12,8 +12,10 @@ import {
   Trash2,
   WandSparkles,
 } from 'lucide-vue-next'
+import { api } from '../services/api'
 
 const maxLength = 5000
+const optimizerStorageKey = 'promptOptimizerHistory'
 const modes = [
   {
     id: 'image',
@@ -42,13 +44,21 @@ const optimizedPrompt = ref('')
 const activeMode = ref('image')
 const notice = ref('')
 const loading = ref(false)
+const optimizeError = ref('')
 const copied = ref(false)
 const historyItems = ref([])
+const abortController = ref(null)
 
 const activeModeItem = computed(() => modes.find((item) => item.id === activeMode.value) || modes[0])
 const charCount = computed(() => inputPrompt.value.length)
 const canOptimize = computed(() => inputPrompt.value.trim().length > 0 && charCount.value <= maxLength && !loading.value)
 const remainingCount = computed(() => Math.max(0, 10 - historyItems.value.length))
+const optimizerStatusText = computed(() => {
+  if (loading.value) return 'AI 正在分析场景、补齐约束并重写提示词'
+  if (optimizeError.value) return optimizeError.value
+  if (optimizedPrompt.value) return '已由后端 AI 优化完成'
+  return '后端 AI 会根据场景生成可复制、可继续修改的提示词草稿'
+})
 const qualityScore = computed(() => {
   const text = inputPrompt.value.trim()
   if (!text) return 0
@@ -76,58 +86,27 @@ function showNotice(text) {
 function pickExample(index) {
   inputPrompt.value = examples[index]
   optimizedPrompt.value = ''
+  optimizeError.value = ''
 }
 
-function buildOptimizedPrompt(rawPrompt) {
-  const normalizedPrompt = rawPrompt.trim()
-  const modeMap = {
-    image: {
-      role: '你是一名资深视觉创意总监和 AI 图像提示词工程师。',
-      task: '请根据以下需求生成高质量图像，并优先保证主体清晰、构图稳定、光线真实、材质细节可信。',
-      output: '输出要求：使用中文描述；包含主体、环境、构图、镜头、光线、色彩、材质、画幅比例和负面约束；避免多余解释。',
-      checks: ['主体身份与动作明确', '画面风格和商业用途清晰', '补充真实摄影或设计质感', '加入可执行的画幅与质量约束'],
-    },
-    writing: {
-      role: '你是一名经验丰富的中文内容策略师。',
-      task: '请围绕以下需求生成可直接使用的文案，并兼顾表达清晰度、说服力和可读性。',
-      output: '输出要求：先给标题，再给正文；语气自然专业；重点信息前置；控制冗余表达；必要时使用分点结构。',
-      checks: ['明确目标受众', '说明写作目的', '限定语气和篇幅', '给出可直接发布的格式'],
-    },
-    work: {
-      role: '你是一名高效的业务助理，擅长把模糊任务拆成可执行方案。',
-      task: '请处理以下任务，先澄清目标，再输出结构化结果，并标出关键假设。',
-      output: '输出要求：按背景、目标、步骤、交付物、风险检查的顺序回答；遇到缺失信息时先列出合理假设。',
-      checks: ['补齐任务背景', '拆分执行步骤', '定义交付格式', '加入质量检查标准'],
-    },
-  }
-  const config = modeMap[activeMode.value] || modeMap.image
-  const checklist = config.checks.map((item, index) => `${index + 1}. ${item}`).join('\n')
-
-  return `${config.role}
-
-原始需求：
-${normalizedPrompt}
-
-任务说明：
-${config.task}
-
-约束条件：
-- 如果需求存在歧义，先采用最常见的专业场景进行补全。
-- 不编造无法确认的具体事实、品牌授权或数据。
-- 输出应当可以直接复制给 AI 使用。
-
-质量检查：
-${checklist}
-
-${config.output}`
+function normalizeOptimizedPrompt(result) {
+  if (typeof result === 'string') return result.trim()
+  return [
+    result?.optimizedPrompt,
+    result?.prompt,
+    result?.text,
+    result?.content,
+    result?.result,
+  ].find((value) => typeof value === 'string' && value.trim())?.trim() || ''
 }
 
-function saveHistory(nextPrompt) {
+function saveHistory(nextPrompt, meta = {}) {
   const nextItem = {
-    id: Date.now(),
+    id: meta.id || Date.now(),
     mode: activeModeItem.value.label,
     source: inputPrompt.value.trim(),
     result: nextPrompt,
+    engine: meta.engine || '后端 AI',
     createdAt: new Date().toLocaleString('zh-CN', {
       month: '2-digit',
       day: '2-digit',
@@ -137,7 +116,7 @@ function saveHistory(nextPrompt) {
   }
 
   historyItems.value = [nextItem, ...historyItems.value].slice(0, 10)
-  localStorage.setItem('promptOptimizerHistory', JSON.stringify(historyItems.value))
+  localStorage.setItem(optimizerStorageKey, JSON.stringify(historyItems.value))
 }
 
 async function optimizePrompt() {
@@ -145,12 +124,49 @@ async function optimizePrompt() {
 
   loading.value = true
   optimizedPrompt.value = ''
-  await new Promise((resolve) => window.setTimeout(resolve, 520))
-  const nextPrompt = buildOptimizedPrompt(inputPrompt.value)
-  optimizedPrompt.value = nextPrompt
-  saveHistory(nextPrompt)
-  loading.value = false
-  showNotice('提示词已优化')
+  optimizeError.value = ''
+  abortController.value?.abort()
+  abortController.value = new AbortController()
+
+  try {
+    const result = await api.optimizePrompt({
+      prompt: inputPrompt.value.trim(),
+      mode: activeMode.value,
+      modeLabel: activeModeItem.value.label,
+      language: 'zh-CN',
+      maxLength,
+      requirements: {
+        preserveFacts: true,
+        directUse: true,
+        includeConstraints: true,
+      },
+    }, {
+      signal: abortController.value.signal,
+    })
+    const nextPrompt = normalizeOptimizedPrompt(result)
+
+    if (!nextPrompt) {
+      throw new Error('后端未返回优化后的提示词')
+    }
+
+    optimizedPrompt.value = nextPrompt
+    saveHistory(nextPrompt, {
+      id: result?.id,
+      engine: result?.engine || result?.model || '后端 AI',
+    })
+    showNotice('AI 提示词已优化')
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      optimizeError.value = '已取消本次优化'
+      showNotice('已取消优化')
+    } else {
+      optimizeError.value = error.message || 'AI 提示词优化失败，请稍后重试'
+      showNotice(optimizeError.value)
+    }
+  } finally {
+    loading.value = false
+    abortController.value = null
+  }
 }
 
 async function copyOptimizedPrompt() {
@@ -177,20 +193,29 @@ function useHistoryItem(item) {
 function resetPrompt() {
   inputPrompt.value = ''
   optimizedPrompt.value = ''
+  optimizeError.value = ''
 }
 
 function clearHistory() {
   historyItems.value = []
-  localStorage.removeItem('promptOptimizerHistory')
+  localStorage.removeItem(optimizerStorageKey)
   showNotice('历史记录已清空')
+}
+
+function cancelOptimization() {
+  abortController.value?.abort()
 }
 
 onMounted(() => {
   try {
-    historyItems.value = JSON.parse(localStorage.getItem('promptOptimizerHistory') || '[]')
+    historyItems.value = JSON.parse(localStorage.getItem(optimizerStorageKey) || '[]')
   } catch {
     historyItems.value = []
   }
+})
+
+onBeforeUnmount(() => {
+  abortController.value?.abort()
 })
 </script>
 
@@ -204,7 +229,7 @@ onMounted(() => {
             提示词优化器
           </span>
           <h1>AI 提示词优化器</h1>
-          <p>快速提升你的提示词质量，让 AI 输出更精准。输入原始想法，选择使用场景，一键生成结构更清晰的专业提示词。</p>
+          <p>辅助整理提示词结构，让描述更清晰。输入原始想法，选择使用场景，生成可继续修改和复核的提示词草稿。</p>
         </div>
 
         <div class="optimizer-layout">
@@ -252,6 +277,9 @@ onMounted(() => {
                 <span class="quality-fill" :style="{ width: `${qualityScore}%` }"></span>
               </div>
             </div>
+            <p class="optimizer-ai-status" :class="{ error: optimizeError }" aria-live="polite">
+              {{ optimizerStatusText }}
+            </p>
 
             <div class="optimizer-examples" aria-label="示例提示词">
               <button v-for="(example, index) in examples" :key="example" type="button" @click="pickExample(index)">
@@ -265,6 +293,9 @@ onMounted(() => {
                 <Loader2 v-if="loading" class="spinner" aria-hidden="true" />
                 <Sparkles v-else aria-hidden="true" />
                 {{ loading ? '优化中...' : '开始优化' }}
+              </button>
+              <button v-if="loading" class="btn btn-soft" type="button" @click="cancelOptimization">
+                取消
               </button>
               <button class="btn btn-ghost" type="button" :disabled="!inputPrompt && !optimizedPrompt" @click="resetPrompt">
                 <RotateCcw aria-hidden="true" />
@@ -288,9 +319,9 @@ onMounted(() => {
             </section>
 
             <section class="card optimizer-credits">
-              <h2>今日剩余免费次数</h2>
+              <h2>本地历史记录</h2>
               <strong>{{ remainingCount }}</strong>
-              <p>本地演示按历史记录模拟次数，不会消耗真实积分。</p>
+              <p>还可保存 {{ remainingCount }} 条记录。优化由后端 AI 完成，历史仅保存在当前浏览器。</p>
             </section>
           </aside>
         </div>
@@ -299,7 +330,7 @@ onMounted(() => {
           <div class="optimizer-panel-head">
             <div>
               <h2 id="optimizer-result-title">优化结果</h2>
-              <p>复制后可直接用于图像生成、写作或办公类 AI 工具。</p>
+              <p>复制后可作为图像生成、写作或办公类 AI 工具的输入草稿，正式使用前请自行复核事实、权利和合规边界。</p>
             </div>
             <button class="btn btn-soft" type="button" :disabled="!optimizedPrompt" @click="copyOptimizedPrompt">
               <Copy aria-hidden="true" />
@@ -308,10 +339,20 @@ onMounted(() => {
           </div>
 
           <pre v-if="optimizedPrompt" class="optimizer-output">{{ optimizedPrompt }}</pre>
+          <div v-else-if="loading" class="empty-state optimizer-empty">
+            <Loader2 class="spinner" aria-hidden="true" />
+            <strong>AI 正在优化提示词</strong>
+            <p>系统会结合当前场景补齐角色、任务、约束、输出格式和质量检查。</p>
+          </div>
+          <div v-else-if="optimizeError" class="empty-state optimizer-empty optimizer-error">
+            <WandSparkles aria-hidden="true" />
+            <strong>优化失败</strong>
+            <p>{{ optimizeError }}</p>
+          </div>
           <div v-else class="empty-state optimizer-empty">
             <WandSparkles aria-hidden="true" />
-            <strong>优化后的提示词会显示在这里</strong>
-            <p>输入原始提示词并点击“开始优化”，系统会补齐角色、任务、约束和输出格式。</p>
+            <strong>优化后的提示词草稿会显示在这里</strong>
+            <p>输入原始提示词并点击“开始优化”，后端 AI 会补齐角色、任务、约束和输出格式。</p>
           </div>
         </section>
 
@@ -333,7 +374,7 @@ onMounted(() => {
             <button v-for="item in historyItems" :key="item.id" type="button" @click="useHistoryItem(item)">
               <span class="tag">{{ item.mode }}</span>
               <strong>{{ item.source }}</strong>
-              <small>{{ item.createdAt }}</small>
+              <small>{{ item.createdAt }} · {{ item.engine || '后端 AI' }}</small>
             </button>
           </div>
           <div v-else class="empty-state optimizer-empty">

@@ -1,7 +1,9 @@
 node_modules
 dist
 .agents
+.claude/
 .env
 *.log
 .vite-dev.*.log
 nano-banana-loading-check.png
+tmp-*.png

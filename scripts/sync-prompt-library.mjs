@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
@@ -19,6 +19,7 @@ const srcDataDir = join(root, 'src', 'data', 'prompt-library')
 const snapshotDir = join(root, 'content', 'prompt-library', 'upstreams')
 const publicAssetDir = join(root, 'public', 'prompt-assets', upstreamName, 'images')
 const assetQueue = []
+const caseChunkSize = 100
 
 const syncedAt = new Date().toISOString()
 const upstreamCommit = sourceDir ? getGitCommit(sourceDir) : ref
@@ -53,11 +54,7 @@ async function main() {
     upstreamCases,
     styleLibrary,
   })
-  writeJson(join(srcDataDir, 'cases.json'), {
-    manifest: manifest.upstream,
-    total: cases.length,
-    cases,
-  })
+  manifest.caseChunks = writeCaseChunks(cases, manifest)
   writeJson(join(srcDataDir, 'templates.json'), {
     manifest: manifest.upstream,
     total: templates.length,
@@ -333,6 +330,33 @@ function cleanText(value = '') {
 
 function hashJson(value) {
   return crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex')
+}
+
+function writeCaseChunks(cases, manifest) {
+  for (const filename of readdirSync(srcDataDir)) {
+    if (/^cases(?:-part-\d+)?\.json$/.test(filename)) {
+      unlinkSync(join(srcDataDir, filename))
+    }
+  }
+
+  const chunks = []
+  for (let index = 0; index < cases.length; index += caseChunkSize) {
+    const chunkIndex = chunks.length + 1
+    const filename = `cases-part-${String(chunkIndex).padStart(2, '0')}.json`
+    const chunkCases = cases.slice(index, index + caseChunkSize)
+    writeJson(join(srcDataDir, filename), {
+      manifest: manifest.upstream,
+      total: cases.length,
+      chunk: chunkIndex,
+      chunkSize: caseChunkSize,
+      cases: chunkCases,
+    })
+    chunks.push({
+      file: filename,
+      count: chunkCases.length,
+    })
+  }
+  return chunks
 }
 
 function writeJson(file, value) {
