@@ -1,8 +1,16 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import { Github, Images, Mail, MessageCircle } from 'lucide-vue-next'
+import { computed, onMounted } from 'vue'
+import { useSiteStore } from '../services/siteStore'
 
 const currentYear = new Date().getFullYear()
+const { siteData, loadSiteData } = useSiteStore()
+const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
+
+onMounted(() => {
+  loadSiteData().catch(() => {})
+})
 </script>
 
 <template>
@@ -34,7 +42,7 @@ const currentYear = new Date().getFullYear()
           <strong>产品</strong>
           <RouterLink to="/generate">AI 生图</RouterLink>
           <RouterLink to="/prompt-optimizer">提示词优化</RouterLink>
-          <RouterLink to="/pricing">定价</RouterLink>
+          <RouterLink v-if="billingEnabled" to="/pricing">定价</RouterLink>
         </div>
 
         <div class="footer-links">

@@ -3,9 +3,11 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { CheckCircle2, Eye, EyeOff, Image, Images, KeyRound, LogIn, LogOut, Mail, Menu, Moon, ShieldCheck, Sparkles, Sun, User, X } from 'lucide-vue-next'
 import { useAuthStore } from '../services/authStore'
+import { useSiteStore } from '../services/siteStore'
 
 const route = useRoute()
 const auth = useAuthStore()
+const { siteData, loadSiteData } = useSiteStore()
 const open = ref(false)
 const accountMenuOpen = ref(false)
 const accountMenuRef = ref(null)
@@ -40,6 +42,8 @@ const navItems = [
   { label: '常见问题', to: '/#faq', path: '/', hash: '#faq' },
   { label: '画廊', to: '/showcase', path: '/showcase' },
 ]
+const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
+const visibleNavItems = computed(() => navItems.filter(item => item.path !== '/pricing' || billingEnabled.value))
 
 const emailValid = computed(() => email.value.includes('@') && email.value.trim().length >= 6)
 const passwordValid = computed(() => password.value.length >= 8)
@@ -349,6 +353,7 @@ onMounted(() => {
   window.addEventListener('click', onDocumentClick)
   window.addEventListener('scroll', onScroll, { passive: true })
   auth.refreshMe().catch(() => {}).finally(maybeOpenInviteRegister)
+  loadSiteData().catch(() => {})
 })
 
 onBeforeUnmount(() => {
@@ -375,7 +380,7 @@ onBeforeUnmount(() => {
 
       <nav class="main-nav" aria-label="主导航">
         <template
-          v-for="item in navItems"
+          v-for="item in visibleNavItems"
           :key="item.label"
         >
           <span v-if="item.soon" class="nav-soon" aria-disabled="true" :aria-label="`${item.label}，规划中`" title="规划中">
@@ -444,7 +449,7 @@ onBeforeUnmount(() => {
     </div>
 
     <nav v-if="open" id="mobile-menu" class="mobile-panel" aria-label="移动端导航">
-      <template v-for="item in navItems" :key="item.label">
+      <template v-for="item in visibleNavItems" :key="item.label">
         <span v-if="item.soon" class="nav-soon mobile-soon" aria-disabled="true" :aria-label="`${item.label}，规划中`" title="规划中">
           {{ item.label }}
           <small>即将上线</small>

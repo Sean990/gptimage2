@@ -39,7 +39,7 @@ const ledger = ref([])
 const inviteOverview = ref(createInviteOverview())
 const loading = ref(false)
 const message = ref('')
-const activeTab = ref('orders')
+const activeTab = ref('credits')
 const profileName = ref('')
 const profileAvatarUrl = ref('')
 const profileSaving = ref(false)
@@ -48,12 +48,14 @@ const copyMessage = ref('')
 
 const isAuthenticated = computed(() => auth.isAuthenticated.value)
 const user = computed(() => auth.user.value || {})
-const tabs = [
+const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
+const allTabs = [
   { key: 'orders', label: '我的订单', icon: ReceiptText },
   { key: 'credits', label: '我的积分', icon: CreditCard },
   { key: 'invites', label: '我的邀请', icon: Gift },
   { key: 'profile', label: '个人资料', icon: IdCard },
 ]
+const tabs = computed(() => allTabs.filter(tab => tab.key !== 'orders' || billingEnabled.value))
 const tabPaths = {
   orders: '/my-orders',
   credits: '/my-credits',
@@ -64,7 +66,7 @@ const tabPaths = {
 const totalPurchasedCredits = computed(() => orders.value
   .filter(order => order.status === 'paid')
   .reduce((sum, order) => sum + Number(order.credits || 0), 0))
-const currentPanelTitle = computed(() => tabs.find((tab) => tab.key === activeTab.value)?.label || '个人中心')
+const currentPanelTitle = computed(() => tabs.value.find((tab) => tab.key === activeTab.value)?.label || '个人中心')
 const profileRewardCredits = computed(() => Number(siteData.value.rewardCredits?.profileCompletion || 0))
 const profileRewardRequirements = computed(() => siteData.value.rewardCredits?.profileCompletionRequirements || {})
 const profileMinNameLength = computed(() => Number(profileRewardRequirements.value.minNameLength || 2))
@@ -95,14 +97,16 @@ const profileRewardStatusText = computed(() => {
 })
 
 function tabFromRoute(path, queryTab) {
-  if (tabs.some((tab) => tab.key === queryTab)) return queryTab
+  const requestedTab = String(queryTab || '')
+  if (tabs.value.some((tab) => tab.key === requestedTab)) return requestedTab
   if (path.includes('my-credits')) return 'credits'
   if (path.includes('my-invites')) return 'invites'
   if (path.includes('profile')) return 'profile'
-  return 'orders'
+  return billingEnabled.value ? 'orders' : 'credits'
 }
 
 function selectTab(tabKey) {
+  if (!tabs.value.some(tab => tab.key === tabKey)) return
   activeTab.value = tabKey
   router.replace(tabPaths[tabKey] || '/my-orders')
 }
@@ -129,7 +133,7 @@ async function loadAccount() {
   message.value = ''
   try {
     const [orderRows, creditPayload, invitePayload] = await Promise.all([
-      api.getOrders(),
+      billingEnabled.value ? api.getOrders() : Promise.resolve([]),
       api.getCreditLedger(),
       api.getInvites(),
       auth.refreshMe(),
@@ -182,6 +186,10 @@ async function copyInviteLink() {
 }
 
 function openPricing() {
+  if (!billingEnabled.value) {
+    router.push('/docs#credits')
+    return
+  }
   router.push('/pricing')
 }
 
@@ -206,10 +214,10 @@ function formatLedgerType(type) {
   const typeMap = {
     admin_adjustment: '管理员调整',
     adjustment: '积分调整',
-    purchase: '充值',
-    recharge: '充值',
-    credit_purchase: '积分充值',
-    order_purchase: '套餐充值',
+    purchase: '积分到账',
+    recharge: '积分到账',
+    credit_purchase: '积分到账',
+    order_purchase: '积分到账',
     signup_bonus: '注册奖励',
     profile_bonus: '资料奖励',
     invite_bonus: '邀请奖励',
@@ -230,7 +238,7 @@ function formatLedgerDescription(item) {
 
 function formatOrderStatus(status) {
   const statusMap = {
-    paid: '已充值',
+    paid: '已发放',
     pending: '待管理员确认',
     canceled: '已取消',
     refunded: '已退款',
@@ -239,11 +247,11 @@ function formatOrderStatus(status) {
 }
 
 onMounted(async () => {
-  activeTab.value = tabFromRoute(route.path, route.query.tab)
   await Promise.all([
     loadSiteData(),
     auth.refreshMe().catch(() => {}),
   ])
+  activeTab.value = tabFromRoute(route.path, route.query.tab)
   await loadAccount()
 })
 
@@ -253,6 +261,10 @@ watch(
     activeTab.value = tabFromRoute(path, queryTab)
   },
 )
+
+watch(billingEnabled, () => {
+  activeTab.value = tabFromRoute(route.path, route.query.tab)
+})
 
 watch(isAuthenticated, (authenticated) => {
   if (authenticated) {
@@ -270,7 +282,7 @@ watch(isAuthenticated, (authenticated) => {
         <section v-if="!isAuthenticated" class="card auth-required-panel">
           <LogIn aria-hidden="true" />
           <h1>登录后查看个人中心</h1>
-          <p>订单、积分、邀请奖励和生成记录都会同步到你的账户。登录后才能提交生图任务。</p>
+          <p>积分、邀请奖励和生成记录都会同步到你的账户。登录后才能提交生图任务。</p>
           <button class="btn btn-primary" type="button" @click="openLogin">
             <LogIn aria-hidden="true" />
             登录 / 注册
@@ -323,9 +335,9 @@ watch(isAuthenticated, (authenticated) => {
                   <ReceiptText aria-hidden="true" />
                   阅读文档
                 </button>
-                <button v-if="activeTab === 'credits'" class="btn btn-primary" type="button" @click="openPricing">
+                <button v-if="activeTab === 'credits' && billingEnabled" class="btn btn-primary" type="button" @click="openPricing">
                   <CreditCard aria-hidden="true" />
-                  充值
+                  积分说明
                 </button>
                 <button v-if="activeTab === 'invites'" class="btn btn-soft" type="button" @click="copyInviteLink">
                   <Copy aria-hidden="true" />
@@ -345,7 +357,7 @@ watch(isAuthenticated, (authenticated) => {
                     <strong>{{ orders.length }}</strong>
                   </article>
                   <article class="account-metric">
-                    <span>累计充值积分</span>
+                    <span>累计发放积分</span>
                     <strong>{{ totalPurchasedCredits }}</strong>
                   </article>
                   <article class="account-metric">

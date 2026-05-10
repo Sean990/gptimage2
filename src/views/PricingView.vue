@@ -18,6 +18,7 @@ const orderLoading = ref(false)
 const orderMessage = ref('')
 const copyMessage = ref('')
 const pricingModes = computed(() => siteData.value.pricingModes)
+const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
 const modes = computed(() => Object.entries(pricingModes.value).map(([key, value]) => ({ key, label: value.label })))
 const plans = computed(() => pricingModes.value[activeMode.value]?.plans || [])
 const paymentImage = computed(() => siteData.value.assets?.cnpay || '')
@@ -38,6 +39,10 @@ function changeModeByOffset(offset) {
 }
 
 function selectPlan(plan) {
+  if (!billingEnabled.value) {
+    orderMessage.value = '积分服务暂未开放，请查看积分说明。'
+    return
+  }
   selectedPlan.value = plan
   createdOrder.value = null
   orderMessage.value = ''
@@ -46,8 +51,12 @@ function selectPlan(plan) {
 
 async function submitOrder() {
   if (!selectedPlan.value) return
+  if (!billingEnabled.value) {
+    orderMessage.value = '积分服务暂未开放，暂不支持创建订单。'
+    return
+  }
   if (!auth.isAuthenticated.value) {
-    orderMessage.value = '请先登录后购买积分套餐'
+    orderMessage.value = '请先登录后查看积分服务'
     window.dispatchEvent(new CustomEvent('open-login'))
     return
   }
@@ -62,7 +71,7 @@ async function submitOrder() {
     })
     createdOrder.value = order
     await auth.refreshMe().catch(() => {})
-    orderMessage.value = `订单 ${order.id} 已创建。请复制订单号并联系管理员，管理员确认后会给账户充值 ${order.credits} 积分。`
+    orderMessage.value = `订单 ${order.id} 已创建。请复制订单号并联系管理员，管理员确认后会给账户发放 ${order.credits} 积分。`
   } catch (error) {
     orderMessage.value = error.message || '订单创建失败，请稍后重试'
   } finally {
@@ -100,16 +109,16 @@ onMounted(() => {
       <div class="container">
         <article class="card sale-banner">
           <Tag aria-hidden="true" />
-          <h2>创作者优惠 · 积分套餐</h2>
-          <p>展示积分包、月付和年付三种购买路径，便于按预计使用量对比成本；最终权益以下单页面和订单记录为准。</p>
+          <h2>{{ billingEnabled ? '创作者积分服务' : '积分说明' }}</h2>
+          <p>{{ billingEnabled ? '展示积分包等使用路径，便于按预计使用量对比成本；最终权益以下单页面和订单记录为准。' : '积分服务暂未开放。你仍可查看积分消耗规则，并在后台开启后恢复定价与订单入口。' }}</p>
         </article>
 
         <SectionTitle
-          title="ImgsGen 定价"
-          description="选择适合你预计使用量的积分包、月付订阅或年付订阅。生成结果公开使用前仍需完成授权和内容复核。"
+          :title="billingEnabled ? 'ImgsGen 定价' : 'ImgsGen 积分说明'"
+          :description="billingEnabled ? '选择适合你预计使用量的积分包。生成结果公开使用前仍需完成授权和内容复核。' : '当前仅展示积分消耗说明，不提供在线下单或支付入口。'"
         />
 
-        <div class="segmented" role="tablist" aria-label="定价模式">
+        <div v-if="billingEnabled" class="segmented" role="tablist" aria-label="定价模式">
           <button
             v-for="mode in modes"
             :key="mode.key"
@@ -129,6 +138,7 @@ onMounted(() => {
         </div>
 
         <div
+          v-if="billingEnabled"
           :id="`pricing-panel-${activeMode}`"
           role="tabpanel"
           :aria-labelledby="`pricing-tab-${activeMode}`"
@@ -136,12 +146,20 @@ onMounted(() => {
           <PricingCards :plans="plans" @select="selectPlan" />
         </div>
 
-        <div class="section-tight">
+        <div v-else class="section-tight">
+          <article class="card feature-card">
+            <ShieldCheck aria-hidden="true" />
+            <h3>积分服务暂未开放</h3>
+            <p>当前站点隐藏定价、订单和支付相关入口。需要开放时，可在后台“积分配置”中开启 billingEnabled。</p>
+          </article>
+        </div>
+
+        <div v-if="billingEnabled" class="section-tight">
           <div class="grid-3">
             <article class="card feature-card">
               <Sparkles aria-hidden="true" />
               <h3>按创作频率选择</h3>
-              <p>轻量体验选积分包，稳定创作测试选月付，团队长期项目可考虑年付。</p>
+              <p>轻量体验选积分包，稳定创作测试选进阶积分包，团队长期项目可考虑团队积分包。</p>
             </article>
             <article class="card feature-card">
               <ShieldCheck aria-hidden="true" />
@@ -159,7 +177,7 @@ onMounted(() => {
     </section>
 
     <div
-      v-if="selectedPlan"
+      v-if="billingEnabled && selectedPlan"
       class="modal-backdrop"
       role="dialog"
       aria-modal="true"

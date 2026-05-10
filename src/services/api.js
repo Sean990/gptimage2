@@ -93,7 +93,10 @@ export const api = {
   getModels: () => request('/models'),
   getSite: () => request('/site'),
   getHome: () => request('/home'),
-  getPricing: () => request('/pricing'),
+  getPricing: async () => {
+    const payload = await request('/pricing')
+    return payload?.pricingModes || payload
+  },
   getShowcase: (params = {}) => request(`/showcase?${new URLSearchParams(params)}`),
   getLegal: (type) => request(`/legal/${encodeURIComponent(type)}`),
   getMe: () => request('/me'),

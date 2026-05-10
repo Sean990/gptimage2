@@ -27,6 +27,7 @@ const homeImages = computed(() => siteData.value.homeImages)
 const features = computed(() => siteData.value.features)
 const faqItems = computed(() => siteData.value.faqItems)
 const pricingModes = computed(() => siteData.value.pricingModes)
+const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
 
 function showNotice(text) {
   notice.value = text
@@ -36,6 +37,11 @@ function showNotice(text) {
 }
 
 function openPricing() {
+  if (!billingEnabled.value) {
+    showNotice('积分服务暂未开放，请先查看积分说明。')
+    router.push('/docs#credits')
+    return
+  }
   router.push('/pricing')
 }
 
@@ -274,18 +280,18 @@ onMounted(loadSiteData)
       </div>
     </section>
 
-    <section class="section" id="pricing">
+    <section v-if="billingEnabled" class="section" id="pricing">
       <div class="container">
         <SectionTitle title="ImgsGen 定价方案" description="按预计使用量选择套餐，具体权益、有效期和消耗规则以下单页与个人中心记录为准。" />
         <PricingCards :plans="pricingModes.credits.plans" @select="openPricing" />
       </div>
     </section>
 
-    <section class="section-tight">
+    <section v-if="billingEnabled" class="section-tight">
       <div class="container credits-guide">
         <div class="credits-copy">
           <span class="eyebrow">按用途选套餐</span>
-          <h2>买多少积分才刚好？</h2>
+          <h2>多少积分才刚好？</h2>
           <p>从首次试水到稳定产出，再到团队批量交付，用量越明确，套餐越好选。</p>
         </div>
         <div class="credits-list">

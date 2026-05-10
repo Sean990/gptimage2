@@ -18,7 +18,7 @@ const routes = [
   { path: '/generate', name: 'generate', component: GenerateView, meta: { title: 'AI 图片生成 - 提示词与参考图创作工具 | ImgsGen' } },
   { path: '/batch-generate', redirect: '/generate' },
   { path: '/prompt-optimizer', name: 'prompt-optimizer', component: PromptOptimizerView, meta: { title: 'AI 提示词优化器 - 生成可复核 Prompt 草稿 | ImgsGen' } },
-  { path: '/pricing', name: 'pricing', component: PricingView, meta: { title: 'ImgsGen 定价 - AI 图片生成积分与套餐' } },
+  { path: '/pricing', name: 'pricing', component: PricingView, meta: { title: 'ImgsGen 积分说明 - AI 图片生成积分与套餐' } },
   { path: '/my-orders', name: 'my-orders', component: MyOrdersView, meta: { title: '个人中心 | ImgsGen' } },
   { path: '/my-credits', name: 'my-credits', component: MyOrdersView, meta: { title: '我的积分 | ImgsGen' } },
   { path: '/my-invites', name: 'my-invites', component: MyOrdersView, meta: { title: '我的邀请 | ImgsGen' } },

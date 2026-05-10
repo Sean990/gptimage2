@@ -390,6 +390,7 @@ const usageCosts = computed(() => siteData.value.usageCosts || {})
 const imageGenerationCosts = computed(() => usageCosts.value.imageGeneration || {})
 const hasUsageCostConfig = computed(() => Boolean(usageCosts.value.imageGeneration && usageCosts.value.reversePrompt))
 const reversePromptCost = computed(() => Number(usageCosts.value.reversePrompt?.credits ?? 0))
+const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
 const generationBillingTip = computed(() => imageGenerationCosts.value.billingTip || '图片生成成功后扣除积分。')
 const generationBillingTipInline = computed(() => generationBillingTip.value.replace(/[。.!！]+$/, ''))
 const creditCost = computed(() => {
@@ -605,7 +606,7 @@ function openLoginFromGenerate() {
 }
 
 function openPricingFromGenerate() {
-  router.push('/pricing')
+  router.push(billingEnabled.value ? '/pricing' : '/docs#credits')
 }
 
 function normalizeGeneratedImage(item, index = 0, defaults = {}) {
@@ -1483,7 +1484,7 @@ onBeforeUnmount(() => {
                   </span>
                   <button class="btn hero-recharge-button" type="button" @click="openPricingFromGenerate">
                     <CreditCard aria-hidden="true" />
-                    <span>充值积分</span>
+                    <span>积分说明</span>
                   </button>
                 </div>
                 <template v-else>

@@ -44,7 +44,7 @@ function formatCredits(credits) {
       <p class="note">{{ plan.note }}</p>
       <div v-if="formatCredits(plan.credits)" class="plan-credit-line">
         <strong>{{ formatCredits(plan.credits) }}</strong>
-        <span>积分额度</span>
+        <span>可用积分</span>
       </div>
       <ul class="plan-features">
         <li v-for="feature in plan.features" :key="feature" :class="{ 'feature-group': isFeatureGroup(feature) }">

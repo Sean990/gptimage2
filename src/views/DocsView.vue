@@ -1,4 +1,5 @@
 <script setup>
+import { computed, onMounted } from 'vue'
 import {
   BookOpen,
   Coins,
@@ -13,6 +14,14 @@ import {
   WandSparkles,
 } from 'lucide-vue-next'
 import SectionTitle from '../components/SectionTitle.vue'
+import { useSiteStore } from '../services/siteStore'
+
+const { siteData, loadSiteData } = useSiteStore()
+const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
+
+onMounted(() => {
+  loadSiteData()
+})
 </script>
 
 <template>
@@ -22,7 +31,7 @@ import SectionTitle from '../components/SectionTitle.vue'
         <SectionTitle
           level="h1"
           title="ImgsGen 文档"
-          description="面向用户的功能说明和上手教程，帮助你完成注册、充值、提示词优化、图片生成、图库管理和发布前复核。"
+          description="面向用户的功能说明和上手教程，帮助你完成注册、积分查看、提示词优化、图片生成、图库管理和发布前复核。"
         />
 
         <div class="docs-layout">
@@ -35,7 +44,8 @@ import SectionTitle from '../components/SectionTitle.vue'
             <a href="#optimizer">提示词优化</a>
             <a href="#gallery">云端图库</a>
             <a href="#showcase">案例库与模板</a>
-            <a href="#orders">订单与充值</a>
+            <a v-if="billingEnabled" href="#orders">订单与积分发放</a>
+            <a href="#credits">积分说明</a>
             <a href="#security">安全与合规</a>
           </aside>
 
@@ -62,10 +72,10 @@ import SectionTitle from '../components/SectionTitle.vue'
             <section id="account" class="card doc-section">
               <UserRound aria-hidden="true" />
               <h2>账号与积分</h2>
-              <p>登录后可以使用图片上传、AI 反推提示词、生图任务、云端图库、订单记录、积分流水和邀请奖励等功能。</p>
+              <p>登录后可以使用图片上传、AI 反推提示词、生图任务、云端图库、积分流水和邀请奖励等功能。</p>
               <ul>
                 <li>积分用于图片生成、提示词反推等消耗型功能。</li>
-                <li>个人中心可以查看订单、积分流水、邀请链接和个人资料。</li>
+                <li>个人中心可以查看积分流水、邀请链接和个人资料。订单入口仅在积分服务开放时显示。</li>
                 <li>完善资料后，如果平台配置了奖励规则，系统会按规则发放一次性奖励。</li>
               </ul>
             </section>
@@ -131,21 +141,21 @@ import SectionTitle from '../components/SectionTitle.vue'
               </ul>
             </section>
 
-            <section id="orders" class="card doc-section">
+            <section v-if="billingEnabled" id="orders" class="card doc-section">
               <ReceiptText aria-hidden="true" />
-              <h2>订单与充值</h2>
-              <p>定价页提供积分包、月付和年付等套餐。提交套餐后会创建订单，并显示付款二维码和订单号。</p>
+              <h2>订单与积分发放</h2>
+              <p>如平台开放积分服务，定价页会展示可用积分方案。提交方案后会创建订单，并显示订单号等处理信息。</p>
               <ol>
-                <li>选择套餐并创建订单。</li>
-                <li>复制订单号作为付款备注。</li>
-                <li>完成付款后联系管理员确认。</li>
+                <li>选择积分方案并创建订单。</li>
+                <li>复制订单号并按页面提示联系管理员处理。</li>
                 <li>管理员确认后，积分会自动到账，可以在个人中心查看订单状态和积分流水。</li>
+                <li>积分服务关闭时，前台不会展示定价入口、首页定价方案和个人中心订单页签。</li>
               </ol>
             </section>
 
             <section id="credits" class="card doc-section">
               <Coins aria-hidden="true" />
-              <h2>积分消耗说明</h2>
+              <h2>积分说明</h2>
               <p>实际消耗以页面提交前展示的预计积分和个人中心积分流水为准。不同模式、图片数量、质量和平台配置都可能影响消耗。</p>
               <ul>
                 <li>图片生成通常在任务成功后扣除积分。</li>

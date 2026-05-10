@@ -15,6 +15,7 @@ const fallbackSiteData = {
   homeImages: fallbackHomeImages,
   features: fallbackFeatures,
   faqItems: fallbackFaqItems,
+  billingEnabled: false,
   pricingModes: fallbackPricingModes,
   usageCosts: null,
   rewardCredits: null,
