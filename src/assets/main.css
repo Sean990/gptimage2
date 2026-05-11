@@ -8773,11 +8773,9 @@ body {
 .generate-page .model-picker-button,
 .generate-page .select-picker-button,
 .generate-page.batch-mode-page .batch-count-picker .select-picker-button {
-  color: #f8fafc;
-  border-color: rgba(83, 103, 145, 0.74);
-  background:
-    linear-gradient(180deg, rgba(16, 28, 52, 0.96), rgba(6, 12, 29, 0.98)),
-    #070d1f;
+  color: var(--text);
+  border-color: var(--line);
+  background: var(--surface);
 }
 
 .generate-page .model-picker-button:hover,
@@ -8786,33 +8784,25 @@ body {
 .generate-page .select-picker-button:focus-visible,
 .generate-page.batch-mode-page .batch-count-picker .select-picker-button:hover,
 .generate-page.batch-mode-page .batch-count-picker .select-picker-button:focus-visible {
-  border-color: rgba(96, 165, 250, 0.78);
-  background:
-    linear-gradient(180deg, rgba(18, 35, 67, 0.98), rgba(8, 17, 39, 1)),
-    #081127;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 0 0 3px rgba(37, 99, 235, 0.16);
+  border-color: rgba(47, 102, 245, 0.4);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px var(--primary-ring);
 }
 
 .generate-page .model-menu,
 .generate-page .select-menu,
 .generate-page.batch-mode-page .batch-count-picker .model-menu {
-  border-color: rgba(83, 103, 145, 0.72);
-  background:
-    linear-gradient(180deg, rgba(8, 15, 35, 0.98), rgba(3, 8, 23, 0.99)),
-    #050a18;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 18px 38px rgba(2, 6, 23, 0.42);
+  border-color: var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
 }
 
 .generate-page .model-option,
 .generate-page .select-option,
 .generate-page.batch-mode-page .batch-count-option {
-  color: #f8fafc;
-  border-color: rgba(83, 103, 145, 0.28);
-  background: rgba(3, 7, 18, 0.2);
+  color: var(--text);
+  border-color: transparent;
+  background: transparent;
 }
 
 .generate-page .model-option:hover,
@@ -8824,12 +8814,16 @@ body {
 .generate-page.batch-mode-page .batch-count-option:hover,
 .generate-page.batch-mode-page .batch-count-option:focus-visible,
 .generate-page.batch-mode-page .batch-count-option.active {
-  color: #dbeafe;
-  border-color: rgba(59, 130, 246, 0.72);
-  background: rgba(14, 75, 139, 0.74);
+  color: var(--primary-strong);
+  border-color: rgba(47, 102, 245, 0.22);
+  background: var(--primary-soft);
 }
 
-.generate-page.batch-mode-page .batch-count-option em,
+.generate-page.batch-mode-page .batch-count-option em {
+  color: var(--primary-strong);
+  background: rgba(47, 102, 245, 0.12);
+}
+
 :root[data-theme="dark"] .generate-page.batch-mode-page .batch-count-option em {
   color: #bfdbfe;
   background: rgba(59, 130, 246, 0.2);
