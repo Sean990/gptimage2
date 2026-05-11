@@ -80,8 +80,6 @@ onMounted(loadSiteData)
             <img
               :src="homeImages[0].src"
               :alt="homeImages[0].title"
-              width="960"
-              height="1280"
               decoding="async"
               fetchpriority="high"
             />
@@ -96,8 +94,6 @@ onMounted(loadSiteData)
               :key="image.title"
               :src="image.src"
               :alt="image.title"
-              width="640"
-              height="854"
               loading="lazy"
               decoding="async"
             />
@@ -231,8 +227,6 @@ onMounted(loadSiteData)
           <img
             :src="homeImages[1].src"
             :alt="homeImages[1].title"
-            width="960"
-            height="1280"
             loading="lazy"
             decoding="async"
           />
