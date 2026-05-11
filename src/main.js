@@ -184,17 +184,24 @@ export const createApp = ViteSSG(
             if (entry.isIntersecting) {
               entry.target.classList.add('in-view')
               observer.unobserve(entry.target)
+              // 动画完成后释放 will-change，减少不必要的图层占用
+              const delay = parseFloat(entry.target.style.transitionDelay) || 0
+              const duration = 800 + delay
+              setTimeout(() => {
+                entry.target.style.willChange = 'auto'
+              }, duration + 100)
             }
           })
         },
-        { threshold: 0.1 }
+        { threshold: 0.08 }
       )
-      
+
       app.directive('fade-up', {
         mounted(el, binding) {
           el.classList.add('fade-up')
-          if (binding.value && binding.value.delay) {
-            el.classList.add(`delay-${binding.value.delay}`)
+          const delay = binding.value?.delay
+          if (delay) {
+            el.style.transitionDelay = `${delay}ms`
           }
           setTimeout(() => {
             observer.observe(el)
@@ -202,8 +209,8 @@ export const createApp = ViteSSG(
         },
         unmounted(el) {
           observer.unobserve(el)
-        }
+        },
       })
     }
-  }
+  },
 )
