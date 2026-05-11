@@ -1,8 +1,35 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { RouterView } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
+import { useHead } from '@unhead/vue'
 import AppFooter from './components/AppFooter.vue'
 import AppHeader from './components/AppHeader.vue'
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE } from './seo/constants.js'
+
+const SITE_URL = (import.meta.env.VITE_SITE_URL || '').replace(/\/+$/, '')
+
+const route = useRoute()
+
+const pageTitle = computed(() => route.meta?.title || DEFAULT_TITLE)
+const pageDescription = computed(() => route.meta?.description || DEFAULT_DESCRIPTION)
+const pageRobots = computed(() => route.meta?.robots || 'index,follow,max-image-preview:large')
+const canonicalUrl = computed(() => (SITE_URL ? `${SITE_URL}${route.path}` : null))
+
+useHead({
+  htmlAttrs: { lang: 'zh-CN' },
+  title: pageTitle,
+  meta: [
+    { name: 'description', content: pageDescription },
+    { name: 'robots', content: pageRobots },
+    { property: 'og:title', content: pageTitle },
+    { property: 'og:description', content: pageDescription },
+    { property: 'og:url', content: canonicalUrl },
+    { name: 'twitter:title', content: pageTitle },
+    { name: 'twitter:description', content: pageDescription },
+  ],
+  link: [{ rel: 'canonical', href: canonicalUrl }],
+})
+
 
 const cursorRef = ref(null)
 let motionMedia = null

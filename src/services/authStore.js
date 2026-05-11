@@ -1,13 +1,16 @@
 import { computed, ref } from 'vue'
 import { api } from './api'
 
-const token = ref(localStorage.getItem('token') || '')
+const hasStorage = typeof localStorage !== 'undefined'
+
+const token = ref(hasStorage ? localStorage.getItem('token') || '' : '')
 const user = ref(null)
 const loading = ref(false)
 const initialized = ref(false)
 
 function persistToken(nextToken) {
   token.value = nextToken || ''
+  if (!hasStorage) return
   if (token.value) localStorage.setItem('token', token.value)
   else localStorage.removeItem('token')
 }
@@ -86,7 +89,8 @@ export function useAuthStore() {
 }
 
 export function getAuthToken() {
-  return token.value || localStorage.getItem('token') || ''
+  if (token.value) return token.value
+  return hasStorage ? localStorage.getItem('token') || '' : ''
 }
 
 export function setAuthToken(nextToken) {

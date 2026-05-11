@@ -77,14 +77,30 @@ onMounted(loadSiteData)
 
         <div class="hero-visual">
           <div class="hero-frame">
-            <img :src="homeImages[0].src" :alt="homeImages[0].title" />
+            <img
+              :src="homeImages[0].src"
+              :alt="homeImages[0].title"
+              width="960"
+              height="1280"
+              decoding="async"
+              fetchpriority="high"
+            />
             <div class="floating-stat">
               <strong>高分辨率</strong>
               <span>以实际参数为准</span>
             </div>
           </div>
           <div class="image-strip">
-            <img v-for="image in homeImages.slice(1)" :key="image.title" :src="image.src" :alt="image.title" />
+            <img
+              v-for="image in homeImages.slice(1)"
+              :key="image.title"
+              :src="image.src"
+              :alt="image.title"
+              width="640"
+              height="854"
+              loading="lazy"
+              decoding="async"
+            />
           </div>
         </div>
       </div>
@@ -212,7 +228,14 @@ onMounted(loadSiteData)
         </div>
 
         <article class="card preview-card">
-          <img :src="homeImages[1].src" :alt="homeImages[1].title" />
+          <img
+            :src="homeImages[1].src"
+            :alt="homeImages[1].title"
+            width="960"
+            height="1280"
+            loading="lazy"
+            decoding="async"
+          />
           <div class="preview-body">
             <span class="tag">AI 反推提示词示例</span>
             <div class="prompt-box">

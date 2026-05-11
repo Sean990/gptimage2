@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /uploads/
+Disallow: /my-orders
+Disallow: /my-credits
+Disallow: /my-invites
+Disallow: /profile
+
+# Sitemap URL will be appended by scripts/generate-sitemap.mjs at build time

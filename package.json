@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "build": "vite-ssg build && node scripts/generate-sitemap.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "sync:prompt-library": "node scripts/sync-prompt-library.mjs"
   },
@@ -17,5 +17,8 @@
     "vue": "^3.5.22",
     "vue-router": "^4.6.3"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@unhead/vue": "^1.11.0",
+    "vite-ssg": "^28.3.0"
+  }
 }
