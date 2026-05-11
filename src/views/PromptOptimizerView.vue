@@ -232,7 +232,7 @@ onBeforeUnmount(() => {
           <p>辅助整理提示词结构，让描述更清晰。输入原始想法，选择使用场景，生成可继续修改和复核的提示词草稿。</p>
         </div>
 
-        <div class="optimizer-layout">
+        <div class="optimizer-layout" v-fade-up="{ delay: 100 }">
           <section class="card optimizer-workbench" aria-labelledby="optimizer-title">
             <div class="optimizer-panel-head">
               <div>
@@ -326,7 +326,7 @@ onBeforeUnmount(() => {
           </aside>
         </div>
 
-        <section class="card optimizer-result" aria-labelledby="optimizer-result-title">
+        <section class="card optimizer-result" aria-labelledby="optimizer-result-title" v-fade-up="{ delay: 200 }">
           <div class="optimizer-panel-head">
             <div>
               <h2 id="optimizer-result-title">优化结果</h2>
@@ -356,7 +356,7 @@ onBeforeUnmount(() => {
           </div>
         </section>
 
-        <section class="card optimizer-history" aria-labelledby="optimizer-history-title">
+        <section class="card optimizer-history" aria-labelledby="optimizer-history-title" v-fade-up="{ delay: 300 }">
           <div class="optimizer-panel-head">
             <div>
               <h2 id="optimizer-history-title">

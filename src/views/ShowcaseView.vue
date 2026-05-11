@@ -230,7 +230,7 @@ onMounted(loadLocalLibrary)
           :description="`内置 Prompt 案例与模板快照。${sourceSummary}，内容仅供学习参考，复用前请自行核验来源、授权和发布合规。`"
         />
 
-        <div class="library-tabs" role="tablist" aria-label="内容类型">
+        <div v-fade-up="{ delay: 100 }" class="library-tabs" role="tablist" aria-label="内容类型">
           <button type="button" :class="{ active: activeTab === 'cases' }" @click="activeTab = 'cases'">
             <Images aria-hidden="true" />
             画廊
@@ -243,7 +243,7 @@ onMounted(loadLocalLibrary)
           </button>
         </div>
 
-        <div class="filter-row prompt-library-filters">
+        <div v-fade-up="{ delay: 200 }" class="filter-row prompt-library-filters">
           <label class="field compact-field" for="showcase-search">
             <span class="sr-only">搜索作品</span>
             <input id="showcase-search" v-model.trim="query" class="search-input" placeholder="搜索案例、模板、来源、Prompt..." />
@@ -270,7 +270,7 @@ onMounted(loadLocalLibrary)
             <p>{{ loadError }}</p>
           </div>
           <div v-else-if="filteredItems.length" class="showcase-grid">
-            <article v-for="item in filteredItems" :key="item.id" class="card showcase-card">
+            <article v-for="(item, index) in filteredItems" :key="item.id" v-fade-up="{ delay: (index % 12) * 50 }" class="card showcase-card">
               <div class="image-wrap">
                 <button class="showcase-image-button" type="button" @click="openCase(item)">
                   <img :src="item.image" :alt="item.title" loading="lazy" />
@@ -331,7 +331,7 @@ onMounted(loadLocalLibrary)
             <p>{{ loadError }}</p>
           </div>
           <div v-else-if="filteredTemplates.length" class="showcase-grid template-library-grid">
-            <article v-for="item in filteredTemplates" :key="item.id" class="card showcase-card template-library-card">
+            <article v-for="(item, index) in filteredTemplates" :key="item.id" v-fade-up="{ delay: (index % 12) * 50 }" class="card showcase-card template-library-card">
               <div class="image-wrap">
                 <button class="showcase-image-button" type="button" @click="openTemplate(item)">
                   <img :src="item.cover" :alt="templateTitle(item)" loading="lazy" />

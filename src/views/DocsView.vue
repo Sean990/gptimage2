@@ -32,10 +32,11 @@ onMounted(() => {
           level="h1"
           title="ImgsGen 文档"
           description="面向用户的功能说明和上手教程，帮助你完成注册、积分查看、提示词优化、图片生成、图库管理和发布前复核。"
+          v-fade-up
         />
 
         <div class="docs-layout">
-          <aside class="card side-nav">
+          <aside v-fade-up="{ delay: 100 }" class="card side-nav">
             <a href="#intro">产品介绍</a>
             <a href="#quickstart">快速开始</a>
             <a href="#account">账号与积分</a>
@@ -50,14 +51,14 @@ onMounted(() => {
           </aside>
 
           <div class="docs-content">
-            <section id="intro" class="card doc-section">
+            <section id="intro" class="card doc-section" v-fade-up="{ delay: 200 }">
               <BookOpen aria-hidden="true" />
               <h2>产品介绍</h2>
               <p>ImgsGen 是一个 AI 图片创作平台，适合用来生成海报、产品图、人物写真方案、社媒封面、插画、界面图和创意视觉草稿。</p>
               <p>你可以输入文字生成图片，也可以上传参考图进行图生图、局部精修和提示词反推。平台会保存生成任务和结果，方便后续复用、查看和管理。</p>
             </section>
 
-            <section id="quickstart" class="card doc-section">
+            <section id="quickstart" class="card doc-section" v-fade-up>
               <Rocket aria-hidden="true" />
               <h2>快速开始</h2>
               <ol>
@@ -69,7 +70,7 @@ onMounted(() => {
               </ol>
             </section>
 
-            <section id="account" class="card doc-section">
+            <section id="account" class="card doc-section" v-fade-up>
               <UserRound aria-hidden="true" />
               <h2>账号与积分</h2>
               <p>登录后可以使用图片上传、AI 反推提示词、生图任务、云端图库、积分流水和邀请奖励等功能。</p>
@@ -80,7 +81,7 @@ onMounted(() => {
               </ul>
             </section>
 
-            <section id="generate" class="card doc-section">
+            <section id="generate" class="card doc-section" v-fade-up>
               <ImagePlus aria-hidden="true" />
               <h2>AI 生图教程</h2>
               <p>AI 生图页支持文生图、图生图和精修图。第一次使用时，建议先从文生图开始，写清楚主体、场景、风格、光线、构图和用途。</p>
@@ -93,7 +94,7 @@ onMounted(() => {
               </ol>
             </section>
 
-            <section id="reference" class="card doc-section">
+            <section id="reference" class="card doc-section" v-fade-up>
               <Sparkles aria-hidden="true" />
               <h2>参考图与精修</h2>
               <p>参考图适合保持人物、产品、空间、构图或风格的一致性。上传图片前，请确认你拥有使用权或已经取得授权。</p>
@@ -105,7 +106,7 @@ onMounted(() => {
               </ul>
             </section>
 
-            <section id="optimizer" class="card doc-section">
+            <section id="optimizer" class="card doc-section" v-fade-up>
               <WandSparkles aria-hidden="true" />
               <h2>提示词优化</h2>
               <p>如果你只有一个模糊想法，可以先使用提示词优化器。它会把简单描述改写成结构更完整、便于继续修改的提示词草稿。</p>
@@ -118,7 +119,7 @@ onMounted(() => {
               <p>优化历史只保存在当前浏览器，清空浏览器数据或更换设备后不会自动同步。</p>
             </section>
 
-            <section id="gallery" class="card doc-section">
+            <section id="gallery" class="card doc-section" v-fade-up>
               <GalleryHorizontal aria-hidden="true" />
               <h2>云端图库</h2>
               <p>我的图库用于查看生成记录、任务进度和已完成图片。登录后，图库会自动同步云端数据。</p>
@@ -130,7 +131,7 @@ onMounted(() => {
               </ul>
             </section>
 
-            <section id="showcase" class="card doc-section">
+            <section id="showcase" class="card doc-section" v-fade-up>
               <BookOpen aria-hidden="true" />
               <h2>案例库与模板</h2>
               <p>画廊里收录了 Prompt 案例和工业模板。你可以搜索分类、风格和场景，查看完整提示词，再作为草稿带入生成器。</p>
@@ -141,7 +142,7 @@ onMounted(() => {
               </ul>
             </section>
 
-            <section v-if="billingEnabled" id="orders" class="card doc-section">
+            <section v-if="billingEnabled" id="orders" class="card doc-section" v-fade-up>
               <ReceiptText aria-hidden="true" />
               <h2>订单与积分发放</h2>
               <p>如平台开放积分服务，定价页会展示可用积分方案。提交方案后会创建订单，并显示订单号等处理信息。</p>
@@ -153,7 +154,7 @@ onMounted(() => {
               </ol>
             </section>
 
-            <section id="credits" class="card doc-section">
+            <section id="credits" class="card doc-section" v-fade-up>
               <Coins aria-hidden="true" />
               <h2>积分说明</h2>
               <p>实际消耗以页面提交前展示的预计积分和个人中心积分流水为准。不同模式、图片数量、质量和平台配置都可能影响消耗。</p>
@@ -164,7 +165,7 @@ onMounted(() => {
               </ul>
             </section>
 
-            <section id="security" class="card doc-section">
+            <section id="security" class="card doc-section" v-fade-up>
               <ShieldCheck aria-hidden="true" />
               <h2>安全与合规</h2>
               <p>上传图片、生成内容和支付信息应通过安全通道处理。商业发布前需要人工审核文字准确性、人物授权、品牌使用边界、广告合规和是否需要 AI 生成内容标识。</p>

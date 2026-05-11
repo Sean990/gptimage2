@@ -107,7 +107,7 @@ onMounted(() => {
   <main class="page pricing-hero">
     <section class="section-tight">
       <div class="container">
-        <article class="card sale-banner">
+        <article v-fade-up class="card sale-banner">
           <Tag aria-hidden="true" />
           <h2>{{ billingEnabled ? '创作者积分服务' : '积分说明' }}</h2>
           <p>{{ billingEnabled ? '展示积分包等使用路径，便于按预计使用量对比成本；最终权益以下单页面和订单记录为准。' : '积分服务暂未开放。你仍可查看积分消耗规则，并在后台开启后恢复定价与订单入口。' }}</p>
@@ -142,12 +142,13 @@ onMounted(() => {
           :id="`pricing-panel-${activeMode}`"
           role="tabpanel"
           :aria-labelledby="`pricing-tab-${activeMode}`"
+          v-fade-up="{ delay: 100 }"
         >
           <PricingCards :plans="plans" @select="selectPlan" />
         </div>
 
         <div v-else class="section-tight">
-          <article class="card feature-card">
+          <article v-fade-up class="card feature-card">
             <ShieldCheck aria-hidden="true" />
             <h3>积分服务暂未开放</h3>
             <p>当前站点隐藏定价、订单和支付相关入口。需要开放时，可在后台“积分配置”中开启 billingEnabled。</p>
@@ -156,17 +157,17 @@ onMounted(() => {
 
         <div v-if="billingEnabled" class="section-tight">
           <div class="grid-3">
-            <article class="card feature-card">
+            <article v-fade-up class="card feature-card">
               <Sparkles aria-hidden="true" />
               <h3>按创作频率选择</h3>
               <p>轻量体验选积分包，稳定创作测试选进阶积分包，团队长期项目可考虑团队积分包。</p>
             </article>
-            <article class="card feature-card">
+            <article v-fade-up="{ delay: 100 }" class="card feature-card">
               <ShieldCheck aria-hidden="true" />
               <h3>商用前合规确认</h3>
               <p>套餐适合商业视觉草稿、广告素材探索和团队协作，发布前仍需确认素材授权、广告合规和 AI 标识。</p>
             </article>
-            <article class="card feature-card">
+            <article v-fade-up="{ delay: 200 }" class="card feature-card">
               <CreditCard aria-hidden="true" />
               <h3>人民币支付</h3>
               <p>提交订单后复制订单号联系管理员，管理员确认后积分会自动到账。</p>

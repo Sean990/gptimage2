@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import {
   ArrowRight,
@@ -48,7 +48,34 @@ function openPricing() {
 const featureIcons = [MessageSquareText, Wand2, Sparkles, Layers, PenTool, BadgeCheck]
 const workflowIcons = [Upload, Wand2, Sparkles, Download]
 
-onMounted(loadSiteData)
+let observer = null
+
+onMounted(() => {
+  loadSiteData()
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view')
+          observer.unobserve(entry.target)
+        }
+      })
+    },
+    { threshold: 0.1 }
+  )
+
+  setTimeout(() => {
+    document.querySelectorAll('.fade-up').forEach((el) => {
+      observer.observe(el)
+    })
+  }, 100)
+})
+
+onBeforeUnmount(() => {
+  if (observer) {
+    observer.disconnect()
+  }
+})
 </script>
 
 <template>
@@ -138,17 +165,17 @@ onMounted(loadSiteData)
           title="更适合国内内容发布流程的 AI 图片生产"
         />
         <div class="grid-3">
-          <article class="card feature-card">
+          <article class="card feature-card fade-up">
             <MessageSquareText aria-hidden="true" />
             <h3>清晰可读的文字渲染</h3>
             <p>海报标题、包装文案、横幅标语和信息图里的文本更容易生成正确，发布前仍建议人工校对。</p>
           </article>
-          <article class="card feature-card">
+          <article class="card feature-card fade-up delay-100">
             <PenTool aria-hidden="true" />
             <h3>更稳的高级编辑</h3>
             <p>继续修改一张已有图片时，能更稳定地保留主体、构图、光线、材质与品牌细节。</p>
           </article>
-          <article class="card feature-card">
+          <article class="card feature-card fade-up delay-200">
             <Sparkles aria-hidden="true" />
             <h3>可复核的视觉效果</h3>
             <p>适合产品图、人物图、广告图和品牌视觉草稿，并保留人工复核和权利确认空间。</p>
@@ -165,7 +192,7 @@ onMounted(loadSiteData)
           description="用户真正关心的不只是能不能出图，还包括素材是否有授权、结果是否需要标识、内容是否能通过发布前审核。"
         />
         <div class="grid-3">
-          <article v-for="([title, body], index) in features" :key="title" class="card feature-card">
+          <article v-for="([title, body], index) in features" :key="title" class="card feature-card fade-up">
             <component :is="featureIcons[index]" aria-hidden="true" />
             <h3>{{ title }}</h3>
             <p>{{ body }}</p>
@@ -184,7 +211,7 @@ onMounted(loadSiteData)
             description="把反推提示词放进完整流程里展示：先上传已授权素材，再让 AI 读图生成提示词，最后生成可下载、可复核的图片方案。"
           />
           <div class="step-list">
-            <article class="card step-card">
+            <article class="card step-card fade-up">
               <span class="step-number">
                 <component :is="workflowIcons[0]" aria-hidden="true" />
               </span>
@@ -193,7 +220,7 @@ onMounted(loadSiteData)
             <p>上传本人或已获授权的照片与参考图，不要上传证件、隐私照片或未经授权的人脸素材。</p>
               </div>
             </article>
-            <article class="card step-card">
+            <article class="card step-card fade-up delay-100">
               <span class="step-number">
                 <component :is="workflowIcons[1]" aria-hidden="true" />
               </span>
@@ -202,7 +229,7 @@ onMounted(loadSiteData)
                 <p>辅助分析服装、光线、表情、镜头和氛围，生成可继续修改的摄影提示词草稿。</p>
               </div>
             </article>
-            <article class="card step-card">
+            <article class="card step-card fade-up delay-200">
               <span class="step-number">
                 <component :is="workflowIcons[2]" aria-hidden="true" />
               </span>
@@ -211,7 +238,7 @@ onMounted(loadSiteData)
             <p>选择风格后生成多张 AI 图片，结果应保留 AI 生成提示，并在公开发布前进行人工审核。</p>
               </div>
             </article>
-            <article class="card step-card">
+            <article class="card step-card fade-up delay-300">
               <span class="step-number">
                 <component :is="workflowIcons[3]" aria-hidden="true" />
               </span>
@@ -258,17 +285,17 @@ onMounted(loadSiteData)
           description="用常见使用场景说明流程：头像草稿、写真方案、电商素材和批量创意，都可以从同一套流程里完成初步探索。"
         />
         <div class="grid-3">
-          <article class="card testimonial-card">
+          <article class="card testimonial-card fade-up">
             <h3>社媒头像快速探索多版</h3>
             <p>先反推再生成，能更方便地比较不同风格方向。</p>
             <span>独立创作者</span>
           </article>
-          <article class="card testimonial-card">
+          <article class="card testimonial-card fade-up delay-100">
             <h3>电商主图方案探索</h3>
             <p>同一张已授权产品参考图可以测试棚拍、生活方式和节日氛围。</p>
             <span>跨境卖家</span>
           </article>
-          <article class="card testimonial-card">
+          <article class="card testimonial-card fade-up delay-200">
             <h3>提示词可以复用</h3>
             <p>生成满意后保存提示词，下次可在授权素材范围内参考同一套视觉风格。</p>
             <span>内容运营</span>
@@ -285,7 +312,7 @@ onMounted(loadSiteData)
           description="重点说明使用边界、内容标识、授权和发布前复核要求。"
         />
         <div class="faq-grid">
-          <article v-for="([question, answer], index) in faqItems" :key="question" class="card faq-item">
+          <article v-for="([question, answer], index) in faqItems" :key="question" class="card faq-item fade-up">
             <span class="tag">
               <FileQuestion aria-hidden="true" />
               {{ index + 1 }}

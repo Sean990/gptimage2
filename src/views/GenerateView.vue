@@ -1596,7 +1596,7 @@ onBeforeUnmount(() => {
   <main class="page generate-page" :class="{ 'batch-mode-page': batchMode }">
     <section class="section-tight">
       <div class="container">
-        <div class="generate-hero">
+        <div class="generate-hero" v-fade-up>
           <div class="generate-hero-copy">
             <span v-if="batchMode" class="batch-hero-badge">
               <Images aria-hidden="true" />
@@ -1650,7 +1650,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div class="generator-layout">
+        <div class="generator-layout" v-fade-up="{ delay: 100 }">
           <section class="card tool-panel">
             <div class="mode-switch-card">
               <div class="settings-section-head">

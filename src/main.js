@@ -165,12 +165,45 @@ const routes = [
   },
 ]
 
-export const createApp = ViteSSG(App, {
-  routes,
-  scrollBehavior(to) {
-    if (to.hash) {
-      return { el: to.hash, top: 88, behavior: 'smooth' }
-    }
-    return { top: 0 }
+export const createApp = ViteSSG(
+  App,
+  {
+    routes,
+    scrollBehavior(to) {
+      if (to.hash) {
+        return { el: to.hash, top: 88, behavior: 'smooth' }
+      }
+      return { top: 0 }
+    },
   },
-})
+  ({ app, isClient }) => {
+    if (isClient) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('in-view')
+              observer.unobserve(entry.target)
+            }
+          })
+        },
+        { threshold: 0.1 }
+      )
+      
+      app.directive('fade-up', {
+        mounted(el, binding) {
+          el.classList.add('fade-up')
+          if (binding.value && binding.value.delay) {
+            el.classList.add(`delay-${binding.value.delay}`)
+          }
+          setTimeout(() => {
+            observer.observe(el)
+          }, 50)
+        },
+        unmounted(el) {
+          observer.unobserve(el)
+        }
+      })
+    }
+  }
+)

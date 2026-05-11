@@ -279,7 +279,7 @@ watch(isAuthenticated, (authenticated) => {
   <main class="page account-page">
     <section class="section-tight account-section">
       <div class="container">
-        <section v-if="!isAuthenticated" class="card auth-required-panel">
+        <section v-if="!isAuthenticated" class="card auth-required-panel" v-fade-up>
           <LogIn aria-hidden="true" />
           <h1>登录后查看个人中心</h1>
           <p>积分、邀请奖励和生成记录都会同步到你的账户。登录后才能提交生图任务。</p>
@@ -290,7 +290,7 @@ watch(isAuthenticated, (authenticated) => {
         </section>
 
         <template v-else>
-          <section class="account-hero" aria-label="账户概览">
+          <section class="account-hero" aria-label="账户概览" v-fade-up>
             <div>
               <span class="eyebrow">个人中心</span>
               <h1>{{ user.name || 'ImgsGen 用户' }}</h1>
@@ -310,7 +310,7 @@ watch(isAuthenticated, (authenticated) => {
 
           <p v-if="message" class="form-message account-message" aria-live="polite">{{ message }}</p>
 
-          <section class="account-shell">
+          <section class="account-shell" v-fade-up="{ delay: 100 }">
             <nav class="account-sidebar" aria-label="个人中心导航">
               <button
                 v-for="tab in tabs"
@@ -351,7 +351,7 @@ watch(isAuthenticated, (authenticated) => {
                 role="tabpanel"
                 aria-labelledby="account-tab-orders"
               >
-                <div class="account-metric-grid">
+                <div class="account-metric-grid" v-fade-up="{ delay: 200 }">
                   <article class="account-metric">
                     <span>订单数量</span>
                     <strong>{{ orders.length }}</strong>
@@ -366,7 +366,7 @@ watch(isAuthenticated, (authenticated) => {
                   </article>
                 </div>
 
-                <div class="account-table-wrap">
+                <div class="account-table-wrap" v-fade-up="{ delay: 300 }">
                   <table class="account-table">
                     <thead>
                       <tr>
@@ -399,10 +399,10 @@ watch(isAuthenticated, (authenticated) => {
                 role="tabpanel"
                 aria-labelledby="account-tab-credits"
               >
-                <div class="credit-overview">
+                <div class="credit-overview" v-fade-up="{ delay: 200 }">
                   <span>剩余积分: {{ user.credits || 0 }}</span>
                 </div>
-                <div class="account-table-wrap">
+                <div class="account-table-wrap" v-fade-up="{ delay: 300 }">
                   <table class="account-table">
                     <thead>
                       <tr>
@@ -435,7 +435,7 @@ watch(isAuthenticated, (authenticated) => {
                 role="tabpanel"
                 aria-labelledby="account-tab-invites"
               >
-                <div class="invite-grid">
+                <div class="invite-grid" v-fade-up="{ delay: 200 }">
                   <article class="invite-card">
                     <span>邀请码</span>
                     <strong>{{ inviteOverview.inviteCode || 'NOT SET' }}</strong>
@@ -465,7 +465,7 @@ watch(isAuthenticated, (authenticated) => {
                   </article>
                 </div>
                 <p v-if="copyMessage" class="form-message invite-copy-message" aria-live="polite">{{ copyMessage }}</p>
-                <div class="account-table-wrap">
+                <div class="account-table-wrap" v-fade-up="{ delay: 300 }">
                   <table class="account-table">
                     <thead>
                       <tr>
@@ -495,7 +495,7 @@ watch(isAuthenticated, (authenticated) => {
                 role="tabpanel"
                 aria-labelledby="account-tab-profile"
               >
-                <div class="profile-overview">
+                <div class="profile-overview" v-fade-up="{ delay: 200 }">
                   <span class="profile-avatar">
                     <img v-if="user.avatarUrl" :src="user.avatarUrl" alt="" />
                     <UserRound v-else aria-hidden="true" />
@@ -507,7 +507,7 @@ watch(isAuthenticated, (authenticated) => {
                   </div>
                 </div>
 
-                <div class="profile-stats">
+                <div class="profile-stats" v-fade-up="{ delay: 300 }">
                   <article>
                     <PackageCheck aria-hidden="true" />
                     <span>图库作品</span>
@@ -525,7 +525,7 @@ watch(isAuthenticated, (authenticated) => {
                   </article>
                 </div>
 
-                <form class="profile-form" @submit.prevent="submitProfile">
+                <form class="profile-form" v-fade-up="{ delay: 400 }" @submit.prevent="submitProfile">
                   <div class="field">
                     <label for="profile-name">昵称</label>
                     <input id="profile-name" v-model.trim="profileName" type="text" autocomplete="name" :minlength="profileInputMinNameLength" required />
