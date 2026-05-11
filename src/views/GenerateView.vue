@@ -224,6 +224,7 @@ const loadingStage = ref('准备提交生成任务')
 const generationAbortController = ref(null)
 const activeTaskId = ref('')
 const reversing = ref(false)
+const optimizing = ref(false)
 const randomPromptLoading = ref(false)
 const notice = ref('')
 const galleryOpen = ref(false)
@@ -391,6 +392,30 @@ const usageCosts = computed(() => siteData.value.usageCosts || {})
 const imageGenerationCosts = computed(() => usageCosts.value.imageGeneration || {})
 const hasUsageCostConfig = computed(() => Boolean(usageCosts.value.imageGeneration && usageCosts.value.reversePrompt))
 const reversePromptCost = computed(() => Number(usageCosts.value.reversePrompt?.credits ?? 0))
+const promptOptimizeConfig = computed(() => usageCosts.value.promptOptimize || {})
+const promptOptimizeCost = computed(() => Number(promptOptimizeConfig.value.credits ?? 0))
+const promptOptimizeDailyQuota = computed(() => Number(promptOptimizeConfig.value.dailyFreeQuota ?? 0))
+const promptOptimizeFreeRemaining = computed(() => {
+  const raw = auth.user.value?.promptOptimizeFreeRemaining
+  if (raw === null || raw === undefined || raw === '') return null
+  return Math.max(0, Number(raw))
+})
+const promptOptimizeUsesFreeQuota = computed(() => {
+  const remaining = promptOptimizeFreeRemaining.value
+  return remaining !== null && remaining > 0
+})
+const promptOptimizeCostTip = computed(() => {
+  if (promptOptimizeUsesFreeQuota.value) {
+    return `今日还剩 ${promptOptimizeFreeRemaining.value} 次免费优化`
+  }
+  const quota = promptOptimizeDailyQuota.value
+  const costText = promptOptimizeCost.value > 0
+    ? `每次消耗 ${promptOptimizeCost.value} 积分`
+    : '本功能当前免费'
+  return quota > 0
+    ? `${costText}，每日前 ${quota} 次免费`
+    : costText
+})
 const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
 const generationBillingTip = computed(() => imageGenerationCosts.value.billingTip || '图片生成成功后扣除积分。')
 const generationBillingTipInline = computed(() => generationBillingTip.value.replace(/[。.!！]+$/, ''))
@@ -908,6 +933,56 @@ async function reversePrompt() {
     showNotice(error.message || '提示词反推失败')
   } finally {
     reversing.value = false
+  }
+}
+
+async function optimizeCurrentPrompt() {
+  if (optimizing.value) return
+  const trimmed = prompt.value.trim()
+  if (!trimmed) {
+    showNotice('请先输入要优化的提示词')
+    return
+  }
+  if (!isAuthenticated.value) {
+    openLoginFromGenerate()
+    showNotice('请先登录后使用一键优化')
+    return
+  }
+
+  const usesFree = promptOptimizeUsesFreeQuota.value
+  const cost = promptOptimizeCost.value
+  if (!usesFree && cost > 0 && userCredits.value < cost) {
+    showNotice(`积分不足，本次需要 ${cost} 积分`)
+    return
+  }
+
+  if (!usesFree && cost > 0) {
+    const confirmMessage = `本次一键优化将消耗 ${cost} 积分${promptOptimizeDailyQuota.value > 0 ? `（已用完今日 ${promptOptimizeDailyQuota.value} 次免费额度）` : ''}，是否继续？`
+    if (typeof window !== 'undefined' && !window.confirm(confirmMessage)) return
+  }
+
+  optimizing.value = true
+  try {
+    const result = await api.optimizePrompt({
+      prompt: trimmed,
+      mode: mode.value,
+      modeLabel: activeMode.value.label,
+      language: 'zh-CN',
+      requirements: {
+        preserveFacts: true,
+        directUse: true,
+        includeConstraints: true,
+      },
+    })
+    const nextPrompt = result?.optimizedPrompt || result?.prompt || result?.result || ''
+    if (!nextPrompt) throw new Error('后端未返回优化后的提示词')
+    prompt.value = nextPrompt
+    await auth.refreshMe().catch(() => {})
+    showNotice(usesFree ? '已使用免费次数优化提示词' : '提示词已优化')
+  } catch (error) {
+    showNotice(error.message || '一键优化失败，请稍后重试')
+  } finally {
+    optimizing.value = false
   }
 }
 
@@ -1539,9 +1614,10 @@ onBeforeUnmount(() => {
                   <Wand aria-hidden="true" />
                   <span>只需要单张？返回普通生图</span>
                 </button>
-                <button class="btn hero-utility-button" type="button" @click="openGallery">
+                <button class="btn hero-utility-button hero-gallery-button" type="button" @click="openGallery">
                   <GalleryHorizontal aria-hidden="true" />
-                  <span>我的图库</span><span v-if="gallery.length">{{ gallery.length }}</span>
+                  <span>我的图库</span>
+                  <span v-if="gallery.length" class="hero-gallery-count">{{ gallery.length }}</span>
                 </button>
               </div>
               <div class="tool-toolbar-row tool-toolbar-row-secondary">
@@ -1853,11 +1929,24 @@ onBeforeUnmount(() => {
             <div class="field">
               <div class="prompt-field-head">
                 <label for="prompt">{{ promptLabel }}</label>
-                <button class="btn btn-soft" type="button" :disabled="randomPromptLoading" @click="randomizePrompt">
-                  <Loader2 v-if="randomPromptLoading" class="spinner" aria-hidden="true" />
-                  <Shuffle v-else aria-hidden="true" />
-                  {{ randomPromptLoading ? '加载案例...' : '随机提示词' }}
-                </button>
+                <div class="prompt-field-actions">
+                  <button
+                    class="btn btn-soft prompt-optimize-btn"
+                    type="button"
+                    :disabled="optimizing || !prompt.trim()"
+                    :title="promptOptimizeCostTip"
+                    @click="optimizeCurrentPrompt"
+                  >
+                    <Loader2 v-if="optimizing" class="spinner" aria-hidden="true" />
+                    <Sparkles v-else aria-hidden="true" />
+                    {{ optimizing ? '优化中...' : '一键优化' }}
+                  </button>
+                  <button class="btn btn-soft" type="button" :disabled="randomPromptLoading" @click="randomizePrompt">
+                    <Loader2 v-if="randomPromptLoading" class="spinner" aria-hidden="true" />
+                    <Shuffle v-else aria-hidden="true" />
+                    {{ randomPromptLoading ? '加载案例...' : '随机提示词' }}
+                  </button>
+                </div>
               </div>
               <textarea
                 id="prompt"
@@ -1874,7 +1963,7 @@ onBeforeUnmount(() => {
                   <span class="quality-fill" :style="{ width: `${promptQualityScore}%` }"></span>
                 </div>
               </div>
-              <small>不知道怎么写？试试下方的「AI 反推提示词」功能</small>
+              <small class="prompt-tip-line">{{ promptOptimizeCostTip }} · 不知道怎么写？试试下方的「AI 反推提示词」功能</small>
             </div>
 
             <details class="advanced-panel" :open="advancedOpen" @toggle="advancedOpen = $event.target.open">

@@ -39,6 +39,41 @@ VITE_API_BASE_URL=https://api.example.com/api
 
 `vite.config.js` 已启用 `build.sourcemap: 'hidden'`，sourcemap 随构建产物一起输出但 bundle 末尾不追加 `sourceMappingURL`，便于线上排障且不暴露给普通用户。部署时建议将 `*.map` 保留在服务器并限制访问，或上传到 Sentry 等监控平台。
 
+## 后端接口约定
+
+### `GET /api/site`
+
+`usageCosts.promptOptimize` 字段供前台"一键优化提示词"使用：
+
+```jsonc
+{
+  "usageCosts": {
+    "promptOptimize": {
+      "credits": 2,          // 超出免费额度后每次消耗的积分
+      "dailyFreeQuota": 3    // 每个用户每天的免费次数，0 表示无免费
+    }
+  }
+}
+```
+
+### `GET /api/me`
+
+用户信息中需携带当日剩余免费次数，便于前台展示"今日还剩 N 次免费优化"：
+
+```jsonc
+{
+  "id": "...",
+  "credits": 120,
+  "promptOptimizeFreeRemaining": 2
+}
+```
+
+字段缺省或为 `null` 时视为"无免费额度已用/未知"，前台会按积分扣费提示。
+
+### `POST /api/prompt/optimize`（或 `/prompt-optimizer/optimize`）
+
+后端收到请求后先检查该用户当日免费配额：有剩余则免费处理、配额 `-1`；无剩余则按 `credits` 扣费。响应至少包含 `optimizedPrompt` 字段，成功后前台会调用 `/api/me` 刷新余额。
+
 ## 上线检查
 
 - 后端 `gptimage2-api` 已启动并通过 `pnpm smoke`。
