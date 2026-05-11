@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  Download,
   ExternalLink,
   Eye,
   Gem,
@@ -1167,6 +1168,73 @@ function openPreviewSource() {
   window.open(currentPreviewImage.value.src, '_blank', 'noreferrer')
 }
 
+function sanitizeFileName(name) {
+  return (name || 'imgsgen-image')
+    .replace(/[\\/:*?"<>|\n\r\t]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120) || 'imgsgen-image'
+}
+
+function inferImageExtension(src, fallback = 'png') {
+  const match = /\.(png|jpe?g|webp|gif|bmp|svg)(?:\?|#|$)/i.exec(src || '')
+  if (match) return match[1].toLowerCase().replace('jpeg', 'jpg')
+  return (fallback || 'png').toLowerCase().replace('jpeg', 'jpg')
+}
+
+async function downloadImage(image, fallbackTitle = '生成图片') {
+  const src = typeof image === 'string' ? image : image?.src || image?.url
+  if (!src) {
+    showNotice('图片地址不存在，无法下载')
+    return
+  }
+  const title = typeof image === 'string' ? fallbackTitle : image?.title || fallbackTitle
+  const ext = inferImageExtension(src, image?.outputFormat || 'png')
+  const filename = `${sanitizeFileName(title)}.${ext}`
+
+  try {
+    const response = await fetch(src, { mode: 'cors', credentials: 'omit' })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = filename
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(objectUrl)
+    showNotice('图片已开始下载')
+  } catch {
+    window.open(src, '_blank', 'noreferrer')
+    showNotice('直接下载失败，已在新标签页打开原图')
+  }
+}
+
+function downloadPreviewImage() {
+  if (!currentPreviewImage.value) return
+  downloadImage(currentPreviewImage.value, '生成图片')
+}
+
+function downloadGalleryRecord(record) {
+  const images = Array.isArray(record?.images) ? record.images : []
+  if (!images.length) {
+    showNotice('该记录暂无可下载图片')
+    return
+  }
+  const title = record.prompt?.slice(0, 40) || 'imgsgen-image'
+  images.forEach((item, index) => {
+    downloadImage(
+      {
+        src: item.url || item.src,
+        title: `${title}-${index + 1}`,
+        outputFormat: item.outputFormat,
+      },
+      '图库图片',
+    )
+  })
+}
+
 function getReferences() {
   return [
     imageUrl.value,
@@ -2215,6 +2283,9 @@ onBeforeUnmount(() => {
                     <button class="icon-button" type="button" :aria-label="`预览 ${item.title}`" @click="openImagePreview(output, index, '生成图片')">
                       <Eye aria-hidden="true" />
                     </button>
+                    <button class="icon-button" type="button" :aria-label="`下载 ${item.title}`" @click="downloadImage(item, '生成图片')">
+                      <Download aria-hidden="true" />
+                    </button>
                     <button class="icon-button" type="button" aria-label="复制当前提示词" @click="copyCurrentPrompt">
                       <Copy aria-hidden="true" />
                     </button>
@@ -2326,6 +2397,9 @@ onBeforeUnmount(() => {
                 <button class="icon-button" type="button" aria-label="预览图片" :disabled="!canPreviewGalleryRecord(record)" @click="openGalleryImage(record)">
                   <Eye aria-hidden="true" />
                 </button>
+                <button class="icon-button" type="button" aria-label="下载该批图片" :disabled="!canPreviewGalleryRecord(record)" @click="downloadGalleryRecord(record)">
+                  <Download aria-hidden="true" />
+                </button>
                 <button class="icon-button" type="button" aria-label="复制提示词" @click="copyGalleryPrompt(record)">
                   <Copy aria-hidden="true" />
                 </button>
@@ -2359,6 +2433,9 @@ onBeforeUnmount(() => {
             <p>{{ [previewPosition, currentPreviewImage?.meta].filter(Boolean).join(' · ') }}</p>
           </div>
           <div class="image-preview-actions">
+            <button class="icon-button" type="button" aria-label="下载当前图片" @click="downloadPreviewImage">
+              <Download aria-hidden="true" />
+            </button>
             <button class="icon-button" type="button" aria-label="打开原图" @click="openPreviewSource">
               <ExternalLink aria-hidden="true" />
             </button>
