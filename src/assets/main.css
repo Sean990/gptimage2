@@ -3293,6 +3293,24 @@ img {
   color: #ffffff;
 }
 
+:root[data-theme="dark"] .prompt-field-head .prompt-optimize-btn {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  box-shadow: 0 8px 18px rgba(139, 92, 246, 0.28);
+}
+
+:root[data-theme="dark"] .prompt-field-head .prompt-optimize-btn:hover:not(:disabled) {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+  box-shadow: 0 12px 26px rgba(139, 92, 246, 0.34);
+}
+
+:root[data-theme="dark"] .prompt-field-head .prompt-optimize-btn svg {
+  color: #ffffff;
+}
+
 .prompt-tip-line {
   display: block;
   line-height: 1.6;
