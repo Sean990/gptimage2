@@ -1076,7 +1076,8 @@ async function generate() {
     showNotice(batchMode.value ? '批量生成已完成' : '图像生成已完成')
   } catch (error) {
     output.value = []
-    if (error.name === 'AbortError') showNotice('已停止提交生成任务')
+    if (error.isTimeout) showNotice(error.message || '请求超时，请稍后重试')
+    else if (error.name === 'AbortError') showNotice('已停止提交生成任务')
     else showNotice(error.message || '图像生成失败，请稍后重试')
   } finally {
     logGenerationDuration()
@@ -2572,6 +2573,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div v-if="notice" class="toast">{{ notice }}</div>
+    <div v-if="notice" class="toast" role="status" aria-live="polite">{{ notice }}</div>
   </main>
 </template>

@@ -27,6 +27,23 @@ export default defineConfig(({ mode }) => {
     ],
     build: {
       sourcemap: 'hidden',
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            const normalizedId = id.replace(/\\/g, '/')
+            if (!normalizedId.includes('/node_modules/')) return undefined
+            if (normalizedId.includes('/node_modules/lucide-vue-next/')) return 'vendor-icons'
+            if (
+              normalizedId.includes('/node_modules/vue/') ||
+              normalizedId.includes('/node_modules/vue-router/') ||
+              normalizedId.includes('/node_modules/@vue/')
+            ) {
+              return 'vendor-vue'
+            }
+            return undefined
+          },
+        },
+      },
     },
   }
 })

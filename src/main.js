@@ -177,6 +177,12 @@ export const createApp = ViteSSG(
     },
   },
   ({ app, isClient }) => {
+    const fadeUpDirective = {
+      getSSRProps() {
+        return {}
+      },
+    }
+
     if (isClient) {
       const observer = new IntersectionObserver(
         (entries) => {
@@ -196,11 +202,11 @@ export const createApp = ViteSSG(
         { threshold: 0.08 }
       )
 
-      app.directive('fade-up', {
+      Object.assign(fadeUpDirective, {
         mounted(el, binding) {
           el.classList.add('fade-up')
           const delay = binding.value?.delay
-          if (delay) {
+          if (Number.isFinite(delay)) {
             el.style.transitionDelay = `${delay}ms`
           }
           setTimeout(() => {
@@ -209,8 +215,12 @@ export const createApp = ViteSSG(
         },
         unmounted(el) {
           observer.unobserve(el)
+          el.style.transitionDelay = ''
+          el.style.willChange = ''
         },
       })
     }
+
+    app.directive('fade-up', fadeUpDirective)
   },
 )

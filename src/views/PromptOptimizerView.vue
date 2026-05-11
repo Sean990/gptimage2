@@ -386,6 +386,6 @@ onBeforeUnmount(() => {
       </div>
     </section>
 
-    <div v-if="notice" class="toast">{{ notice }}</div>
+    <div v-if="notice" class="toast" role="status" aria-live="polite">{{ notice }}</div>
   </main>
 </template>

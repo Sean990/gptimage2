@@ -32,6 +32,7 @@ const copiedId = ref(null)
 const activeTab = ref('cases')
 const selectedCase = ref(null)
 const selectedTemplate = ref(null)
+const loadedImages = ref(new Set())
 
 const categories = computed(() => ['全部分类', ...promptTaxonomy.value.categories.map((item) => item.value)])
 const styles = computed(() => ['全部风格', ...promptTaxonomy.value.styles.map((item) => item.value)])
@@ -101,6 +102,14 @@ function showNotice(text) {
   window.setTimeout(() => {
     if (notice.value === text) notice.value = ''
   }, 2400)
+}
+
+function markImageLoaded(id) {
+  loadedImages.value = new Set(loadedImages.value).add(id)
+}
+
+function isImageLoaded(id) {
+  return loadedImages.value.has(id)
 }
 
 function categoryLabel(value) {
@@ -273,7 +282,13 @@ onMounted(loadLocalLibrary)
             <article v-for="(item, index) in filteredItems" :key="item.id" v-fade-up="{ delay: (index % 12) * 50 }" class="card showcase-card">
               <div class="image-wrap">
                 <button class="showcase-image-button" type="button" @click="openCase(item)">
-                  <img :src="item.image" :alt="item.title" loading="lazy" />
+                  <img
+                    :src="item.image"
+                    :alt="item.title"
+                    loading="lazy"
+                    :class="{ loaded: isImageLoaded(`case-${item.id}`) }"
+                    @load="markImageLoaded(`case-${item.id}`)"
+                  />
                 </button>
                 <button class="btn btn-accent image-action" type="button" @click="generateSimilar(item)">
                   <Sparkles aria-hidden="true" />
@@ -334,7 +349,13 @@ onMounted(loadLocalLibrary)
             <article v-for="(item, index) in filteredTemplates" :key="item.id" v-fade-up="{ delay: (index % 12) * 50 }" class="card showcase-card template-library-card">
               <div class="image-wrap">
                 <button class="showcase-image-button" type="button" @click="openTemplate(item)">
-                  <img :src="item.cover" :alt="templateTitle(item)" loading="lazy" />
+                  <img
+                    :src="item.cover"
+                    :alt="templateTitle(item)"
+                    loading="lazy"
+                    :class="{ loaded: isImageLoaded(`template-${item.id}`) }"
+                    @load="markImageLoaded(`template-${item.id}`)"
+                  />
                   <span class="template-badge">模板</span>
                 </button>
               </div>
@@ -484,6 +505,6 @@ onMounted(loadLocalLibrary)
       </div>
     </div>
 
-    <div v-if="notice" class="toast">{{ notice }}</div>
+    <div v-if="notice" class="toast" role="status" aria-live="polite">{{ notice }}</div>
   </main>
 </template>
