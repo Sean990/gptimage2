@@ -1,7 +1,24 @@
 import { ViteSSG } from 'vite-ssg'
 import App from './App.vue'
 import './assets/main.css'
+import './assets/components.css'
+import './assets/layout.css'
+import './assets/account.css'
+import './assets/home.css'
+import './assets/pricing.css'
+import './assets/prompt-optimizer.css'
+import './assets/generate.css'
+import './assets/showcase.css'
+import './assets/docs.css'
+import './assets/legal.css'
+import './assets/responsive.css'
+import './assets/dark.css'
+import './assets/polish.css'
+import './assets/auth-modal.css'
+import './assets/selectors.css'
+import './assets/responsive-late.css'
 import { DEFAULT_DESCRIPTION } from './seo/constants.js'
+import { initWebVitals } from './services/webVitals.js'
 
 const HomeView = () => import('./views/HomeView.vue')
 const GenerateView = () => import('./views/GenerateView.vue')
@@ -184,6 +201,8 @@ export const createApp = ViteSSG(
     }
 
     if (isClient) {
+      initWebVitals()
+
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {

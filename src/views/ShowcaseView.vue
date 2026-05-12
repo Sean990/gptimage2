@@ -2,8 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { Copy, ExternalLink, Eye, Images, LayoutTemplate, RotateCcw, Search, Sparkles, X } from 'lucide-vue-next'
+import EmptyState from '../components/EmptyState.vue'
+import ModalDialog from '../components/ModalDialog.vue'
 import SectionTitle from '../components/SectionTitle.vue'
 import SelectPicker from '../components/SelectPicker.vue'
+import Toast from '../components/Toast.vue'
 import {
   formatTemplatePrompt,
   localizePromptLabel,
@@ -268,16 +271,20 @@ onMounted(loadLocalLibrary)
             <h2>画廊</h2>
             <p>当前显示 {{ filteredItems.length }} 个案例。每条保留 Prompt、来源链接和快照信息，仅供学习提示词结构。</p>
           </div>
-          <div v-if="loading" class="empty-state">
-            <Search aria-hidden="true" />
-            <strong>正在加载本地 Prompt 内容库</strong>
-            <p>案例和模板来自项目内置快照。</p>
-          </div>
-          <div v-else-if="loadError" class="empty-state">
-            <Search aria-hidden="true" />
-            <strong>内容库加载失败</strong>
-            <p>{{ loadError }}</p>
-          </div>
+          <EmptyState
+            v-if="loading"
+            title="正在加载本地 Prompt 内容库"
+            description="案例和模板来自项目内置快照。"
+          >
+            <template #icon>
+              <Search aria-hidden="true" />
+            </template>
+          </EmptyState>
+          <EmptyState v-else-if="loadError" title="内容库加载失败" :description="loadError">
+            <template #icon>
+              <Search aria-hidden="true" />
+            </template>
+          </EmptyState>
           <div v-else-if="filteredItems.length" class="showcase-grid">
             <article v-for="(item, index) in filteredItems" :key="item.id" v-fade-up="{ delay: (index % 12) * 50 }" class="card showcase-card">
               <div class="image-wrap">
@@ -319,15 +326,15 @@ onMounted(loadLocalLibrary)
               </div>
             </article>
           </div>
-          <div v-else class="empty-state">
-            <Search aria-hidden="true" />
-            <strong>没有匹配的案例</strong>
-            <p>换一个关键词或恢复全部分类后再试。</p>
+          <EmptyState v-else title="没有匹配的案例" description="换一个关键词或恢复全部分类后再试。">
+            <template #icon>
+              <Search aria-hidden="true" />
+            </template>
             <button class="btn btn-soft" type="button" @click="resetFilters">
               <RotateCcw aria-hidden="true" />
               重置筛选
             </button>
-          </div>
+          </EmptyState>
         </section>
 
         <section v-else>
@@ -335,16 +342,20 @@ onMounted(loadLocalLibrary)
             <h2>工业模板库</h2>
             <p>当前显示 {{ filteredTemplates.length }} 个模板。模板会被转换成结构化 ImgsGen Prompt 草稿，使用前请按业务和合规要求修改。</p>
           </div>
-          <div v-if="loading" class="empty-state">
-            <Search aria-hidden="true" />
-            <strong>正在加载本地模板库</strong>
-            <p>模板数据会按需载入，不影响首页首屏。</p>
-          </div>
-          <div v-else-if="loadError" class="empty-state">
-            <Search aria-hidden="true" />
-            <strong>模板库加载失败</strong>
-            <p>{{ loadError }}</p>
-          </div>
+          <EmptyState
+            v-if="loading"
+            title="正在加载本地模板库"
+            description="模板数据会按需载入，不影响首页首屏。"
+          >
+            <template #icon>
+              <Search aria-hidden="true" />
+            </template>
+          </EmptyState>
+          <EmptyState v-else-if="loadError" title="模板库加载失败" :description="loadError">
+            <template #icon>
+              <Search aria-hidden="true" />
+            </template>
+          </EmptyState>
           <div v-else-if="filteredTemplates.length" class="showcase-grid template-library-grid">
             <article v-for="(item, index) in filteredTemplates" :key="item.id" v-fade-up="{ delay: (index % 12) * 50 }" class="card showcase-card template-library-card">
               <div class="image-wrap">
@@ -383,28 +394,25 @@ onMounted(loadLocalLibrary)
               </div>
             </article>
           </div>
-          <div v-else class="empty-state">
-            <Search aria-hidden="true" />
-            <strong>没有匹配的模板</strong>
-            <p>换一个关键词或恢复全部分类后再试。</p>
+          <EmptyState v-else title="没有匹配的模板" description="换一个关键词或恢复全部分类后再试。">
+            <template #icon>
+              <Search aria-hidden="true" />
+            </template>
             <button class="btn btn-soft" type="button" @click="resetFilters">
               <RotateCcw aria-hidden="true" />
               重置筛选
             </button>
-          </div>
+          </EmptyState>
         </section>
       </div>
     </section>
 
-    <div
-      v-if="selectedCase"
-      class="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="prompt-case-title"
-      @click.self="closeModal"
+    <ModalDialog
+      :open="Boolean(selectedCase)"
+      title-id="prompt-case-title"
+      card-class="prompt-detail-modal"
+      @close="closeModal"
     >
-      <div class="modal-card prompt-detail-modal">
         <div class="modal-head">
           <div>
             <span class="tag">案例 #{{ selectedCase.upstreamId }}</span>
@@ -445,18 +453,14 @@ onMounted(loadLocalLibrary)
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </ModalDialog>
 
-    <div
-      v-if="selectedTemplate"
-      class="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="prompt-template-title"
-      @click.self="closeModal"
+    <ModalDialog
+      :open="Boolean(selectedTemplate)"
+      title-id="prompt-template-title"
+      card-class="prompt-detail-modal"
+      @close="closeModal"
     >
-      <div class="modal-card prompt-detail-modal">
         <div class="modal-head">
           <div>
             <span class="tag">{{ categoryLabel(selectedTemplate.category) }}</span>
@@ -502,9 +506,8 @@ onMounted(loadLocalLibrary)
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </ModalDialog>
 
-    <div v-if="notice" class="toast" role="status" aria-live="polite">{{ notice }}</div>
+    <Toast :message="notice" />
   </main>
 </template>

@@ -12,6 +12,8 @@ import {
   Trash2,
   WandSparkles,
 } from 'lucide-vue-next'
+import EmptyState from '../components/EmptyState.vue'
+import Toast from '../components/Toast.vue'
 import { api } from '../services/api'
 
 const maxLength = 5000
@@ -339,21 +341,36 @@ onBeforeUnmount(() => {
           </div>
 
           <pre v-if="optimizedPrompt" class="optimizer-output">{{ optimizedPrompt }}</pre>
-          <div v-else-if="loading" class="empty-state optimizer-empty">
-            <Loader2 class="spinner" aria-hidden="true" />
-            <strong>AI 正在优化提示词</strong>
-            <p>系统会结合当前场景补齐角色、任务、约束、输出格式和质量检查。</p>
-          </div>
-          <div v-else-if="optimizeError" class="empty-state optimizer-empty optimizer-error">
-            <WandSparkles aria-hidden="true" />
-            <strong>优化失败</strong>
-            <p>{{ optimizeError }}</p>
-          </div>
-          <div v-else class="empty-state optimizer-empty">
-            <WandSparkles aria-hidden="true" />
-            <strong>优化后的提示词草稿会显示在这里</strong>
-            <p>输入原始提示词并点击“开始优化”，后端 AI 会补齐角色、任务、约束和输出格式。</p>
-          </div>
+          <EmptyState
+            v-else-if="loading"
+            class="optimizer-empty"
+            title="AI 正在优化提示词"
+            description="系统会结合当前场景补齐角色、任务、约束、输出格式和质量检查。"
+          >
+            <template #icon>
+              <Loader2 class="spinner" aria-hidden="true" />
+            </template>
+          </EmptyState>
+          <EmptyState
+            v-else-if="optimizeError"
+            class="optimizer-empty optimizer-error"
+            title="优化失败"
+            :description="optimizeError"
+          >
+            <template #icon>
+              <WandSparkles aria-hidden="true" />
+            </template>
+          </EmptyState>
+          <EmptyState
+            v-else
+            class="optimizer-empty"
+            title="优化后的提示词草稿会显示在这里"
+            description="输入原始提示词并点击“开始优化”，后端 AI 会补齐角色、任务、约束和输出格式。"
+          >
+            <template #icon>
+              <WandSparkles aria-hidden="true" />
+            </template>
+          </EmptyState>
         </section>
 
         <section class="card optimizer-history" aria-labelledby="optimizer-history-title" v-fade-up="{ delay: 300 }">
@@ -377,15 +394,20 @@ onBeforeUnmount(() => {
               <small>{{ item.createdAt }} · {{ item.engine || '后端 AI' }}</small>
             </button>
           </div>
-          <div v-else class="empty-state optimizer-empty">
-            <CheckCircle2 aria-hidden="true" />
-            <strong>暂无历史记录</strong>
-            <p>完成一次优化后，记录会自动保存在当前浏览器中。</p>
-          </div>
+          <EmptyState
+            v-else
+            class="optimizer-empty"
+            title="暂无历史记录"
+            description="完成一次优化后，记录会自动保存在当前浏览器中。"
+          >
+            <template #icon>
+              <CheckCircle2 aria-hidden="true" />
+            </template>
+          </EmptyState>
         </section>
       </div>
     </section>
 
-    <div v-if="notice" class="toast" role="status" aria-live="polite">{{ notice }}</div>
+    <Toast :message="notice" />
   </main>
 </template>

@@ -2,6 +2,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Copy, CreditCard, QrCode, ShieldCheck, Sparkles, Tag, X } from 'lucide-vue-next'
+import FeatureCard from '../components/FeatureCard.vue'
+import ModalDialog from '../components/ModalDialog.vue'
 import PricingCards from '../components/PricingCards.vue'
 import SectionTitle from '../components/SectionTitle.vue'
 import { api } from '../services/api'
@@ -148,44 +150,56 @@ onMounted(() => {
         </div>
 
         <div v-else class="section-tight">
-          <article v-fade-up class="card feature-card">
-            <ShieldCheck aria-hidden="true" />
-            <h3>积分服务暂未开放</h3>
-            <p>当前站点隐藏定价、订单和支付相关入口。需要开放时，可在后台“积分配置”中开启 billingEnabled。</p>
-          </article>
+          <FeatureCard
+            v-fade-up
+            title="积分服务暂未开放"
+            description="当前站点隐藏定价、订单和支付相关入口。需要开放时，可在后台“积分配置”中开启 billingEnabled。"
+          >
+            <template #icon>
+              <ShieldCheck aria-hidden="true" />
+            </template>
+          </FeatureCard>
         </div>
 
         <div v-if="billingEnabled" class="section-tight">
           <div class="grid-3">
-            <article v-fade-up class="card feature-card">
-              <Sparkles aria-hidden="true" />
-              <h3>按创作频率选择</h3>
-              <p>轻量体验选积分包，稳定创作测试选进阶积分包，团队长期项目可考虑团队积分包。</p>
-            </article>
-            <article v-fade-up="{ delay: 100 }" class="card feature-card">
-              <ShieldCheck aria-hidden="true" />
-              <h3>商用前合规确认</h3>
-              <p>套餐适合商业视觉草稿、广告素材探索和团队协作，发布前仍需确认素材授权、广告合规和 AI 标识。</p>
-            </article>
-            <article v-fade-up="{ delay: 200 }" class="card feature-card">
-              <CreditCard aria-hidden="true" />
-              <h3>人民币支付</h3>
-              <p>提交订单后复制订单号联系管理员，管理员确认后积分会自动到账。</p>
-            </article>
+            <FeatureCard
+              v-fade-up
+              title="按创作频率选择"
+              description="轻量体验选积分包，稳定创作测试选进阶积分包，团队长期项目可考虑团队积分包。"
+            >
+              <template #icon>
+                <Sparkles aria-hidden="true" />
+              </template>
+            </FeatureCard>
+            <FeatureCard
+              v-fade-up="{ delay: 100 }"
+              title="商用前合规确认"
+              description="套餐适合商业视觉草稿、广告素材探索和团队协作，发布前仍需确认素材授权、广告合规和 AI 标识。"
+            >
+              <template #icon>
+                <ShieldCheck aria-hidden="true" />
+              </template>
+            </FeatureCard>
+            <FeatureCard
+              v-fade-up="{ delay: 200 }"
+              title="人民币支付"
+              description="提交订单后复制订单号联系管理员，管理员确认后积分会自动到账。"
+            >
+              <template #icon>
+                <CreditCard aria-hidden="true" />
+              </template>
+            </FeatureCard>
           </div>
         </div>
       </div>
     </section>
 
-    <div
-      v-if="billingEnabled && selectedPlan"
-      class="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="checkout-title"
-      @click.self="selectedPlan = null"
+    <ModalDialog
+      :open="billingEnabled && Boolean(selectedPlan)"
+      title-id="checkout-title"
+      @close="selectedPlan = null"
     >
-      <div class="modal-card">
         <div class="modal-head">
           <h2 id="checkout-title">确认套餐</h2>
           <button class="icon-button" type="button" aria-label="关闭" @click="selectedPlan = null">
@@ -244,7 +258,6 @@ onMounted(() => {
           <ShieldCheck aria-hidden="true" />
           {{ orderLoading ? '创建中...' : '创建订单' }}
         </button>
-      </div>
-    </div>
+    </ModalDialog>
   </main>
 </template>

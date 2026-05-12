@@ -16,8 +16,10 @@ import {
   Upload,
   Wand2,
 } from 'lucide-vue-next'
+import FeatureCard from '../components/FeatureCard.vue'
 import PricingCards from '../components/PricingCards.vue'
 import SectionTitle from '../components/SectionTitle.vue'
+import Toast from '../components/Toast.vue'
 import { useSiteStore } from '../services/siteStore'
 
 const { siteData, loadSiteData } = useSiteStore()
@@ -140,21 +142,33 @@ onMounted(() => {
           title="更适合国内内容发布流程的 AI 图片生产"
         />
         <div class="grid-3">
-          <article v-fade-up class="card feature-card">
-            <MessageSquareText aria-hidden="true" />
-            <h3>清晰可读的文字渲染</h3>
-            <p>海报标题、包装文案、横幅标语和信息图里的文本更容易生成正确，发布前仍建议人工校对。</p>
-          </article>
-          <article v-fade-up="{ delay: 100 }" class="card feature-card">
-            <PenTool aria-hidden="true" />
-            <h3>更稳的高级编辑</h3>
-            <p>继续修改一张已有图片时，能更稳定地保留主体、构图、光线、材质与品牌细节。</p>
-          </article>
-          <article v-fade-up="{ delay: 200 }" class="card feature-card">
-            <Sparkles aria-hidden="true" />
-            <h3>可复核的视觉效果</h3>
-            <p>适合产品图、人物图、广告图和品牌视觉草稿，并保留人工复核和权利确认空间。</p>
-          </article>
+          <FeatureCard
+            v-fade-up
+            title="清晰可读的文字渲染"
+            description="海报标题、包装文案、横幅标语和信息图里的文本更容易生成正确，发布前仍建议人工校对。"
+          >
+            <template #icon>
+              <MessageSquareText aria-hidden="true" />
+            </template>
+          </FeatureCard>
+          <FeatureCard
+            v-fade-up="{ delay: 100 }"
+            title="更稳的高级编辑"
+            description="继续修改一张已有图片时，能更稳定地保留主体、构图、光线、材质与品牌细节。"
+          >
+            <template #icon>
+              <PenTool aria-hidden="true" />
+            </template>
+          </FeatureCard>
+          <FeatureCard
+            v-fade-up="{ delay: 200 }"
+            title="可复核的视觉效果"
+            description="适合产品图、人物图、广告图和品牌视觉草稿，并保留人工复核和权利确认空间。"
+          >
+            <template #icon>
+              <Sparkles aria-hidden="true" />
+            </template>
+          </FeatureCard>
         </div>
       </div>
     </section>
@@ -167,11 +181,17 @@ onMounted(() => {
           description="用户真正关心的不只是能不能出图，还包括素材是否有授权、结果是否需要标识、内容是否能通过发布前审核。"
         />
         <div class="grid-3">
-          <article v-for="([title, body], index) in features" :key="title" v-fade-up="{ delay: (index % 3) * 100 }" class="card feature-card">
-            <component :is="featureIcons[index]" aria-hidden="true" />
-            <h3>{{ title }}</h3>
-            <p>{{ body }}</p>
-          </article>
+          <FeatureCard
+            v-for="([title, body], index) in features"
+            :key="title"
+            v-fade-up="{ delay: (index % 3) * 100 }"
+            :title="title"
+            :description="body"
+          >
+            <template #icon>
+              <component :is="featureIcons[index]" aria-hidden="true" />
+            </template>
+          </FeatureCard>
         </div>
       </div>
     </section>
@@ -356,6 +376,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <div v-if="notice" class="toast" role="status" aria-live="polite">{{ notice }}</div>
+    <Toast :message="notice" />
   </main>
 </template>
