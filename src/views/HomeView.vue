@@ -322,7 +322,7 @@ onMounted(() => {
     <section v-if="billingEnabled" class="section" id="pricing">
       <div class="container">
         <SectionTitle title="ImgsGen 定价方案" description="按预计使用量选择套餐，具体权益、有效期和消耗规则以下单页与个人中心记录为准。" />
-        <PricingCards :plans="pricingModes.credits.plans" @select="openPricing" />
+        <PricingCards :plans="pricingModes.credits.plans" button-text="查看说明" @select="openPricing" />
       </div>
     </section>
 

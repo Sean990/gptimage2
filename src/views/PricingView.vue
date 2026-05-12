@@ -146,7 +146,7 @@ onMounted(() => {
           :aria-labelledby="`pricing-tab-${activeMode}`"
           v-fade-up="{ delay: 100 }"
         >
-          <PricingCards :plans="plans" @select="selectPlan" />
+          <PricingCards :plans="plans" button-text="选择方案" @select="selectPlan" />
         </div>
 
         <div v-else class="section-tight">

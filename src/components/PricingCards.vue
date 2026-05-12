@@ -6,6 +6,7 @@ const { siteData } = useSiteStore()
 
 defineProps({
   plans: { type: Array, required: true },
+  buttonText: { type: String, default: '' },
 })
 
 const emit = defineEmits(['select'])
@@ -60,7 +61,7 @@ function formatCredits(credits) {
         </span>
       </div>
       <button class="btn btn-primary" type="button" @click="emit('select', plan)">
-        {{ plan.cta }}
+        {{ buttonText || plan.cta }}
         <ArrowRight aria-hidden="true" />
       </button>
       <div class="unit-note">{{ plan.unit }}</div>
