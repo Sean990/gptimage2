@@ -25,6 +25,10 @@ function normalizeGalleryId(id) {
   return String(id || '').trim()
 }
 
+function isLocalGalleryId(id) {
+  return /^(gallery-|manual-)/.test(normalizeGalleryId(id))
+}
+
 function getGalleryRecordDeleteKeys(record = {}) {
   const keys = []
   const recordId = normalizeGalleryId(record.id)
@@ -32,7 +36,7 @@ function getGalleryRecordDeleteKeys(record = {}) {
   const fallbackKey = [record.prompt, firstImageUrl || record.status].map((part) => String(part || '').trim()).join('|')
 
   if (recordId) keys.push(`id:${recordId}`)
-  if (fallbackKey !== '|') keys.push(`record:${fallbackKey}`)
+  if ((!recordId || isLocalGalleryId(recordId)) && fallbackKey !== '|') keys.push(`record:${fallbackKey}`)
 
   return keys
 }

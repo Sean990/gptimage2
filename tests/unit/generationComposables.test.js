@@ -132,4 +132,38 @@ describe('生成页拆分 composables', () => {
 
     expect(mergeGalleryRecords(gallery.value, [cloudRecord])).toEqual([])
   })
+
+  it('删除有稳定 ID 的失败记录不会误隐藏同文案其他记录', () => {
+    const { gallery, markGalleryRecordsDeleted, mergeGalleryRecords, persistLocalGallery } = useGallery({
+      normalizeGenerationRecord,
+    })
+    const firstFailed = {
+      id: 'task-failed-1',
+      prompt: '相同失败提示词',
+      status: 'failed',
+      createdAt: '2026-05-13T08:00:00.000Z',
+      images: [],
+    }
+    const secondFailed = {
+      id: 'task-failed-2',
+      prompt: '相同失败提示词',
+      status: 'failed',
+      createdAt: '2026-05-13T08:01:00.000Z',
+      images: [],
+    }
+
+    gallery.value = mergeGalleryRecords([firstFailed, secondFailed])
+    expect(gallery.value).toHaveLength(2)
+
+    markGalleryRecordsDeleted([firstFailed])
+    gallery.value = gallery.value.filter((record) => record.id !== firstFailed.id)
+    persistLocalGallery()
+
+    expect(mergeGalleryRecords(gallery.value, [firstFailed, secondFailed]).map((record) => record.id)).toEqual([
+      'task-failed-2',
+    ])
+    expect(filterVisibleGalleryRecords([firstFailed, secondFailed]).map((record) => record.id)).toEqual([
+      'task-failed-2',
+    ])
+  })
 })
