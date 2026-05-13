@@ -1,0 +1,45 @@
+{
+  "date": "2026-05-13",
+  "url": "http://127.0.0.1:5173",
+  "healthScore": 94,
+  "issues": [
+    {
+      "id": "QA-001",
+      "title": "AppFooter.vue 不符合 Prettier",
+      "severity": "Low",
+      "category": "Code Quality",
+      "status": "verified"
+    },
+    {
+      "id": "QA-002",
+      "title": "127.0.0.1 前端登录被后端 CORS 拦截",
+      "severity": "High",
+      "category": "Functional",
+      "status": "verified"
+    },
+    {
+      "id": "QA-003",
+      "title": "个人资料图库数量与图库列表不一致",
+      "severity": "High",
+      "category": "Functional",
+      "status": "verified"
+    },
+    {
+      "id": "QA-004",
+      "title": "图库删除兜底键误隐藏同内容云端记录",
+      "severity": "High",
+      "category": "Functional",
+      "status": "verified"
+    }
+  ],
+  "categoryScores": {
+    "console": 100,
+    "links": 100,
+    "visual": 95,
+    "functional": 95,
+    "ux": 92,
+    "performance": 90,
+    "content": 95,
+    "accessibility": 86
+  }
+}
