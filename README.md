@@ -49,10 +49,10 @@ VITE_API_BASE_URL=https://api.example.com/api
 {
   "usageCosts": {
     "promptOptimize": {
-      "credits": 2,          // 超出免费额度后每次消耗的积分
-      "dailyFreeQuota": 3    // 每个用户每天的免费次数，0 表示无免费
-    }
-  }
+      "credits": 2, // 超出免费额度后每次消耗的积分
+      "dailyFreeQuota": 3, // 每个用户每天的免费次数，0 表示无免费
+    },
+  },
 }
 ```
 
@@ -64,7 +64,7 @@ VITE_API_BASE_URL=https://api.example.com/api
 {
   "id": "...",
   "credits": 120,
-  "promptOptimizeFreeRemaining": 2
+  "promptOptimizeFreeRemaining": 2,
 }
 ```
 

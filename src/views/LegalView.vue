@@ -2,6 +2,7 @@
 import { computed, onMounted, watch } from 'vue'
 import { FileCheck2 } from 'lucide-vue-next'
 import { useSiteStore } from '../services/siteStore'
+import '../assets/legal.css'
 
 const props = defineProps({
   type: { type: String, required: true },

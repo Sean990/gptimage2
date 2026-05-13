@@ -1,0 +1,11 @@
+dist
+node_modules
+.vite-ssg-temp
+coverage
+playwright-report
+test-results
+.codex
+.codex-logs
+pnpm-lock.yaml
+src/data/prompt-library/*.json
+content/prompt-library/upstreams/*.json

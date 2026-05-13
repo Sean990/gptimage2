@@ -1,0 +1,180 @@
+export function useGenerationPolling({
+  activeTaskId,
+  api,
+  gallery,
+  galleryLastSyncedAt,
+  galleryOpen,
+  gallerySyncError,
+  gallerySyncing,
+  generationAbortController,
+  hasPendingGalleryRecords,
+  isAuthenticated,
+  isGalleryRecordPending,
+  loadLocalGallery,
+  loading,
+  loadingStage,
+  mergeGalleryRecords,
+  normalizeGenerationRecord,
+  persistLocalGallery,
+  setGallerySyncMessage,
+  showNotice,
+}) {
+  let taskPollTimer = null
+  let galleryRefreshTimer = null
+
+  function clearTaskPollTimer() {
+    if (!taskPollTimer) return
+    window.clearTimeout(taskPollTimer)
+    taskPollTimer = null
+  }
+
+  async function waitForGenerationTask(taskId) {
+    clearTaskPollTimer()
+    return new Promise((resolve, reject) => {
+      const poll = async () => {
+        try {
+          const task = await api.getGenerationTask(taskId)
+          gallery.value = mergeGalleryRecords([normalizeGenerationRecord(task, task)], gallery.value)
+          persistLocalGallery()
+          const statusText = {
+            queued: '任务排队中',
+            running: '后台生成中',
+            saving: '正在保存图片',
+            cancel_requested: '正在取消任务',
+          }[task.status]
+          loadingStage.value = statusText || '后台生成中'
+
+          if (task.status === 'completed') {
+            clearTaskPollTimer()
+            if (galleryOpen.value) syncCloudGallery({ silent: true })
+            resolve(task)
+            return
+          }
+          if (['failed', 'canceled'].includes(task.status)) {
+            clearTaskPollTimer()
+            persistLocalGallery()
+            reject(new Error(task.errorMessage || (task.status === 'canceled' ? '生成已取消' : '生成失败')))
+            return
+          }
+          taskPollTimer = window.setTimeout(poll, 1800)
+        } catch (error) {
+          clearTaskPollTimer()
+          reject(error)
+        }
+      }
+      poll()
+    })
+  }
+
+  async function stopGeneration() {
+    if (!loading.value) return
+    if (!activeTaskId.value) {
+      generationAbortController.value?.abort()
+      showNotice('正在停止提交生成任务')
+      return
+    }
+    try {
+      await api.cancelGenerationTask(activeTaskId.value)
+      showNotice('已请求取消生成')
+    } catch (error) {
+      showNotice(error.message || '取消失败')
+    }
+  }
+
+  function clearGalleryRefreshTimer() {
+    if (!galleryRefreshTimer) return
+    window.clearTimeout(galleryRefreshTimer)
+    galleryRefreshTimer = null
+  }
+
+  function scheduleGalleryRefresh() {
+    clearGalleryRefreshTimer()
+    if (!galleryOpen.value || !isAuthenticated.value || !hasPendingGalleryRecords.value) return
+
+    galleryRefreshTimer = window.setTimeout(() => {
+      syncCloudGallery({ silent: true })
+    }, 3000)
+  }
+
+  async function refreshPendingGalleryRecords() {
+    if (!isAuthenticated.value) return
+    const pendingRecords = gallery.value.filter((record) => isGalleryRecordPending(record))
+    if (!pendingRecords.length) return
+
+    const settledRecords = await Promise.allSettled(pendingRecords.map((record) => api.getGenerationTask(record.id)))
+    const updatedRecords = settledRecords
+      .filter((result) => result.status === 'fulfilled')
+      .map((result) => normalizeGenerationRecord(result.value, result.value))
+
+    if (updatedRecords.length) {
+      gallery.value = mergeGalleryRecords(updatedRecords, gallery.value)
+      persistLocalGallery()
+    }
+  }
+
+  async function syncCloudGallery({ silent = false } = {}) {
+    gallery.value = mergeGalleryRecords(gallery.value, loadLocalGallery())
+    gallerySyncError.value = ''
+
+    if (!isAuthenticated.value) {
+      if (!silent) showNotice('登录后可查看云端图库和生成进度')
+      return
+    }
+
+    if (gallerySyncing.value) return
+    gallerySyncing.value = true
+
+    try {
+      await refreshPendingGalleryRecords()
+      const records = await api.getGallery()
+      gallery.value = mergeGalleryRecords(gallery.value, Array.isArray(records) ? records : [])
+      galleryLastSyncedAt.value = new Date().toISOString()
+      persistLocalGallery()
+      if (!silent) setGallerySyncMessage('云端图库已同步')
+    } catch (error) {
+      gallerySyncError.value = error.message || '云端图库同步失败'
+      if (!silent && !gallery.value.length) showNotice(gallerySyncError.value)
+    } finally {
+      gallerySyncing.value = false
+      scheduleGalleryRefresh()
+    }
+  }
+
+  async function openGallery() {
+    galleryOpen.value = true
+    await syncCloudGallery({ silent: false })
+  }
+
+  function closeGallery() {
+    galleryOpen.value = false
+    clearGalleryRefreshTimer()
+  }
+
+  function resetCloudGalleryState() {
+    clearGalleryRefreshTimer()
+    galleryLastSyncedAt.value = ''
+    gallerySyncError.value = ''
+    gallery.value = loadLocalGallery()
+  }
+
+  function disposeGenerationPolling() {
+    clearTaskPollTimer()
+    clearGalleryRefreshTimer()
+  }
+
+  return {
+    clearGalleryRefreshTimer,
+    clearTaskPollTimer,
+    closeGallery,
+    disposeGenerationPolling,
+    galleryRefreshTimer,
+    openGallery,
+    refreshPendingGalleryRecords,
+    resetCloudGalleryState,
+    scheduleGalleryRefresh,
+    stopGeneration,
+    syncCloudGallery,
+    taskPollTimer,
+    waitForGenerationTask,
+  }
+}

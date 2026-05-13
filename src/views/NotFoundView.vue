@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import { ArrowLeft, SearchX } from 'lucide-vue-next'
+import '../assets/legal.css'
 </script>
 
 <template>

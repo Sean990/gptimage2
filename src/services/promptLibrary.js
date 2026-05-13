@@ -1,44 +1,126 @@
 let libraryPromise = null
 let activeLibrary = null
+let metaPromise = null
+let activeMeta = null
+let caseIndexPromise = null
+let activeCaseIndex = null
+const activeCaseChunks = new Map()
+const caseChunkPromises = new Map()
 let labelMaps = {
   categories: {},
   styles: {},
   scenes: {},
 }
-const caseModuleLoaders = import.meta.glob('../data/prompt-library/cases-part-*.json')
 
-async function loadCaseChunks() {
+const caseModuleLoaders = import.meta.glob('../data/prompt-library/cases-part-*.json')
+const caseChunkLoadersByNumber = Object.fromEntries(
+  Object.entries(caseModuleLoaders).map(([file, loader]) => {
+    const chunk = Number(file.match(/cases-part-(\d+)\.json$/)?.[1] || 0)
+    return [chunk, loader]
+  }),
+)
+
+function moduleDefault(module) {
+  return module.default || module
+}
+
+async function loadCaseChunk(chunk) {
+  const chunkNumber = Number(chunk)
+  if (activeCaseChunks.has(chunkNumber)) return activeCaseChunks.get(chunkNumber)
+  if (!caseChunkPromises.has(chunkNumber)) {
+    const loader = caseChunkLoadersByNumber[chunkNumber]
+    if (!loader) throw new Error(`Prompt 案例分片不存在：${chunkNumber}`)
+    caseChunkPromises.set(
+      chunkNumber,
+      loader().then((module) => {
+        const cases = moduleDefault(module).cases || []
+        activeCaseChunks.set(chunkNumber, cases)
+        return cases
+      }),
+    )
+  }
+  return caseChunkPromises.get(chunkNumber)
+}
+
+async function loadAllCases() {
   const modules = await Promise.all(
     Object.entries(caseModuleLoaders)
       .sort(([left], [right]) => left.localeCompare(right, 'en'))
       .map(([, loader]) => loader()),
   )
-  return modules.flatMap((item) => item.default?.cases || [])
+  const cases = modules.flatMap((item) => moduleDefault(item).cases || [])
+  modules.forEach((item) => {
+    const payload = moduleDefault(item)
+    if (payload.chunk) activeCaseChunks.set(Number(payload.chunk), payload.cases || [])
+  })
+  return cases
 }
 
-export async function loadPromptLibrary() {
-  if (activeLibrary) return activeLibrary
-  if (!libraryPromise) {
-    libraryPromise = Promise.all([
-      loadCaseChunks(),
+export async function loadPromptLibraryMeta() {
+  if (activeMeta) return activeMeta
+  if (!metaPromise) {
+    metaPromise = Promise.all([
       import('../data/prompt-library/manifest.json'),
       import('../data/prompt-library/taxonomy.json'),
       import('../data/prompt-library/templates.json'),
-    ]).then(([cases, manifestModule, taxonomyModule, templatesModule]) => {
-      const promptTaxonomy = taxonomyModule.default
+    ]).then(([manifestModule, taxonomyModule, templatesModule]) => {
+      const promptTaxonomy = moduleDefault(taxonomyModule)
       labelMaps = {
         categories: buildLabelMap(promptTaxonomy.categories),
         styles: buildLabelMap(promptTaxonomy.styles),
         scenes: buildLabelMap(promptTaxonomy.scenes),
       }
 
-      activeLibrary = {
-        manifest: manifestModule.default,
-        cases,
-        templates: templatesModule.default.templates,
+      activeMeta = {
+        manifest: moduleDefault(manifestModule),
+        templates: moduleDefault(templatesModule).templates,
         taxonomy: promptTaxonomy,
       }
 
+      return activeMeta
+    })
+  }
+
+  return metaPromise
+}
+
+export async function loadPromptCaseIndex() {
+  if (activeCaseIndex) return activeCaseIndex
+  if (!caseIndexPromise) {
+    caseIndexPromise = import('../data/prompt-library/cases-index.json').then((module) => {
+      activeCaseIndex = moduleDefault(module).cases || []
+      return activeCaseIndex
+    })
+  }
+  return caseIndexPromise
+}
+
+export async function loadPromptCaseById(id) {
+  const caseIndex = await loadPromptCaseIndex()
+  const item = caseIndex.find((entry) => entry.id === id || Number(entry.upstreamId) === Number(id))
+  if (!item) return null
+
+  const cases = await loadCaseChunk(item.chunk)
+  return cases.find((entry) => entry.id === item.id) || null
+}
+
+export async function loadRandomCasePrompt() {
+  const caseIndex = await loadPromptCaseIndex()
+  if (!caseIndex.length) throw new Error('画廊案例暂无可用提示词')
+  const item = caseIndex[Math.floor(Math.random() * caseIndex.length)]
+  const fullCase = await loadPromptCaseById(item.id)
+  if (!fullCase?.prompt) throw new Error('画廊案例暂无可用提示词')
+  return fullCase.prompt
+}
+
+export async function loadPromptLibrary() {
+  if (activeLibrary) return activeLibrary
+  if (!libraryPromise) {
+    libraryPromise = Promise.all([loadPromptLibraryMeta(), loadAllCases()]).then(([meta, cases]) => {
+      activeLibrary = {
+        ...meta,
+        cases,
+      }
       return activeLibrary
     })
   }
@@ -54,7 +136,7 @@ export function localizePromptLabel(value, group = 'categories', language = 'zh'
 }
 
 export function localizeTagLabel(value, language = 'zh') {
-  const tagLabel = activeLibrary?.taxonomy?.tagLabels?.[value]
+  const tagLabel = activeMeta?.taxonomy?.tagLabels?.[value] || activeLibrary?.taxonomy?.tagLabels?.[value]
   if (tagLabel) return tagLabel[language] || tagLabel.zh || tagLabel.en || value
 
   const styleItem = labelMaps.styles[value]
@@ -67,7 +149,16 @@ export function localizeTagLabel(value, language = 'zh') {
 }
 
 export function getCaseByUpstreamId(upstreamId) {
-  return activeLibrary?.cases?.find((item) => Number(item.upstreamId) === Number(upstreamId))
+  if (activeLibrary?.cases) {
+    return activeLibrary.cases.find((item) => Number(item.upstreamId) === Number(upstreamId))
+  }
+
+  for (const cases of activeCaseChunks.values()) {
+    const found = cases.find((item) => Number(item.upstreamId) === Number(upstreamId))
+    if (found) return found
+  }
+
+  return null
 }
 
 export function formatTemplatePrompt(template, language = 'zh') {

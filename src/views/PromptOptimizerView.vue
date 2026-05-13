@@ -15,9 +15,12 @@ import {
 import EmptyState from '../components/EmptyState.vue'
 import Toast from '../components/Toast.vue'
 import { api } from '../services/api'
+import { useAuthStore } from '../services/authStore'
+import '../assets/prompt-optimizer.css'
 
 const maxLength = 5000
 const optimizerStorageKey = 'promptOptimizerHistory'
+const auth = useAuthStore()
 const modes = [
   {
     id: 'image',
@@ -53,7 +56,9 @@ const abortController = ref(null)
 
 const activeModeItem = computed(() => modes.find((item) => item.id === activeMode.value) || modes[0])
 const charCount = computed(() => inputPrompt.value.length)
-const canOptimize = computed(() => inputPrompt.value.trim().length > 0 && charCount.value <= maxLength && !loading.value)
+const canOptimize = computed(
+  () => inputPrompt.value.trim().length > 0 && charCount.value <= maxLength && !loading.value,
+)
 const remainingCount = computed(() => Math.max(0, 10 - historyItems.value.length))
 const optimizerStatusText = computed(() => {
   if (loading.value) return 'AI 正在分析场景、补齐约束并重写提示词'
@@ -93,13 +98,11 @@ function pickExample(index) {
 
 function normalizeOptimizedPrompt(result) {
   if (typeof result === 'string') return result.trim()
-  return [
-    result?.optimizedPrompt,
-    result?.prompt,
-    result?.text,
-    result?.content,
-    result?.result,
-  ].find((value) => typeof value === 'string' && value.trim())?.trim() || ''
+  return (
+    [result?.optimizedPrompt, result?.prompt, result?.text, result?.content, result?.result]
+      .find((value) => typeof value === 'string' && value.trim())
+      ?.trim() || ''
+  )
 }
 
 function saveHistory(nextPrompt, meta = {}) {
@@ -121,8 +124,21 @@ function saveHistory(nextPrompt, meta = {}) {
   localStorage.setItem(optimizerStorageKey, JSON.stringify(historyItems.value))
 }
 
+async function ensureAuthenticated() {
+  if (auth.isAuthenticated.value) return true
+  if (auth.token.value && !auth.initialized.value) {
+    await auth.refreshMe().catch(() => {})
+  }
+  return auth.isAuthenticated.value
+}
+
 async function optimizePrompt() {
   if (!canOptimize.value) return
+  if (!(await ensureAuthenticated())) {
+    window.dispatchEvent(new CustomEvent('open-login'))
+    showNotice('请先登录后使用提示词优化器')
+    return
+  }
 
   loading.value = true
   optimizedPrompt.value = ''
@@ -131,20 +147,23 @@ async function optimizePrompt() {
   abortController.value = new AbortController()
 
   try {
-    const result = await api.optimizePrompt({
-      prompt: inputPrompt.value.trim(),
-      mode: activeMode.value,
-      modeLabel: activeModeItem.value.label,
-      language: 'zh-CN',
-      maxLength,
-      requirements: {
-        preserveFacts: true,
-        directUse: true,
-        includeConstraints: true,
+    const result = await api.optimizePrompt(
+      {
+        prompt: inputPrompt.value.trim(),
+        mode: activeMode.value,
+        modeLabel: activeModeItem.value.label,
+        language: 'zh-CN',
+        maxLength,
+        requirements: {
+          preserveFacts: true,
+          directUse: true,
+          includeConstraints: true,
+        },
       },
-    }, {
-      signal: abortController.value.signal,
-    })
+      {
+        signal: abortController.value.signal,
+      },
+    )
     const nextPrompt = normalizeOptimizedPrompt(result)
 
     if (!nextPrompt) {
@@ -209,6 +228,7 @@ function cancelOptimization() {
 }
 
 onMounted(() => {
+  auth.refreshMe().catch(() => {})
   try {
     historyItems.value = JSON.parse(localStorage.getItem(optimizerStorageKey) || '[]')
   } catch {
@@ -296,10 +316,13 @@ onBeforeUnmount(() => {
                 <Sparkles v-else aria-hidden="true" />
                 {{ loading ? '优化中...' : '开始优化' }}
               </button>
-              <button v-if="loading" class="btn btn-soft" type="button" @click="cancelOptimization">
-                取消
-              </button>
-              <button class="btn btn-ghost" type="button" :disabled="!inputPrompt && !optimizedPrompt" @click="resetPrompt">
+              <button v-if="loading" class="btn btn-soft" type="button" @click="cancelOptimization">取消</button>
+              <button
+                class="btn btn-ghost"
+                type="button"
+                :disabled="!inputPrompt && !optimizedPrompt"
+                @click="resetPrompt"
+              >
                 <RotateCcw aria-hidden="true" />
                 清空
               </button>
@@ -382,7 +405,13 @@ onBeforeUnmount(() => {
               </h2>
               <p>保留最近 10 条优化记录，点击任意记录可恢复到工作台。</p>
             </div>
-            <button class="icon-button" type="button" aria-label="清空历史记录" :disabled="!historyItems.length" @click="clearHistory">
+            <button
+              class="icon-button"
+              type="button"
+              aria-label="清空历史记录"
+              :disabled="!historyItems.length"
+              @click="clearHistory"
+            >
               <Trash2 aria-hidden="true" />
             </button>
           </div>

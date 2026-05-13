@@ -14,12 +14,12 @@
   --subtle: #64748b;
 
   /* Brand */
-  --primary: #2563EB;
-  --primary-strong: #1D4ED8;
+  --primary: #2563eb;
+  --primary-strong: #1d4ed8;
   --primary-soft: rgba(47, 102, 245, 0.1);
   --primary-ring: rgba(47, 102, 245, 0.28);
-  --accent: #F97316;
-  --accent-strong: #EA580C;
+  --accent: #f97316;
+  --accent-strong: #ea580c;
   --success: #16a34a;
   --warn: #d97706;
   --danger: #dc2626;
@@ -78,12 +78,20 @@
   --fs-2xl: 22px;
 
   font-family:
-    "Plus Jakarta Sans", "Inter", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui,
-    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    'Plus Jakarta Sans',
+    'Inter',
+    'PingFang SC',
+    'Microsoft YaHei',
+    'Noto Sans SC',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
   color-scheme: light;
 }
 
-:root[data-theme="dark"] {
+:root[data-theme='dark'] {
   /* Surface */
   --bg: #060a14;
   --surface: #111a2c;
@@ -132,31 +140,31 @@
 }
 
 @property --spot-a-x {
-  syntax: "<percentage>";
+  syntax: '<percentage>';
   inherits: false;
   initial-value: 30%;
 }
 
 @property --spot-a-y {
-  syntax: "<percentage>";
+  syntax: '<percentage>';
   inherits: false;
   initial-value: 16%;
 }
 
 @property --spot-b-x {
-  syntax: "<percentage>";
+  syntax: '<percentage>';
   inherits: false;
   initial-value: 68%;
 }
 
 @property --spot-b-y {
-  syntax: "<percentage>";
+  syntax: '<percentage>';
   inherits: false;
   initial-value: 66%;
 }
 
 @property --spot-b-opacity {
-  syntax: "<number>";
+  syntax: '<number>';
   inherits: false;
   initial-value: 0;
 }
@@ -176,7 +184,7 @@ body {
   background: var(--bg);
 }
 
-:root[data-theme="dark"] body {
+:root[data-theme='dark'] body {
   background: var(--bg);
 }
 
@@ -259,33 +267,31 @@ img {
     radial-gradient(circle at 18% 58%, rgba(249, 115, 22, 0.09), transparent 23rem),
     radial-gradient(circle at 64% 84%, rgba(20, 184, 166, 0.08), transparent 24rem);
   filter: blur(4px);
-  content: "";
+  content: '';
 }
 
 .interactive-background::after {
   opacity: 0.46;
   background-image:
-    linear-gradient(var(--bg-noise) 1px, transparent 1px),
-    linear-gradient(90deg, var(--bg-noise) 1px, transparent 1px);
+    linear-gradient(var(--bg-noise) 1px, transparent 1px), linear-gradient(90deg, var(--bg-noise) 1px, transparent 1px);
   background-position:
     0 0,
     0 0;
   background-size: 140px 140px;
   mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.76), transparent 74%);
-  content: "";
+  content: '';
 }
 
 .interactive-background__mesh {
   opacity: 0.72;
-  background:
-    conic-gradient(
-      from 130deg at 50% 50%,
-      transparent 0deg,
-      rgba(37, 99, 235, 0.08) 62deg,
-      rgba(249, 115, 22, 0.07) 126deg,
-      rgba(20, 184, 166, 0.06) 190deg,
-      transparent 260deg,
-      transparent 360deg
+  background: conic-gradient(
+    from 130deg at 50% 50%,
+    transparent 0deg,
+    rgba(37, 99, 235, 0.08) 62deg,
+    rgba(249, 115, 22, 0.07) 126deg,
+    rgba(20, 184, 166, 0.06) 190deg,
+    transparent 260deg,
+    transparent 360deg
   );
   filter: blur(58px);
   transform: scale(1.08);
@@ -294,8 +300,7 @@ img {
 .interactive-background__grid {
   opacity: 0.28;
   background-image:
-    linear-gradient(var(--bg-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    linear-gradient(var(--bg-grid) 1px, transparent 1px), linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
   background-position:
     50% 12%,
     50% 12%;
@@ -326,36 +331,35 @@ img {
   contain: layout style paint;
 }
 
-:root[data-theme="dark"] .interactive-background {
+:root[data-theme='dark'] .interactive-background {
   background:
     radial-gradient(circle at 12% 8%, rgba(96, 165, 250, 0.16), transparent 28rem),
     radial-gradient(circle at 86% 18%, rgba(251, 146, 60, 0.1), transparent 25rem),
     linear-gradient(180deg, #0b1220 0%, var(--bg) 48rem);
 }
 
-:root[data-theme="dark"] .interactive-background::before {
+:root[data-theme='dark'] .interactive-background::before {
   background:
     radial-gradient(circle at 74% 16%, rgba(96, 165, 250, 0.18), transparent 21rem),
     radial-gradient(circle at 18% 58%, rgba(251, 146, 60, 0.11), transparent 24rem),
     radial-gradient(circle at 64% 84%, rgba(45, 212, 191, 0.1), transparent 24rem);
 }
 
-:root[data-theme="dark"] .interactive-background__mesh {
+:root[data-theme='dark'] .interactive-background__mesh {
   opacity: 0.88;
-  background:
-    conic-gradient(
-      from 130deg at 50% 50%,
-      transparent 0deg,
-      rgba(96, 165, 250, 0.12) 62deg,
-      rgba(251, 146, 60, 0.09) 126deg,
-      rgba(45, 212, 191, 0.08) 190deg,
-      transparent 260deg,
-      transparent 360deg
-    );
+  background: conic-gradient(
+    from 130deg at 50% 50%,
+    transparent 0deg,
+    rgba(96, 165, 250, 0.12) 62deg,
+    rgba(251, 146, 60, 0.09) 126deg,
+    rgba(45, 212, 191, 0.08) 190deg,
+    transparent 260deg,
+    transparent 360deg
+  );
   mix-blend-mode: screen;
 }
 
-:root[data-theme="dark"] .interactive-background__cursor {
+:root[data-theme='dark'] .interactive-background__cursor {
   mix-blend-mode: screen;
 }
 
@@ -409,6 +413,8 @@ img {
 
 .section {
   padding: 76px 0;
+  content-visibility: auto;
+  contain-intrinsic-size: 1000px;
 }
 
 .section-tight {
@@ -490,7 +496,9 @@ img {
 .fade-up {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.7s var(--ease-standard), transform 0.7s var(--ease-standard);
+  transition:
+    opacity 0.7s var(--ease-standard),
+    transform 0.7s var(--ease-standard);
   will-change: opacity, transform;
 }
 .fade-up.in-view {

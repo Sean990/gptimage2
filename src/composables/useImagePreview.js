@@ -24,9 +24,7 @@ export function useImagePreview() {
 
   function openImagePreview(imageOrImages, startIndex = 0, fallbackTitle = '图片预览') {
     const rawImages = Array.isArray(imageOrImages) ? imageOrImages : [imageOrImages]
-    const images = rawImages
-      .map((item, index) => normalizePreviewImage(item, index, fallbackTitle))
-      .filter(Boolean)
+    const images = rawImages.map((item, index) => normalizePreviewImage(item, index, fallbackTitle)).filter(Boolean)
     if (!images.length) return
     const safeIndex = Math.min(Math.max(Number(startIndex) || 0, 0), images.length - 1)
     imagePreview.value = {

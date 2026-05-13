@@ -15,6 +15,7 @@ import {
 } from 'lucide-vue-next'
 import SectionTitle from '../components/SectionTitle.vue'
 import { useSiteStore } from '../services/siteStore'
+import '../assets/docs.css'
 
 const { siteData, loadSiteData } = useSiteStore()
 const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
@@ -54,8 +55,13 @@ onMounted(() => {
             <section id="intro" class="card doc-section" v-fade-up="{ delay: 200 }">
               <BookOpen aria-hidden="true" />
               <h2>产品介绍</h2>
-              <p>ImgsGen 是一个 AI 图片创作平台，适合用来生成海报、产品图、人物写真方案、社媒封面、插画、界面图和创意视觉草稿。</p>
-              <p>你可以输入文字生成图片，也可以上传参考图进行图生图、局部精修和提示词反推。平台会保存生成任务和结果，方便后续复用、查看和管理。</p>
+              <p>
+                ImgsGen 是一个 AI
+                图片创作平台，适合用来生成海报、产品图、人物写真方案、社媒封面、插画、界面图和创意视觉草稿。
+              </p>
+              <p>
+                你可以输入文字生成图片，也可以上传参考图进行图生图、局部精修和提示词反推。平台会保存生成任务和结果，方便后续复用、查看和管理。
+              </p>
             </section>
 
             <section id="quickstart" class="card doc-section" v-fade-up>
@@ -84,9 +90,14 @@ onMounted(() => {
             <section id="generate" class="card doc-section" v-fade-up>
               <ImagePlus aria-hidden="true" />
               <h2>AI 生图教程</h2>
-              <p>AI 生图页支持文生图、图生图和精修图。第一次使用时，建议先从文生图开始，写清楚主体、场景、风格、光线、构图和用途。</p>
+              <p>
+                AI
+                生图页支持文生图、图生图和精修图。第一次使用时，建议先从文生图开始，写清楚主体、场景、风格、光线、构图和用途。
+              </p>
               <ol>
-                <li>选择文生图，输入一句完整提示词，例如“高级护肤品海报，透明精华瓶，白色背景，柔和光线，商业摄影质感”。</li>
+                <li>
+                  选择文生图，输入一句完整提示词，例如“高级护肤品海报，透明精华瓶，白色背景，柔和光线，商业摄影质感”。
+                </li>
                 <li>选择比例。小红书封面常用 3:4 或 9:16，头像和图标常用 1:1，横幅常用 16:9。</li>
                 <li>选择分辨率和质量。质量越高通常更适合正式交付，但消耗可能更高。</li>
                 <li>如果需要多张方案，打开批量生成，选择 2、4、6、8 或 10 张。</li>
@@ -109,7 +120,9 @@ onMounted(() => {
             <section id="optimizer" class="card doc-section" v-fade-up>
               <WandSparkles aria-hidden="true" />
               <h2>提示词优化</h2>
-              <p>如果你只有一个模糊想法，可以先使用提示词优化器。它会把简单描述改写成结构更完整、便于继续修改的提示词草稿。</p>
+              <p>
+                如果你只有一个模糊想法，可以先使用提示词优化器。它会把简单描述改写成结构更完整、便于继续修改的提示词草稿。
+              </p>
               <ol>
                 <li>打开提示词优化页面，选择图像生成、文案写作或办公任务。</li>
                 <li>输入原始想法，例如“做一张咖啡店新品海报”。</li>
@@ -134,7 +147,9 @@ onMounted(() => {
             <section id="showcase" class="card doc-section" v-fade-up>
               <BookOpen aria-hidden="true" />
               <h2>案例库与模板</h2>
-              <p>画廊里收录了 Prompt 案例和工业模板。你可以搜索分类、风格和场景，查看完整提示词，再作为草稿带入生成器。</p>
+              <p>
+                画廊里收录了 Prompt 案例和工业模板。你可以搜索分类、风格和场景，查看完整提示词，再作为草稿带入生成器。
+              </p>
               <ul>
                 <li>案例适合学习别人如何描述画面、构图、文字和风格。</li>
                 <li>模板适合快速生成结构化 Prompt，尤其适合海报、信息图、界面图和产品图。</li>
@@ -157,7 +172,9 @@ onMounted(() => {
             <section id="credits" class="card doc-section" v-fade-up>
               <Coins aria-hidden="true" />
               <h2>积分说明</h2>
-              <p>实际消耗以页面提交前展示的预计积分和个人中心积分流水为准。不同模式、图片数量、质量和平台配置都可能影响消耗。</p>
+              <p>
+                实际消耗以页面提交前展示的预计积分和个人中心积分流水为准。不同模式、图片数量、质量和平台配置都可能影响消耗。
+              </p>
               <ul>
                 <li>图片生成通常在任务成功后扣除积分。</li>
                 <li>AI 反推提示词会按页面展示的规则消耗积分。</li>
@@ -168,10 +185,20 @@ onMounted(() => {
             <section id="security" class="card doc-section" v-fade-up>
               <ShieldCheck aria-hidden="true" />
               <h2>安全与合规</h2>
-              <p>上传图片、生成内容和支付信息应通过安全通道处理。商业发布前需要人工审核文字准确性、人物授权、品牌使用边界、广告合规和是否需要 AI 生成内容标识。</p>
-              <p>不得生成或传播违法违规、侵权、虚假新闻、冒用身份、侵犯肖像隐私、损害未成年人权益或危害公共利益的内容。平台可对输入和输出进行自动或人工审核，并处理投诉举报。</p>
-              <p>页面内合规提示只用于帮助理解平台规则，不构成法律意见。涉及广告投放、商业授权、肖像权、著作权、未成年人或监管敏感场景时，请自行咨询专业人士。</p>
-              <p><KeyRound aria-hidden="true" /> 请妥善保管账号密码、邮箱验证码、订单号和付款凭证，不要把账号借给他人使用。</p>
+              <p>
+                上传图片、生成内容和支付信息应通过安全通道处理。商业发布前需要人工审核文字准确性、人物授权、品牌使用边界、广告合规和是否需要
+                AI 生成内容标识。
+              </p>
+              <p>
+                不得生成或传播违法违规、侵权、虚假新闻、冒用身份、侵犯肖像隐私、损害未成年人权益或危害公共利益的内容。平台可对输入和输出进行自动或人工审核，并处理投诉举报。
+              </p>
+              <p>
+                页面内合规提示只用于帮助理解平台规则，不构成法律意见。涉及广告投放、商业授权、肖像权、著作权、未成年人或监管敏感场景时，请自行咨询专业人士。
+              </p>
+              <p>
+                <KeyRound aria-hidden="true" />
+                请妥善保管账号密码、邮箱验证码、订单号和付款凭证，不要把账号借给他人使用。
+              </p>
             </section>
           </div>
         </div>

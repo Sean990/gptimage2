@@ -49,12 +49,18 @@ async function main() {
     await mirrorQueuedAssets()
   }
 
+  const caseIndex = buildCaseIndex(cases)
   writeJson(join(snapshotDir, `${upstreamName}.snapshot.json`), {
     manifest,
     upstreamCases,
     styleLibrary,
   })
   manifest.caseChunks = writeCaseChunks(cases, manifest)
+  writeJson(join(srcDataDir, 'cases-index.json'), {
+    manifest: manifest.upstream,
+    total: cases.length,
+    cases: caseIndex,
+  })
   writeJson(join(srcDataDir, 'templates.json'), {
     manifest: manifest.upstream,
     total: templates.length,
@@ -142,7 +148,9 @@ function normalizeCase(item, styleLibrary) {
     sourceLabel: cleanText(item.sourceLabel || 'Community'),
     sourceUrl: item.sourceUrl || '',
     prompt: cleanText(item.prompt),
-    promptPreview: cleanText(item.promptPreview || item.prompt).replace(/\s+/g, ' ').slice(0, 260),
+    promptPreview: cleanText(item.promptPreview || item.prompt)
+      .replace(/\s+/g, ' ')
+      .slice(0, 260),
     category,
     styles,
     scenes,
@@ -247,9 +255,7 @@ function normalizeImageAsset(imagePath, id) {
   const path = String(imagePath || '').trim()
   const filename = path.split('/').filter(Boolean).pop() || `case-${id}.jpg`
   const local = `/prompt-assets/${upstreamName}/images/${filename}`
-  const remote = path.startsWith('http')
-    ? path
-    : `${rawBase}/data/${path.replace(/^\//, '')}`
+  const remote = path.startsWith('http') ? path : `${rawBase}/data/${path.replace(/^\//, '')}`
 
   if (shouldDownloadAssets) assetQueue.push({ path, filename, remote })
 
@@ -334,7 +340,7 @@ function hashJson(value) {
 
 function writeCaseChunks(cases, manifest) {
   for (const filename of readdirSync(srcDataDir)) {
-    if (/^cases(?:-part-\d+)?\.json$/.test(filename)) {
+    if (/^cases(?:-index|-part-\d+)?\.json$/.test(filename)) {
       unlinkSync(join(srcDataDir, filename))
     }
   }
@@ -357,6 +363,41 @@ function writeCaseChunks(cases, manifest) {
     })
   }
   return chunks
+}
+
+function buildCaseIndex(cases) {
+  return cases.map((item, index) => {
+    const chunk = Math.floor(index / caseChunkSize) + 1
+    const tags = [...new Set([...(item.styles || []), ...(item.scenes || [])])]
+    const searchText = [
+      item.upstreamId,
+      item.title,
+      item.promptPreview,
+      item.category,
+      ...(item.styles || []),
+      ...(item.scenes || []),
+      item.sourceLabel,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+
+    return {
+      id: item.id,
+      upstreamId: item.upstreamId,
+      chunk,
+      title: item.title,
+      image: item.image,
+      imageAlt: item.imageAlt,
+      category: item.category,
+      styles: item.styles,
+      scenes: item.scenes,
+      tags,
+      featured: item.featured,
+      promptPreview: item.promptPreview,
+      searchText,
+    }
+  })
 }
 
 function writeJson(file, value) {

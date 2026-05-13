@@ -9,7 +9,7 @@ const { siteData, loadSiteData } = useSiteStore()
 const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
 
 onMounted(() => {
-  loadSiteData().catch(() => {})
+  loadSiteData().catch(() => { })
 })
 </script>
 
@@ -26,13 +26,13 @@ onMounted(() => {
           </RouterLink>
           <p>面向国内内容发布场景的 AI 图像生成与编辑工具，适用于海报、品牌、电商和社媒视觉的方案创作与发布前复核。</p>
           <div class="header-actions">
-            <a class="icon-button" href="https://x.com" aria-label="X">
+            <a class="icon-button" href="https://weixin.com" alt="微信" aria-label="微信">
               <MessageCircle aria-hidden="true" />
             </a>
-            <a class="icon-button" href="https://github.com" aria-label="GitHub">
+            <a class="icon-button" href="https://github.com/Sean990" alt="GitHub" aria-label="GitHub">
               <Github aria-hidden="true" />
             </a>
-            <a class="icon-button" href="mailto:bgnwd15@gmail.com" aria-label="邮件">
+            <a class="icon-button" href="mailto:imgsgen@163.com" alt="邮件" aria-label="邮件">
               <Mail aria-hidden="true" />
             </a>
           </div>

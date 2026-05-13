@@ -1,6 +1,7 @@
 <script setup>
 import { ArrowRight, CheckCircle2, Flame } from 'lucide-vue-next'
 import { useSiteStore } from '../services/siteStore'
+import '../assets/pricing.css'
 
 const { siteData } = useSiteStore()
 
@@ -24,12 +25,7 @@ function formatCredits(credits) {
 
 <template>
   <div class="grid-3">
-    <article
-      v-for="plan in plans"
-      :key="plan.name"
-      class="card price-card"
-      :class="{ featured: plan.badge }"
-    >
+    <article v-for="plan in plans" :key="plan.name" class="card price-card" :class="{ featured: plan.badge }">
       <div class="plan-head">
         <h3>{{ plan.name }}</h3>
         <span v-if="plan.badge" class="badge">

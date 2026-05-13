@@ -140,7 +140,12 @@ const {
         </button>
       </div>
     </div>
-    <div v-if="batchMode" class="batch-count-card" :class="{ 'menu-open': selectMenuOpen === 'batchCount' }" aria-label="批量生成数量">
+    <div
+      v-if="batchMode"
+      class="batch-count-card"
+      :class="{ 'menu-open': selectMenuOpen === 'batchCount' }"
+      aria-label="批量生成数量"
+    >
       <div>
         <span>生成数量</span>
         <strong>{{ normalizedImageCount }} 张图片</strong>
@@ -162,7 +167,11 @@ const {
               <strong>{{ selectedBatchCountLabel }}</strong>
             </span>
           </span>
-          <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'batchCount' }" aria-hidden="true" />
+          <ChevronDown
+            class="model-picker-arrow"
+            :class="{ open: selectMenuOpen === 'batchCount' }"
+            aria-hidden="true"
+          />
         </button>
         <div
           v-if="selectMenuOpen === 'batchCount'"
@@ -259,7 +268,11 @@ const {
                 <strong>{{ selectedAspectRatioLabel }}</strong>
               </span>
             </span>
-            <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'aspectRatio' }" aria-hidden="true" />
+            <ChevronDown
+              class="model-picker-arrow"
+              :class="{ open: selectMenuOpen === 'aspectRatio' }"
+              aria-hidden="true"
+            />
           </button>
           <div
             v-if="selectMenuOpen === 'aspectRatio'"
@@ -308,7 +321,11 @@ const {
                 <strong>{{ selectedResolutionLabel }}</strong>
               </span>
             </span>
-            <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'resolution' }" aria-hidden="true" />
+            <ChevronDown
+              class="model-picker-arrow"
+              :class="{ open: selectMenuOpen === 'resolution' }"
+              aria-hidden="true"
+            />
           </button>
           <div
             v-if="selectMenuOpen === 'resolution'"
@@ -340,9 +357,12 @@ const {
         <small v-if="resolution !== 'auto'">{{ resolutionLabel }}</small>
       </div>
     </div>
-    
+
     <div v-if="showReferenceSection" class="field reference-section">
-      <label>{{ referenceLabel }} <span v-if="requiresReference">({{ referenceCount }}/{{ maxReferenceCount }})</span></label>
+      <label
+        >{{ referenceLabel }}
+        <span v-if="requiresReference">({{ referenceCount }}/{{ maxReferenceCount }})</span></label
+      >
       <div class="field">
         <label for="image-url">{{ referenceInputLabel }}</label>
         <div class="control-row">
@@ -371,29 +391,57 @@ const {
         <strong>点击上传</strong>
         <span>或拖拽图片</span>
         <span>{{ referenceUploadHint }}</span>
-        <input type="file" accept="image/png,image/jpeg,image/webp" :multiple="mode !== 'edit'" hidden @change="onFileChange" />
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          :multiple="mode !== 'edit'"
+          hidden
+          @change="onFileChange"
+        />
       </label>
-      <p class="compliance-hint">请仅上传本人或已获授权的图片。包含人脸、证件、未成年人、商标、作品或隐私信息的素材，需先取得合法授权。</p>
+      <p class="compliance-hint">
+        请仅上传本人或已获授权的图片。包含人脸、证件、未成年人、商标、作品或隐私信息的素材，需先取得合法授权。
+      </p>
       <div v-if="referenceCount" class="reference-grid">
         <div v-if="imageUrl" class="reference-thumb">
-          <button class="thumb-preview" type="button" aria-label="预览 URL 参考图" @click="openImagePreview(getReferencePreviewImages(), 0, '参考图像')">
+          <button
+            class="thumb-preview"
+            type="button"
+            aria-label="预览 URL 参考图"
+            @click="openImagePreview(getReferencePreviewImages(), 0, '参考图像')"
+          >
             <img :src="imageUrl" alt="URL 参考图" />
           </button>
-          <button class="icon-button thumb-remove" type="button" aria-label="移除 URL 参考图" @click="removeUrlReference">
+          <button
+            class="icon-button thumb-remove"
+            type="button"
+            aria-label="移除 URL 参考图"
+            @click="removeUrlReference"
+          >
             <X aria-hidden="true" />
           </button>
         </div>
         <div v-for="(item, index) in uploads" :key="item.src" class="reference-thumb">
-          <button class="thumb-preview" type="button" :aria-label="`预览 ${item.name}`" @click="openImagePreview(getReferencePreviewImages(), imageUrl ? index + 1 : index, '参考图像')">
+          <button
+            class="thumb-preview"
+            type="button"
+            :aria-label="`预览 ${item.name}`"
+            @click="openImagePreview(getReferencePreviewImages(), imageUrl ? index + 1 : index, '参考图像')"
+          >
             <img :src="item.src" :alt="item.name" />
           </button>
-          <button class="icon-button thumb-remove" type="button" :aria-label="`移除 ${item.name}`" @click="removeUpload(index)">
+          <button
+            class="icon-button thumb-remove"
+            type="button"
+            :aria-label="`移除 ${item.name}`"
+            @click="removeUpload(index)"
+          >
             <Trash2 aria-hidden="true" />
           </button>
         </div>
       </div>
     </div>
-    
+
     <div class="field">
       <div class="prompt-field-head">
         <label for="prompt">{{ promptLabel }}</label>
@@ -416,12 +464,7 @@ const {
           </button>
         </div>
       </div>
-      <textarea
-        id="prompt"
-        v-model.trim="prompt"
-        :placeholder="promptPlaceholder"
-        spellcheck="false"
-      />
+      <textarea id="prompt" v-model.trim="prompt" :placeholder="promptPlaceholder" spellcheck="false" />
       <div class="quality-meter" aria-live="polite">
         <div class="quality-meter-head">
           <span>{{ promptQualityLabel }}</span>
@@ -433,7 +476,7 @@ const {
       </div>
       <small class="prompt-tip-line">{{ promptOptimizeCostTip }} · 不知道怎么写？试试下方的「AI 反推提示词」功能</small>
     </div>
-    
+
     <details class="advanced-panel" :open="advancedOpen" @toggle="advancedOpen = $event.target.open">
       <summary>
         <span>输出参数</span>
@@ -460,7 +503,11 @@ const {
                   <strong>{{ selectedQualityLabel }}</strong>
                 </span>
               </span>
-              <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'quality' }" aria-hidden="true" />
+              <ChevronDown
+                class="model-picker-arrow"
+                :class="{ open: selectMenuOpen === 'quality' }"
+                aria-hidden="true"
+              />
             </button>
             <div
               v-if="selectMenuOpen === 'quality'"
@@ -509,7 +556,11 @@ const {
                   <strong>{{ selectedOutputFormatLabel }}</strong>
                 </span>
               </span>
-              <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'outputFormat' }" aria-hidden="true" />
+              <ChevronDown
+                class="model-picker-arrow"
+                :class="{ open: selectMenuOpen === 'outputFormat' }"
+                aria-hidden="true"
+              />
             </button>
             <div
               v-if="selectMenuOpen === 'outputFormat'"
@@ -558,7 +609,11 @@ const {
                   <strong>{{ selectedBackgroundLabel }}</strong>
                 </span>
               </span>
-              <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'background' }" aria-hidden="true" />
+              <ChevronDown
+                class="model-picker-arrow"
+                :class="{ open: selectMenuOpen === 'background' }"
+                aria-hidden="true"
+              />
             </button>
             <div
               v-if="selectMenuOpen === 'background'"
@@ -607,7 +662,11 @@ const {
                   <strong>{{ selectedModerationLabel }}</strong>
                 </span>
               </span>
-              <ChevronDown class="model-picker-arrow" :class="{ open: selectMenuOpen === 'moderation' }" aria-hidden="true" />
+              <ChevronDown
+                class="model-picker-arrow"
+                :class="{ open: selectMenuOpen === 'moderation' }"
+                aria-hidden="true"
+              />
             </button>
             <div
               v-if="selectMenuOpen === 'moderation'"
@@ -673,25 +732,45 @@ const {
         <p class="compliance-hint">请勿通过蒙版编辑未获授权的人脸、身体、证件、隐私区域或可能造成误导的敏感内容。</p>
         <div v-if="maskCount" class="reference-grid mask-grid">
           <div v-if="maskImageUrl" class="reference-thumb">
-            <button class="thumb-preview" type="button" aria-label="预览 URL 蒙版" @click="openImagePreview(getMaskPreviewImages(), 0, '蒙版')">
+            <button
+              class="thumb-preview"
+              type="button"
+              aria-label="预览 URL 蒙版"
+              @click="openImagePreview(getMaskPreviewImages(), 0, '蒙版')"
+            >
               <img :src="maskImageUrl" alt="URL 蒙版" />
             </button>
-            <button class="icon-button thumb-remove" type="button" aria-label="移除 URL 蒙版" @click="removeMaskUrlReference">
+            <button
+              class="icon-button thumb-remove"
+              type="button"
+              aria-label="移除 URL 蒙版"
+              @click="removeMaskUrlReference"
+            >
               <X aria-hidden="true" />
             </button>
           </div>
           <div v-for="(item, index) in maskUploads" :key="item.src" class="reference-thumb">
-            <button class="thumb-preview" type="button" :aria-label="`预览 ${item.name}`" @click="openImagePreview(getMaskPreviewImages(), maskImageUrl ? index + 1 : index, '蒙版')">
+            <button
+              class="thumb-preview"
+              type="button"
+              :aria-label="`预览 ${item.name}`"
+              @click="openImagePreview(getMaskPreviewImages(), maskImageUrl ? index + 1 : index, '蒙版')"
+            >
               <img :src="item.src" :alt="item.name" />
             </button>
-            <button class="icon-button thumb-remove" type="button" :aria-label="`移除 ${item.name}`" @click="removeMaskUpload(index)">
+            <button
+              class="icon-button thumb-remove"
+              type="button"
+              :aria-label="`移除 ${item.name}`"
+              @click="removeMaskUpload(index)"
+            >
               <Trash2 aria-hidden="true" />
             </button>
           </div>
         </div>
       </div>
     </details>
-    
+
     <div v-if="requiresReference" class="reverse-box">
       <div class="reverse-head">
         <span class="reverse-icon" aria-hidden="true">
@@ -705,8 +784,16 @@ const {
           <span>上传已授权照片，生成可修改的摄影提示词草稿</span>
         </div>
       </div>
-      <p>AI 辅助分析照片并生成包含人物特征、服装细节、光线描述、镜头参数等信息的提示词草稿。上传真人照片前请确认已取得合法授权。</p>
-      <button class="btn btn-soft reverse-action" type="button" :disabled="!canReverse || reversing" @click="reversePrompt">
+      <p>
+        AI
+        辅助分析照片并生成包含人物特征、服装细节、光线描述、镜头参数等信息的提示词草稿。上传真人照片前请确认已取得合法授权。
+      </p>
+      <button
+        class="btn btn-soft reverse-action"
+        type="button"
+        :disabled="!canReverse || reversing"
+        @click="reversePrompt"
+      >
         <Loader2 v-if="reversing" class="spinner" aria-hidden="true" />
         <Wand2 v-else aria-hidden="true" />
         {{ reversing ? '反推中...' : canReverse ? '生成反推提示词' : '请先上传图片' }}
@@ -716,12 +803,20 @@ const {
         <span><Zap aria-hidden="true" />10 秒生成</span>
       </div>
     </div>
-    
+
     <div class="generation-actions">
       <button class="btn btn-primary" type="button" :aria-busy="loading" :disabled="loading" @click="generate">
         <Sparkles v-if="!loading" aria-hidden="true" />
         <Loader2 v-else class="spinner" aria-hidden="true" />
-        {{ loading ? (batchMode ? '批量生成中...' : '正在创建图像...') : (batchMode ? `批量生成 ${normalizedImageCount} 张图片` : '开始生成') }}
+        {{
+          loading
+            ? batchMode
+              ? '批量生成中...'
+              : '正在创建图像...'
+            : batchMode
+              ? `批量生成 ${normalizedImageCount} 张图片`
+              : '开始生成'
+        }}
       </button>
       <button v-if="loading" class="btn btn-soft" type="button" @click="stopGeneration">
         <Square aria-hidden="true" />

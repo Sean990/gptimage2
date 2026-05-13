@@ -36,12 +36,10 @@ const optionRefs = ref([])
 const open = ref(false)
 
 const normalizedOptions = computed(() =>
-  props.options.map((item) => (typeof item === 'object' ? item : { label: String(item), value: item }))
+  props.options.map((item) => (typeof item === 'object' ? item : { label: String(item), value: item })),
 )
 
-const selectedOption = computed(() =>
-  normalizedOptions.value.find((item) => Object.is(item.value, props.modelValue))
-)
+const selectedOption = computed(() => normalizedOptions.value.find((item) => Object.is(item.value, props.modelValue)))
 
 const selectedLabel = computed(() => selectedOption.value?.label || props.placeholder)
 const resolvedAriaLabel = computed(() => props.ariaLabel || selectedLabel.value)

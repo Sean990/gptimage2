@@ -20,12 +20,12 @@ export function useAuthForm(auth) {
   const passwordValid = computed(() => password.value.length >= 8)
   const verificationCodeValid = computed(() => /^\d{4,8}$/.test(verificationCode.value.trim()))
   const requiresVerificationCode = computed(() => authMode.value !== 'login')
-  const loginDisabled = computed(() => (
-    !emailValid.value ||
-    !passwordValid.value ||
-    (requiresVerificationCode.value && !verificationCodeValid.value)
-  ))
-  const sendCodeDisabled = computed(() => !emailValid.value || codeLoading.value || codeCooldown.value > 0 || loginLoading.value)
+  const loginDisabled = computed(
+    () => !emailValid.value || !passwordValid.value || (requiresVerificationCode.value && !verificationCodeValid.value),
+  )
+  const sendCodeDisabled = computed(
+    () => !emailValid.value || codeLoading.value || codeCooldown.value > 0 || loginLoading.value,
+  )
   const authTitle = computed(() => {
     if (authMode.value === 'register') return '创建 ImgsGen 账号'
     if (authMode.value === 'reset') return '重置登录密码'
@@ -100,7 +100,9 @@ export function useAuthForm(auth) {
   async function submitLogin(onAuthenticated) {
     if (loginDisabled.value) {
       loginMessageType.value = 'error'
-      loginMessage.value = requiresVerificationCode.value ? '请填写有效邮箱、验证码和至少 8 位密码' : '请输入有效邮箱和至少 8 位密码'
+      loginMessage.value = requiresVerificationCode.value
+        ? '请填写有效邮箱、验证码和至少 8 位密码'
+        : '请输入有效邮箱和至少 8 位密码'
       focusEmailInput()
       return false
     }
@@ -120,11 +122,7 @@ export function useAuthForm(auth) {
       else if (currentMode === 'reset') result = await auth.resetPassword(payload)
       else result = await auth.login(payload)
 
-      const actionText = currentMode === 'register'
-        ? '注册并登录'
-        : currentMode === 'reset'
-          ? '重置密码并登录'
-          : '登录'
+      const actionText = currentMode === 'register' ? '注册并登录' : currentMode === 'reset' ? '重置密码并登录' : '登录'
       loginMessageType.value = 'success'
       loginMessage.value = `${result.user.name} 已${actionText}，当前积分 ${result.user.credits}`
       onAuthenticated?.(result)
@@ -147,15 +145,17 @@ export function useAuthForm(auth) {
 
     codeLoading.value = true
     try {
-      const result = authMode.value === 'reset'
-        ? await auth.sendPasswordResetCode({ email: email.value })
-        : await auth.sendEmailCode({ email: email.value })
+      const result =
+        authMode.value === 'reset'
+          ? await auth.sendPasswordResetCode({ email: email.value })
+          : await auth.sendEmailCode({ email: email.value })
       loginMessageType.value = 'info'
-      loginMessage.value = import.meta.env.DEV && result.debugCode
-        ? `验证码已生成：${result.debugCode}`
-        : authMode.value === 'reset'
-          ? '如果邮箱已注册，验证码将发送到该邮箱'
-          : '验证码已发送，请查收邮箱'
+      loginMessage.value =
+        import.meta.env.DEV && result.debugCode
+          ? `验证码已生成：${result.debugCode}`
+          : authMode.value === 'reset'
+            ? '如果邮箱已注册，验证码将发送到该邮箱'
+            : '验证码已发送，请查收邮箱'
       startCodeCooldown(60)
     } catch (error) {
       loginMessageType.value = 'error'

@@ -9,6 +9,7 @@ import SectionTitle from '../components/SectionTitle.vue'
 import { api } from '../services/api'
 import { useAuthStore } from '../services/authStore'
 import { useSiteStore } from '../services/siteStore'
+import '../assets/pricing.css'
 
 const { siteData, loadSiteData } = useSiteStore()
 const auth = useAuthStore()
@@ -40,9 +41,23 @@ function changeModeByOffset(offset) {
   })
 }
 
-function selectPlan(plan) {
+async function ensureAuthenticated() {
+  if (auth.isAuthenticated.value) return true
+  if (auth.token.value && !auth.initialized.value) {
+    await auth.refreshMe().catch(() => {})
+  }
+  return auth.isAuthenticated.value
+}
+
+async function selectPlan(plan) {
   if (!billingEnabled.value) {
     orderMessage.value = '积分服务暂未开放，请查看积分说明。'
+    return
+  }
+  if (!(await ensureAuthenticated())) {
+    orderMessage.value = ''
+    copyMessage.value = ''
+    window.dispatchEvent(new CustomEvent('open-login'))
     return
   }
   selectedPlan.value = plan
@@ -112,12 +127,22 @@ onMounted(() => {
         <article v-fade-up class="card sale-banner">
           <Tag aria-hidden="true" />
           <h2>{{ billingEnabled ? '创作者积分服务' : '积分说明' }}</h2>
-          <p>{{ billingEnabled ? '展示积分包等使用路径，便于按预计使用量对比成本；最终权益以下单页面和订单记录为准。' : '积分服务暂未开放。你仍可查看积分消耗规则，并在后台开启后恢复定价与订单入口。' }}</p>
+          <p>
+            {{
+              billingEnabled
+                ? '展示积分包等使用路径，便于按预计使用量对比成本；最终权益以下单页面和订单记录为准。'
+                : '积分服务暂未开放。你仍可查看积分消耗规则，并在后台开启后恢复定价与订单入口。'
+            }}
+          </p>
         </article>
 
         <SectionTitle
           :title="billingEnabled ? 'ImgsGen 定价' : 'ImgsGen 积分说明'"
-          :description="billingEnabled ? '选择适合你预计使用量的积分包。生成结果公开使用前仍需完成授权和内容复核。' : '当前仅展示积分消耗说明，不提供在线下单或支付入口。'"
+          :description="
+            billingEnabled
+              ? '选择适合你预计使用量的积分包。生成结果公开使用前仍需完成授权和内容复核。'
+              : '当前仅展示积分消耗说明，不提供在线下单或支付入口。'
+          "
         />
 
         <div v-if="billingEnabled" class="segmented" role="tablist" aria-label="定价模式">
@@ -195,69 +220,67 @@ onMounted(() => {
       </div>
     </section>
 
-    <ModalDialog
-      :open="billingEnabled && Boolean(selectedPlan)"
-      title-id="checkout-title"
-      @close="selectedPlan = null"
-    >
-        <div class="modal-head">
-          <h2 id="checkout-title">确认套餐</h2>
-          <button class="icon-button" type="button" aria-label="关闭" @click="selectedPlan = null">
-            <X aria-hidden="true" />
-          </button>
-        </div>
-        <p>你选择了 {{ selectedPlan.name }}，提交后只会创建订单，请把订单号发给管理员处理。</p>
-        <p v-if="orderMessage" class="form-message" aria-live="polite">
-          <ShieldCheck aria-hidden="true" />
-          {{ orderMessage }}
-        </p>
-        <div class="price-line">
-          <span class="old-price">{{ selectedPlan.oldPrice }}</span>
-          <span class="new-price">{{ selectedPlan.price }}</span>
-          <span class="cycle">{{ selectedPlan.cycle }}</span>
-        </div>
-        <section v-if="createdOrder && createdOrder.status !== 'paid'" class="checkout-payment-panel" aria-label="订单付款信息">
-          <div class="checkout-payment-qr">
-            <img v-if="paymentImage" :src="paymentImage" alt="人民币支付二维码" />
-            <QrCode v-else aria-hidden="true" />
-          </div>
-          <div class="checkout-payment-copy">
-            <span>付款备注</span>
-            <strong>{{ paymentRemark }}</strong>
-            <button class="btn btn-soft" type="button" @click="copyPaymentRemark">
-              <Copy aria-hidden="true" />
-              复制订单号
-            </button>
-          </div>
-          <dl class="checkout-order-lines">
-            <div>
-              <dt>订单金额</dt>
-              <dd>{{ createdOrder.amountText || selectedPlan.price }}</dd>
-            </div>
-            <div>
-              <dt>到账积分</dt>
-              <dd>{{ createdOrder.credits }} 积分</dd>
-            </div>
-          </dl>
-          <p>请把订单号发给管理员。管理员在后台将订单标记为已支付后，积分会自动到账。</p>
-          <p v-if="copyMessage" class="form-message" aria-live="polite">
-            <ShieldCheck aria-hidden="true" />
-            {{ copyMessage }}
-          </p>
-          <button class="btn btn-soft" type="button" @click="openOrders">
-            查看我的订单
-          </button>
-        </section>
-        <button
-          v-if="!createdOrder || createdOrder.status === 'paid'"
-          class="btn btn-primary"
-          type="button"
-          :disabled="orderLoading"
-          @click="submitOrder"
-        >
-          <ShieldCheck aria-hidden="true" />
-          {{ orderLoading ? '创建中...' : '创建订单' }}
+    <ModalDialog :open="billingEnabled && Boolean(selectedPlan)" title-id="checkout-title" @close="selectedPlan = null">
+      <div class="modal-head">
+        <h2 id="checkout-title">确认套餐</h2>
+        <button class="icon-button" type="button" aria-label="关闭" @click="selectedPlan = null">
+          <X aria-hidden="true" />
         </button>
+      </div>
+      <p>你选择了 {{ selectedPlan.name }}，提交后只会创建订单，请把订单号发给管理员处理。</p>
+      <p v-if="orderMessage" class="form-message" aria-live="polite">
+        <ShieldCheck aria-hidden="true" />
+        {{ orderMessage }}
+      </p>
+      <div class="price-line">
+        <span class="old-price">{{ selectedPlan.oldPrice }}</span>
+        <span class="new-price">{{ selectedPlan.price }}</span>
+        <span class="cycle">{{ selectedPlan.cycle }}</span>
+      </div>
+      <section
+        v-if="createdOrder && createdOrder.status !== 'paid'"
+        class="checkout-payment-panel"
+        aria-label="订单付款信息"
+      >
+        <div class="checkout-payment-qr">
+          <img v-if="paymentImage" :src="paymentImage" alt="人民币支付二维码" />
+          <QrCode v-else aria-hidden="true" />
+        </div>
+        <div class="checkout-payment-copy">
+          <span>付款备注</span>
+          <strong>{{ paymentRemark }}</strong>
+          <button class="btn btn-soft" type="button" @click="copyPaymentRemark">
+            <Copy aria-hidden="true" />
+            复制订单号
+          </button>
+        </div>
+        <dl class="checkout-order-lines">
+          <div>
+            <dt>订单金额</dt>
+            <dd>{{ createdOrder.amountText || selectedPlan.price }}</dd>
+          </div>
+          <div>
+            <dt>到账积分</dt>
+            <dd>{{ createdOrder.credits }} 积分</dd>
+          </div>
+        </dl>
+        <p>请把订单号发给管理员。管理员在后台将订单标记为已支付后，积分会自动到账。</p>
+        <p v-if="copyMessage" class="form-message" aria-live="polite">
+          <ShieldCheck aria-hidden="true" />
+          {{ copyMessage }}
+        </p>
+        <button class="btn btn-soft" type="button" @click="openOrders">查看我的订单</button>
+      </section>
+      <button
+        v-if="!createdOrder || createdOrder.status === 'paid'"
+        class="btn btn-primary"
+        type="button"
+        :disabled="orderLoading"
+        @click="submitOrder"
+      >
+        <ShieldCheck aria-hidden="true" />
+        {{ orderLoading ? '创建中...' : '创建订单' }}
+      </button>
     </ModalDialog>
   </main>
 </template>

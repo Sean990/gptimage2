@@ -19,6 +19,8 @@ import {
 import { api } from '../services/api'
 import { useAuthStore } from '../services/authStore'
 import { useSiteStore } from '../services/siteStore'
+import { filterVisibleGalleryRecords } from '../composables/useGallery'
+import '../assets/account.css'
 
 const auth = useAuthStore()
 const { siteData, loadSiteData } = useSiteStore()
@@ -45,6 +47,7 @@ const profileAvatarUrl = ref('')
 const profileSaving = ref(false)
 const profileMessage = ref('')
 const copyMessage = ref('')
+const profileGalleryCount = ref(0)
 
 const isAuthenticated = computed(() => auth.isAuthenticated.value)
 const user = computed(() => auth.user.value || {})
@@ -55,7 +58,7 @@ const allTabs = [
   { key: 'invites', label: '我的邀请', icon: Gift },
   { key: 'profile', label: '个人资料', icon: IdCard },
 ]
-const tabs = computed(() => allTabs.filter(tab => tab.key !== 'orders' || billingEnabled.value))
+const tabs = computed(() => allTabs.filter((tab) => tab.key !== 'orders' || billingEnabled.value))
 const tabPaths = {
   orders: '/my-orders',
   credits: '/my-credits',
@@ -63,9 +66,9 @@ const tabPaths = {
   profile: '/profile',
 }
 
-const totalPurchasedCredits = computed(() => orders.value
-  .filter(order => order.status === 'paid')
-  .reduce((sum, order) => sum + Number(order.credits || 0), 0))
+const totalPurchasedCredits = computed(() =>
+  orders.value.filter((order) => order.status === 'paid').reduce((sum, order) => sum + Number(order.credits || 0), 0),
+)
 const currentPanelTitle = computed(() => tabs.value.find((tab) => tab.key === activeTab.value)?.label || '个人中心')
 const profileRewardCredits = computed(() => Number(siteData.value.rewardCredits?.profileCompletion || 0))
 const profileRewardRequirements = computed(() => siteData.value.rewardCredits?.profileCompletionRequirements || {})
@@ -76,7 +79,10 @@ const profileInputMinNameLength = computed(() => (profileRewardCheckEnabled.valu
 const profileAvatarRequired = computed(() => profileRewardCheckEnabled.value && profileRequiresAvatar.value)
 const profileRewardRequirementText = computed(() => {
   if (!profileRewardCredits.value) return '填写昵称即可保存资料。'
-  return profileRewardRequirements.value.description || `填写至少 ${profileMinNameLength.value} 个字符昵称，并设置有效头像 URL 后，仅可领取一次。`
+  return (
+    profileRewardRequirements.value.description ||
+    `填写至少 ${profileMinNameLength.value} 个字符昵称，并设置有效头像 URL 后，仅可领取一次。`
+  )
 })
 const isProfileAvatarValid = computed(() => {
   const avatar = String(profileAvatarUrl.value || '').trim()
@@ -106,7 +112,7 @@ function tabFromRoute(path, queryTab) {
 }
 
 function selectTab(tabKey) {
-  if (!tabs.value.some(tab => tab.key === tabKey)) return
+  if (!tabs.value.some((tab) => tab.key === tabKey)) return
   activeTab.value = tabKey
   router.replace(tabPaths[tabKey] || '/my-orders')
 }
@@ -124,6 +130,7 @@ function resetAccountState() {
   message.value = ''
   profileMessage.value = ''
   copyMessage.value = ''
+  profileGalleryCount.value = 0
 }
 
 async function loadAccount() {
@@ -132,10 +139,11 @@ async function loadAccount() {
   loading.value = true
   message.value = ''
   try {
-    const [orderRows, creditPayload, invitePayload] = await Promise.all([
+    const [orderRows, creditPayload, invitePayload, galleryRows] = await Promise.all([
       billingEnabled.value ? api.getOrders() : Promise.resolve([]),
       api.getCreditLedger(),
       api.getInvites(),
+      api.getGallery().catch(() => null),
       auth.refreshMe(),
     ])
     orders.value = Array.isArray(orderRows) ? orderRows : []
@@ -147,6 +155,9 @@ async function loadAccount() {
     }
     profileName.value = user.value?.name || ''
     profileAvatarUrl.value = user.value?.avatarUrl || ''
+    profileGalleryCount.value = Array.isArray(galleryRows)
+      ? filterVisibleGalleryRecords(galleryRows).length
+      : Number(user.value?.galleryCount || 0)
   } catch (error) {
     message.value = error.message || '账户数据读取失败'
   } finally {
@@ -210,7 +221,9 @@ function formatDate(value) {
 }
 
 function formatLedgerType(type) {
-  const normalizedType = String(type || '').trim().toLowerCase()
+  const normalizedType = String(type || '')
+    .trim()
+    .toLowerCase()
   const typeMap = {
     admin_adjustment: '管理员调整',
     adjustment: '积分调整',
@@ -247,10 +260,7 @@ function formatOrderStatus(status) {
 }
 
 onMounted(async () => {
-  await Promise.all([
-    loadSiteData(),
-    auth.refreshMe().catch(() => {}),
-  ])
+  await Promise.all([loadSiteData(), auth.refreshMe().catch(() => {})])
   activeTab.value = tabFromRoute(route.path, route.query.tab)
   await loadAccount()
 })
@@ -335,7 +345,12 @@ watch(isAuthenticated, (authenticated) => {
                   <ReceiptText aria-hidden="true" />
                   阅读文档
                 </button>
-                <button v-if="activeTab === 'credits' && billingEnabled" class="btn btn-primary" type="button" @click="openPricing">
+                <button
+                  v-if="activeTab === 'credits' && billingEnabled"
+                  class="btn btn-primary"
+                  type="button"
+                  @click="openPricing"
+                >
                   <CreditCard aria-hidden="true" />
                   积分说明
                 </button>
@@ -439,7 +454,12 @@ watch(isAuthenticated, (authenticated) => {
                   <article class="invite-card">
                     <span>邀请码</span>
                     <strong>{{ inviteOverview.inviteCode || 'NOT SET' }}</strong>
-                    <p>{{ inviteOverview.rewardRule || `每邀请 1 位新用户注册，奖励 ${inviteOverview.rewardCredits || 0} 积分。` }}</p>
+                    <p>
+                      {{
+                        inviteOverview.rewardRule ||
+                        `每邀请 1 位新用户注册，奖励 ${inviteOverview.rewardCredits || 0} 积分。`
+                      }}
+                    </p>
                     <button class="btn btn-soft" type="button" @click="copyInviteLink">
                       <Copy aria-hidden="true" />
                       复制邀请链接
@@ -511,7 +531,7 @@ watch(isAuthenticated, (authenticated) => {
                   <article>
                     <PackageCheck aria-hidden="true" />
                     <span>图库作品</span>
-                    <strong>{{ user.galleryCount || 0 }}</strong>
+                    <strong>{{ profileGalleryCount }}</strong>
                   </article>
                   <article>
                     <UsersRound aria-hidden="true" />
@@ -528,11 +548,25 @@ watch(isAuthenticated, (authenticated) => {
                 <form class="profile-form" v-fade-up="{ delay: 400 }" @submit.prevent="submitProfile">
                   <div class="field">
                     <label for="profile-name">昵称</label>
-                    <input id="profile-name" v-model.trim="profileName" type="text" autocomplete="name" :minlength="profileInputMinNameLength" required />
+                    <input
+                      id="profile-name"
+                      v-model.trim="profileName"
+                      type="text"
+                      autocomplete="name"
+                      :minlength="profileInputMinNameLength"
+                      required
+                    />
                   </div>
                   <div class="field">
                     <label for="profile-avatar">头像 URL</label>
-                    <input id="profile-avatar" v-model.trim="profileAvatarUrl" type="url" placeholder="https://..." autocomplete="off" :required="profileAvatarRequired" />
+                    <input
+                      id="profile-avatar"
+                      v-model.trim="profileAvatarUrl"
+                      type="url"
+                      placeholder="https://..."
+                      autocomplete="off"
+                      :required="profileAvatarRequired"
+                    />
                     <small>{{ profileRewardRequirementText }}</small>
                   </div>
                   <p v-if="profileMessage" class="form-message" aria-live="polite">{{ profileMessage }}</p>

@@ -11,8 +11,11 @@ import {
   formatTemplatePrompt,
   localizePromptLabel,
   localizeTagLabel,
-  loadPromptLibrary,
+  loadPromptCaseById,
+  loadPromptCaseIndex,
+  loadPromptLibraryMeta,
 } from '../services/promptLibrary'
+import '../assets/showcase.css'
 
 const router = useRouter()
 const loading = ref(true)
@@ -49,21 +52,23 @@ const categoryOptions = computed(() =>
   categories.value.map((item) => ({
     label: item === '全部分类' ? item : categoryLabel(item),
     value: item,
-  }))
+  })),
 )
 const styleOptions = computed(() =>
   styles.value.map((item) => ({
     label: item === '全部风格' ? item : styleLabel(item),
     value: item,
-  }))
+  })),
 )
 const sceneOptions = computed(() =>
   scenes.value.map((item) => ({
     label: item === '全部场景' ? item : sceneLabel(item),
     value: item,
-  }))
+  })),
 )
-const activeTemplatePrompt = computed(() => (selectedTemplate.value ? formatTemplatePrompt(selectedTemplate.value) : ''))
+const activeTemplatePrompt = computed(() =>
+  selectedTemplate.value ? formatTemplatePrompt(selectedTemplate.value) : '',
+)
 const activeModalOpen = computed(() => Boolean(selectedCase.value || selectedTemplate.value))
 const sourceSummary = computed(() => {
   if (!promptLibraryManifest.value) return '正在加载本地 Prompt 内容库'
@@ -79,7 +84,7 @@ const filteredItems = computed(() => {
     .filter((item) => scene.value === '全部场景' || item.scenes.includes(scene.value))
     .filter((item) => {
       if (!keyword) return true
-      return `${item.upstreamId} ${item.title} ${item.prompt} ${item.category} ${item.styles.join(' ')} ${item.scenes.join(' ')}`.toLowerCase().includes(keyword)
+      return item.searchText.includes(keyword)
     })
     .sort((a, b) => {
       if (sort.value === '标题排序') return a.title.localeCompare(b.title, 'zh-CN')
@@ -96,7 +101,9 @@ const filteredTemplates = computed(() => {
     .filter((item) => scene.value === '全部场景' || item.scenes.includes(scene.value))
     .filter((item) => {
       if (!keyword) return true
-      return `${item.title.zh} ${item.title.en} ${item.description.zh} ${item.description.en} ${item.category} ${item.tags.join(' ')}`.toLowerCase().includes(keyword)
+      return `${item.title.zh} ${item.title.en} ${item.description.zh} ${item.description.en} ${item.category} ${item.tags.join(' ')}`
+        .toLowerCase()
+        .includes(keyword)
     })
 })
 
@@ -139,16 +146,21 @@ function itemTags(item) {
   return [...new Set([...(item.styles || []), ...(item.scenes || []), ...(item.tags || [])])].slice(0, 5)
 }
 
+async function resolveCase(item) {
+  return (await loadPromptCaseById(item.id)) || item
+}
+
 async function copyPrompt(item) {
+  const fullCase = await resolveCase(item)
   try {
-    await navigator.clipboard.writeText(item.prompt)
+    await navigator.clipboard.writeText(fullCase.prompt)
     copiedId.value = item.id
     showNotice('提示词已复制')
     window.setTimeout(() => {
       if (copiedId.value === item.id) copiedId.value = null
     }, 1800)
   } catch {
-    showNotice(item.prompt)
+    showNotice(fullCase.prompt || item.promptPreview)
   }
 }
 
@@ -166,16 +178,21 @@ async function copyTemplatePrompt(item) {
   }
 }
 
-function generateSimilar(item) {
-  router.push({ path: '/generate', query: { prompt: item.prompt } })
+async function generateSimilar(item) {
+  const fullCase = await resolveCase(item)
+  router.push({ path: '/generate', query: { prompt: fullCase.prompt || item.promptPreview } })
 }
 
 function useTemplate(item) {
   router.push({ path: '/generate', query: { prompt: formatTemplatePrompt(item) } })
 }
 
-function openCase(item) {
-  selectedCase.value = item
+async function openCase(item) {
+  selectedCase.value = {
+    ...item,
+    prompt: '正在加载完整 Prompt...',
+  }
+  selectedCase.value = await resolveCase(item)
 }
 
 function openTemplate(item) {
@@ -199,11 +216,11 @@ async function loadLocalLibrary() {
   loading.value = true
   loadError.value = ''
   try {
-    const library = await loadPromptLibrary()
-    promptLibraryManifest.value = library.manifest
-    promptCases.value = library.cases
-    promptTemplates.value = library.templates
-    promptTaxonomy.value = library.taxonomy
+    const [meta, caseIndex] = await Promise.all([loadPromptLibraryMeta(), loadPromptCaseIndex()])
+    promptLibraryManifest.value = meta.manifest
+    promptCases.value = caseIndex
+    promptTemplates.value = meta.templates
+    promptTaxonomy.value = meta.taxonomy
   } catch (error) {
     loadError.value = error.message || 'Prompt 内容库加载失败'
   } finally {
@@ -243,12 +260,28 @@ onMounted(loadLocalLibrary)
         />
 
         <div v-fade-up="{ delay: 100 }" class="library-tabs" role="tablist" aria-label="内容类型">
-          <button type="button" :class="{ active: activeTab === 'cases' }" @click="activeTab = 'cases'">
+          <button
+            id="library-tab-cases"
+            type="button"
+            role="tab"
+            :aria-selected="activeTab === 'cases'"
+            aria-controls="library-panel-cases"
+            :class="{ active: activeTab === 'cases' }"
+            @click="activeTab = 'cases'"
+          >
             <Images aria-hidden="true" />
             画廊
             <span>{{ filteredItems.length }}</span>
           </button>
-          <button type="button" :class="{ active: activeTab === 'templates' }" @click="activeTab = 'templates'">
+          <button
+            id="library-tab-templates"
+            type="button"
+            role="tab"
+            :aria-selected="activeTab === 'templates'"
+            aria-controls="library-panel-templates"
+            :class="{ active: activeTab === 'templates' }"
+            @click="activeTab = 'templates'"
+          >
             <LayoutTemplate aria-hidden="true" />
             模板库
             <span>{{ filteredTemplates.length }}</span>
@@ -258,7 +291,12 @@ onMounted(loadLocalLibrary)
         <div v-fade-up="{ delay: 200 }" class="filter-row prompt-library-filters">
           <label class="field compact-field" for="showcase-search">
             <span class="sr-only">搜索作品</span>
-            <input id="showcase-search" v-model.trim="query" class="search-input" placeholder="搜索案例、模板、来源、Prompt..." />
+            <input
+              id="showcase-search"
+              v-model.trim="query"
+              class="search-input"
+              placeholder="搜索案例、模板、来源、Prompt..."
+            />
           </label>
           <SelectPicker id="showcase-category" v-model="category" :options="categoryOptions" aria-label="分类筛选" />
           <SelectPicker id="showcase-style" v-model="style" :options="styleOptions" aria-label="风格筛选" />
@@ -266,16 +304,17 @@ onMounted(loadLocalLibrary)
           <SelectPicker id="showcase-sort" v-model="sort" :options="sortOptions" aria-label="排序" />
         </div>
 
-        <section v-if="activeTab === 'cases'">
+        <section
+          v-if="activeTab === 'cases'"
+          id="library-panel-cases"
+          role="tabpanel"
+          aria-labelledby="library-tab-cases"
+        >
           <div class="section-title align-left" style="margin-bottom: 18px">
             <h2>画廊</h2>
             <p>当前显示 {{ filteredItems.length }} 个案例。每条保留 Prompt、来源链接和快照信息，仅供学习提示词结构。</p>
           </div>
-          <EmptyState
-            v-if="loading"
-            title="正在加载本地 Prompt 内容库"
-            description="案例和模板来自项目内置快照。"
-          >
+          <EmptyState v-if="loading" title="正在加载本地 Prompt 内容库" description="案例和模板来自项目内置快照。">
             <template #icon>
               <Search aria-hidden="true" />
             </template>
@@ -286,7 +325,12 @@ onMounted(loadLocalLibrary)
             </template>
           </EmptyState>
           <div v-else-if="filteredItems.length" class="showcase-grid">
-            <article v-for="(item, index) in filteredItems" :key="item.id" v-fade-up="{ delay: (index % 12) * 50 }" class="card showcase-card">
+            <article
+              v-for="(item, index) in filteredItems"
+              :key="item.id"
+              v-fade-up="{ delay: (index % 12) * 50 }"
+              class="card showcase-card"
+            >
               <div class="image-wrap">
                 <button class="showcase-image-button" type="button" @click="openCase(item)">
                   <img
@@ -337,16 +381,15 @@ onMounted(loadLocalLibrary)
           </EmptyState>
         </section>
 
-        <section v-else>
+        <section v-else id="library-panel-templates" role="tabpanel" aria-labelledby="library-tab-templates">
           <div class="section-title align-left" style="margin-bottom: 18px">
             <h2>工业模板库</h2>
-            <p>当前显示 {{ filteredTemplates.length }} 个模板。模板会被转换成结构化 ImgsGen Prompt 草稿，使用前请按业务和合规要求修改。</p>
+            <p>
+              当前显示 {{ filteredTemplates.length }} 个模板。模板会被转换成结构化 ImgsGen Prompt
+              草稿，使用前请按业务和合规要求修改。
+            </p>
           </div>
-          <EmptyState
-            v-if="loading"
-            title="正在加载本地模板库"
-            description="模板数据会按需载入，不影响首页首屏。"
-          >
+          <EmptyState v-if="loading" title="正在加载本地模板库" description="模板数据会按需载入，不影响首页首屏。">
             <template #icon>
               <Search aria-hidden="true" />
             </template>
@@ -357,7 +400,12 @@ onMounted(loadLocalLibrary)
             </template>
           </EmptyState>
           <div v-else-if="filteredTemplates.length" class="showcase-grid template-library-grid">
-            <article v-for="(item, index) in filteredTemplates" :key="item.id" v-fade-up="{ delay: (index % 12) * 50 }" class="card showcase-card template-library-card">
+            <article
+              v-for="(item, index) in filteredTemplates"
+              :key="item.id"
+              v-fade-up="{ delay: (index % 12) * 50 }"
+              class="card showcase-card template-library-card"
+            >
               <div class="image-wrap">
                 <button class="showcase-image-button" type="button" @click="openTemplate(item)">
                   <img
@@ -413,46 +461,54 @@ onMounted(loadLocalLibrary)
       card-class="prompt-detail-modal"
       @close="closeModal"
     >
-        <div class="modal-head">
-          <div>
-            <span class="tag">案例 #{{ selectedCase.upstreamId }}</span>
-            <h2 id="prompt-case-title">{{ selectedCase.title }}</h2>
-          </div>
-          <button class="icon-button" type="button" aria-label="关闭" @click="closeModal">
-            <X aria-hidden="true" />
-          </button>
+      <div class="modal-head">
+        <div>
+          <span class="tag">案例 #{{ selectedCase.upstreamId }}</span>
+          <h2 id="prompt-case-title">{{ selectedCase.title }}</h2>
         </div>
-        <div class="prompt-detail-layout">
-          <div class="prompt-detail-image">
-            <img :src="selectedCase.image" :alt="selectedCase.imageAlt" />
+        <button class="icon-button" type="button" aria-label="关闭" @click="closeModal">
+          <X aria-hidden="true" />
+        </button>
+      </div>
+      <div class="prompt-detail-layout">
+        <div class="prompt-detail-image">
+          <img :src="selectedCase.image" :alt="selectedCase.imageAlt" />
+        </div>
+        <div class="prompt-detail-body">
+          <div class="prompt-tag-row">
+            <span>{{ categoryLabel(selectedCase.category) }}</span>
+            <span v-for="tag in itemTags(selectedCase)" :key="`modal-${tag}`">{{ localizeTagLabel(tag) }}</span>
           </div>
-          <div class="prompt-detail-body">
-            <div class="prompt-tag-row">
-              <span>{{ categoryLabel(selectedCase.category) }}</span>
-              <span v-for="tag in itemTags(selectedCase)" :key="`modal-${tag}`">{{ localizeTagLabel(tag) }}</span>
-            </div>
-            <pre class="prompt-block">{{ selectedCase.prompt }}</pre>
-            <p class="license-note">来源内容仅供学习参考，默认标记为需授权复核；公开传播或商业使用前请确认图片、文字、品牌和人物权益。</p>
-            <div class="card-actions">
-              <button class="btn btn-primary" type="button" @click="generateSimilar(selectedCase)">
-                <Sparkles aria-hidden="true" />
-                参考这个 Prompt
-              </button>
-              <button class="btn btn-soft" type="button" @click="copyPrompt(selectedCase)">
-                <Copy aria-hidden="true" />
-                {{ copiedId === selectedCase.id ? '已复制' : '复制 Prompt' }}
-              </button>
-              <a v-if="selectedCase.sourceUrl" class="btn btn-ghost" :href="selectedCase.sourceUrl" target="_blank" rel="noreferrer">
-                <ExternalLink aria-hidden="true" />
-                原始来源
-              </a>
-              <a class="btn btn-ghost" :href="selectedCase.githubUrl" target="_blank" rel="noreferrer">
-                <ExternalLink aria-hidden="true" />
-                GitHub 条目
-              </a>
-            </div>
+          <pre class="prompt-block">{{ selectedCase.prompt }}</pre>
+          <p class="license-note">
+            来源内容仅供学习参考，默认标记为需授权复核；公开传播或商业使用前请确认图片、文字、品牌和人物权益。
+          </p>
+          <div class="card-actions">
+            <button class="btn btn-primary" type="button" @click="generateSimilar(selectedCase)">
+              <Sparkles aria-hidden="true" />
+              参考这个 Prompt
+            </button>
+            <button class="btn btn-soft" type="button" @click="copyPrompt(selectedCase)">
+              <Copy aria-hidden="true" />
+              {{ copiedId === selectedCase.id ? '已复制' : '复制 Prompt' }}
+            </button>
+            <a
+              v-if="selectedCase.sourceUrl"
+              class="btn btn-ghost"
+              :href="selectedCase.sourceUrl"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <ExternalLink aria-hidden="true" />
+              原始来源
+            </a>
+            <a class="btn btn-ghost" :href="selectedCase.githubUrl" target="_blank" rel="noreferrer">
+              <ExternalLink aria-hidden="true" />
+              GitHub 条目
+            </a>
           </div>
         </div>
+      </div>
     </ModalDialog>
 
     <ModalDialog
@@ -461,51 +517,53 @@ onMounted(loadLocalLibrary)
       card-class="prompt-detail-modal"
       @close="closeModal"
     >
-        <div class="modal-head">
-          <div>
-            <span class="tag">{{ categoryLabel(selectedTemplate.category) }}</span>
-            <h2 id="prompt-template-title">{{ templateTitle(selectedTemplate) }}</h2>
-          </div>
-          <button class="icon-button" type="button" aria-label="关闭" @click="closeModal">
-            <X aria-hidden="true" />
-          </button>
+      <div class="modal-head">
+        <div>
+          <span class="tag">{{ categoryLabel(selectedTemplate.category) }}</span>
+          <h2 id="prompt-template-title">{{ templateTitle(selectedTemplate) }}</h2>
         </div>
-        <div class="prompt-detail-layout">
-          <div class="prompt-detail-image">
-            <img :src="selectedTemplate.cover" :alt="templateTitle(selectedTemplate)" />
+        <button class="icon-button" type="button" aria-label="关闭" @click="closeModal">
+          <X aria-hidden="true" />
+        </button>
+      </div>
+      <div class="prompt-detail-layout">
+        <div class="prompt-detail-image">
+          <img :src="selectedTemplate.cover" :alt="templateTitle(selectedTemplate)" />
+        </div>
+        <div class="prompt-detail-body">
+          <p>{{ selectedTemplate.useWhen.zh || selectedTemplate.description.zh }}</p>
+          <div class="prompt-tag-row">
+            <span v-for="tag in itemTags(selectedTemplate)" :key="`template-modal-${tag}`">{{
+              localizeTagLabel(tag)
+            }}</span>
           </div>
-          <div class="prompt-detail-body">
-            <p>{{ selectedTemplate.useWhen.zh || selectedTemplate.description.zh }}</p>
-            <div class="prompt-tag-row">
-              <span v-for="tag in itemTags(selectedTemplate)" :key="`template-modal-${tag}`">{{ localizeTagLabel(tag) }}</span>
+          <pre class="prompt-block">{{ activeTemplatePrompt }}</pre>
+          <div class="prompt-detail-columns">
+            <div>
+              <h3>核心约束</h3>
+              <ul>
+                <li v-for="item in selectedTemplate.guidance.zh" :key="item">{{ item }}</li>
+              </ul>
             </div>
-            <pre class="prompt-block">{{ activeTemplatePrompt }}</pre>
-            <div class="prompt-detail-columns">
-              <div>
-                <h3>核心约束</h3>
-                <ul>
-                  <li v-for="item in selectedTemplate.guidance.zh" :key="item">{{ item }}</li>
-                </ul>
-              </div>
-              <div>
-                <h3>需要避免</h3>
-                <ul>
-                  <li v-for="item in selectedTemplate.pitfalls.zh" :key="item">{{ item }}</li>
-                </ul>
-              </div>
+            <div>
+              <h3>需要避免</h3>
+              <ul>
+                <li v-for="item in selectedTemplate.pitfalls.zh" :key="item">{{ item }}</li>
+              </ul>
             </div>
-            <div class="card-actions">
-              <button class="btn btn-primary" type="button" @click="useTemplate(selectedTemplate)">
-                <Sparkles aria-hidden="true" />
-                使用模板生成
-              </button>
-              <button class="btn btn-soft" type="button" @click="copyTemplatePrompt(selectedTemplate)">
-                <Copy aria-hidden="true" />
-                {{ copiedId === selectedTemplate.id ? '已复制' : '复制模板 Prompt' }}
-              </button>
-            </div>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-primary" type="button" @click="useTemplate(selectedTemplate)">
+              <Sparkles aria-hidden="true" />
+              使用模板生成
+            </button>
+            <button class="btn btn-soft" type="button" @click="copyTemplatePrompt(selectedTemplate)">
+              <Copy aria-hidden="true" />
+              {{ copiedId === selectedTemplate.id ? '已复制' : '复制模板 Prompt' }}
+            </button>
           </div>
         </div>
+      </div>
     </ModalDialog>
 
     <Toast :message="notice" />

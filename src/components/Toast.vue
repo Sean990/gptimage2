@@ -57,13 +57,7 @@ onBeforeUnmount(clearHideTimer)
 
 <template>
   <Transition name="toast-fade">
-    <div
-      v-if="message && visible"
-      class="toast"
-      :class="`toast--${type}`"
-      :role="role"
-      :aria-live="ariaLive"
-    >
+    <div v-if="message && visible" class="toast" :class="`toast--${type}`" :role="role" :aria-live="ariaLive">
       <slot>{{ message }}</slot>
     </div>
   </Transition>

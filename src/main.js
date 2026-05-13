@@ -3,14 +3,6 @@ import App from './App.vue'
 import './assets/main.css'
 import './assets/components.css'
 import './assets/layout.css'
-import './assets/account.css'
-import './assets/home.css'
-import './assets/pricing.css'
-import './assets/prompt-optimizer.css'
-import './assets/generate.css'
-import './assets/showcase.css'
-import './assets/docs.css'
-import './assets/legal.css'
 import './assets/responsive.css'
 import './assets/dark.css'
 import './assets/polish.css'
@@ -46,7 +38,8 @@ const routes = [
     component: GenerateView,
     meta: {
       title: 'AI 图片生成 - 提示词与参考图创作工具 | ImgsGen',
-      description: '使用 ImgsGen 生成 AI 图片：输入提示词或上传授权参考图，支持文生图、图生图、局部编辑、批量出图与发布前人工复核。',
+      description:
+        '使用 ImgsGen 生成 AI 图片：输入提示词或上传授权参考图，支持文生图、图生图、局部编辑、批量出图与发布前人工复核。',
     },
   },
   { path: '/batch-generate', redirect: '/generate' },
@@ -56,7 +49,8 @@ const routes = [
     component: PromptOptimizerView,
     meta: {
       title: 'AI 提示词优化器 - 生成可复核 Prompt 草稿 | ImgsGen',
-      description: 'ImgsGen 提示词优化器可将简短想法扩展为结构化的 AI 作图 Prompt，覆盖主体、风格、镜头、光线、材质与合规要点。',
+      description:
+        'ImgsGen 提示词优化器可将简短想法扩展为结构化的 AI 作图 Prompt，覆盖主体、风格、镜头、光线、材质与合规要点。',
     },
   },
   {
@@ -65,7 +59,8 @@ const routes = [
     component: PricingView,
     meta: {
       title: 'ImgsGen 积分说明 - AI 图片生成积分与套餐',
-      description: 'ImgsGen 提供体验包、超值包和专业年卡等积分套餐，按张消耗、发票开具、团队协作与商用合规提示一目了然。',
+      description:
+        'ImgsGen 提供体验包、超值包和专业年卡等积分套餐，按张消耗、发票开具、团队协作与商用合规提示一目了然。',
     },
   },
   {
@@ -118,7 +113,8 @@ const routes = [
     component: ShowcaseView,
     meta: {
       title: 'AI 图片案例库 - 学习提示词结构与模板 | ImgsGen',
-      description: 'ImgsGen 案例库精选 AI 图片作品与对应提示词模板，涵盖人像、电商、海报、场景氛围与创意玩法，便于快速复用。',
+      description:
+        'ImgsGen 案例库精选 AI 图片作品与对应提示词模板，涵盖人像、电商、海报、场景氛围与创意玩法，便于快速复用。',
     },
   },
   { path: '/tutorial', redirect: '/showcase' },
@@ -218,7 +214,7 @@ export const createApp = ViteSSG(
             }
           })
         },
-        { threshold: 0.08 }
+        { threshold: 0.08 },
       )
 
       Object.assign(fadeUpDirective, {

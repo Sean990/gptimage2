@@ -21,6 +21,7 @@ import PricingCards from '../components/PricingCards.vue'
 import SectionTitle from '../components/SectionTitle.vue'
 import Toast from '../components/Toast.vue'
 import { useSiteStore } from '../services/siteStore'
+import '../assets/home.css'
 
 const { siteData, loadSiteData } = useSiteStore()
 const router = useRouter()
@@ -47,6 +48,8 @@ function openPricing() {
   router.push('/pricing')
 }
 
+const prefetchGenerate = () => import('./GenerateView.vue')
+
 const featureIcons = [MessageSquareText, Wand2, Sparkles, Layers, PenTool, BadgeCheck]
 const workflowIcons = [Upload, Wand2, Sparkles, Download]
 
@@ -70,7 +73,12 @@ onMounted(() => {
             适合海报、电商、品牌视觉和社媒素材的日常生产。
           </p>
           <div class="hero-actions">
-            <RouterLink class="btn btn-primary" to="/generate">
+            <RouterLink
+              class="btn btn-primary"
+              to="/generate"
+              @mouseenter="prefetchGenerate"
+              @touchstart.passive="prefetchGenerate"
+            >
               开始使用 ImgsGen
               <ArrowRight aria-hidden="true" />
             </RouterLink>
@@ -81,12 +89,7 @@ onMounted(() => {
 
         <div class="hero-visual">
           <div class="hero-frame">
-            <img
-              :src="homeImages[0].src"
-              :alt="homeImages[0].title"
-              decoding="async"
-              fetchpriority="high"
-            />
+            <img :src="homeImages[0].src" :alt="homeImages[0].title" decoding="async" fetchpriority="high" />
             <div class="floating-stat">
               <strong>高分辨率</strong>
               <span>以实际参数为准</span>
@@ -137,10 +140,7 @@ onMounted(() => {
 
     <section class="section" id="feature">
       <div class="container">
-        <SectionTitle
-          eyebrow="为什么选择 ImgsGen 进行 AI 图片生成"
-          title="更适合国内内容发布流程的 AI 图片生产"
-        />
+        <SectionTitle eyebrow="为什么选择 ImgsGen 进行 AI 图片生成" title="更适合国内内容发布流程的 AI 图片生产" />
         <div class="grid-3">
           <FeatureCard
             v-fade-up
@@ -180,7 +180,7 @@ onMounted(() => {
           title="围绕图片生成、编辑和合规发布构建的关键能力"
           description="用户真正关心的不只是能不能出图，还包括素材是否有授权、结果是否需要标识、内容是否能通过发布前审核。"
         />
-        <div class="grid-3">
+        <div class="grid-3" v-memo="[features]">
           <FeatureCard
             v-for="([title, body], index) in features"
             :key="title"
@@ -212,7 +212,7 @@ onMounted(() => {
               </span>
               <div>
                 <h3>Step 1 上传照片</h3>
-            <p>上传本人或已获授权的照片与参考图，不要上传证件、隐私照片或未经授权的人脸素材。</p>
+                <p>上传本人或已获授权的照片与参考图，不要上传证件、隐私照片或未经授权的人脸素材。</p>
               </div>
             </article>
             <article v-fade-up="{ delay: 100 }" class="card step-card">
@@ -230,7 +230,7 @@ onMounted(() => {
               </span>
               <div>
                 <h3>Step 3 生成图片方案</h3>
-            <p>选择风格后生成多张 AI 图片，结果应保留 AI 生成提示，并在公开发布前进行人工审核。</p>
+                <p>选择风格后生成多张 AI 图片，结果应保留 AI 生成提示，并在公开发布前进行人工审核。</p>
               </div>
             </article>
             <article v-fade-up="{ delay: 300 }" class="card step-card">
@@ -239,19 +239,14 @@ onMounted(() => {
               </span>
               <div>
                 <h3>Step 4 下载复核</h3>
-            <p>保存图片，复制提示词再次生成；商用或公开传播前请确认授权、标识和内容合规。</p>
+                <p>保存图片，复制提示词再次生成；商用或公开传播前请确认授权、标识和内容合规。</p>
               </div>
             </article>
           </div>
         </div>
 
         <article class="card preview-card">
-          <img
-            :src="homeImages[1].src"
-            :alt="homeImages[1].title"
-            loading="lazy"
-            decoding="async"
-          />
+          <img :src="homeImages[1].src" :alt="homeImages[1].title" loading="lazy" decoding="async" />
           <div class="preview-body">
             <span class="tag">AI 反推提示词示例</span>
             <div class="prompt-box">
@@ -306,8 +301,13 @@ onMounted(() => {
           title="ImgsGen 常见问题"
           description="重点说明使用边界、内容标识、授权和发布前复核要求。"
         />
-        <div class="faq-grid">
-          <article v-for="([question, answer], index) in faqItems" :key="question" v-fade-up="{ delay: (index % 4) * 80 }" class="card faq-item">
+        <div class="faq-grid" v-memo="[faqItems]">
+          <article
+            v-for="([question, answer], index) in faqItems"
+            :key="question"
+            v-fade-up="{ delay: (index % 4) * 80 }"
+            class="card faq-item"
+          >
             <span class="tag">
               <FileQuestion aria-hidden="true" />
               {{ index + 1 }}
@@ -321,7 +321,10 @@ onMounted(() => {
 
     <section v-if="billingEnabled" class="section" id="pricing">
       <div class="container">
-        <SectionTitle title="ImgsGen 定价方案" description="按预计使用量选择套餐，具体权益、有效期和消耗规则以下单页与个人中心记录为准。" />
+        <SectionTitle
+          title="ImgsGen 定价方案"
+          description="按预计使用量选择套餐，具体权益、有效期和消耗规则以下单页与个人中心记录为准。"
+        />
         <PricingCards :plans="pricingModes.credits.plans" button-text="查看说明" @select="openPricing" />
       </div>
     </section>
@@ -340,7 +343,7 @@ onMounted(() => {
           </article>
           <article class="card credits-card">
             <h3>150 积分：稳定内容产出</h3>
-          <p>适合头像、社媒配图、活动 KV、电商主图等高频任务，一次探索多版方案，方便筛选和复用。</p>
+            <p>适合头像、社媒配图、活动 KV、电商主图等高频任务，一次探索多版方案，方便筛选和复用。</p>
           </article>
           <article class="card credits-card">
             <h3>500 积分：团队批量交付</h3>

@@ -15,6 +15,16 @@ function persistToken(nextToken) {
   else localStorage.removeItem('token')
 }
 
+function handleAuthExpired() {
+  persistToken('')
+  user.value = null
+  initialized.value = false
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('auth-expired', handleAuthExpired)
+}
+
 async function refreshMe() {
   loading.value = true
   try {

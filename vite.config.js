@@ -1,13 +1,61 @@
 import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { VitePWA } from 'vite-plugin-pwa'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const siteUrl = (env.VITE_SITE_URL || env.SITE_URL || '').trim().replace(/\/+$/, '')
+  const analyzeEnabled = mode === 'analyze' || env.ANALYZE === '1'
 
   return {
     plugins: [
       vue(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.svg'],
+        manifest: false,
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,svg,png,woff2,jpg,jpeg,webp}'],
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'google-fonts-cache',
+                expiration: {
+                  maxEntries: 10,
+                  maxAgeSeconds: 60 * 60 * 24 * 365,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'gstatic-fonts-cache',
+                expiration: {
+                  maxEntries: 10,
+                  maxAgeSeconds: 60 * 60 * 24 * 365,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+          ],
+        },
+      }),
+      analyzeEnabled &&
+        visualizer({
+          filename: 'dist/bundle-report.html',
+          gzipSize: true,
+          brotliSize: true,
+          template: 'treemap',
+        }),
       {
         name: 'imgsgen-html-site-url',
         transformIndexHtml: {
@@ -24,7 +72,7 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-    ],
+    ].filter(Boolean),
     build: {
       sourcemap: 'hidden',
       rollupOptions: {

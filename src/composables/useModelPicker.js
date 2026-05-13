@@ -41,7 +41,10 @@ const fallbackModelGroups = [
 ]
 
 export function normalizeModelKey(value = '') {
-  const normalized = value.trim().toLowerCase().replace(/[_\s]+/g, '-')
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-')
 
   if (!normalized) return 'generic'
   if (normalized.includes('gpt-image-2') || normalized.includes('gptimage2')) return 'gpt-image-2'
@@ -93,7 +96,7 @@ export function useModelPicker({ initialModel = 'gpt-image-2', onToggle } = {}) 
     return {
       value,
       name,
-      badge: item.default ? '当前' : (known?.badge || '可用'),
+      badge: item.default ? '当前' : known?.badge || '可用',
       description: item.description || known?.description || `${name} 当前可用于图片生成。`,
       meta: known?.meta || '通用等待态',
     }
@@ -105,9 +108,7 @@ export function useModelPicker({ initialModel = 'gpt-image-2', onToggle } = {}) 
 
     try {
       const models = await api.getModels()
-      const availableModels = Array.isArray(models)
-        ? models.map(normalizeModelOption).filter(Boolean)
-        : []
+      const availableModels = Array.isArray(models) ? models.map(normalizeModelOption).filter(Boolean) : []
 
       if (!availableModels.length) return
 

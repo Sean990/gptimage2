@@ -9,14 +9,21 @@
 .model-picker-button,
 .select-picker-button,
 .app-select-button {
+  display: inline-flex;
   width: 100%;
+  min-width: 0;
   min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   border: 1px solid var(--line);
   border-radius: 12px;
   padding: 10px 14px;
   color: var(--text);
   background: var(--surface);
   box-shadow: var(--shadow-xs);
+  text-align: left;
+  cursor: pointer;
 }
 
 .model-picker-button:hover,
@@ -35,6 +42,19 @@
 .model-preview-head,
 .model-option-head {
   min-width: 0;
+}
+
+.model-picker-copy {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.model-preview-head,
+.model-option-head {
+  display: flex;
+  align-items: center;
 }
 
 .model-picker-copy strong,
@@ -67,9 +87,12 @@
 .model-menu,
 .select-menu,
 .app-select-menu {
+  position: absolute;
   top: calc(100% + 8px);
   left: 0;
   right: auto;
+  display: grid;
+  box-sizing: border-box;
   z-index: 90;
   width: 100%;
   min-width: 100%;
@@ -118,12 +141,27 @@
 .model-option,
 .select-option,
 .app-select-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   min-height: 39px;
   border: 1px solid transparent;
   border-radius: 7px;
   padding: 9px 11px;
   color: var(--text);
   background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.model-option > span,
+.select-option > span,
+.app-select-option > span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
 }
 
 .model-option:hover,
@@ -157,73 +195,82 @@
   min-width: 132px;
 }
 
+.model-picker.is-open,
+.select-picker.is-open,
+.app-select-picker.is-open {
+  z-index: 2;
+}
+
 .prompt-library-filters .app-select-picker {
   min-width: 0;
 }
 
-:root[data-theme="dark"] .model-picker-button,
-:root[data-theme="dark"] .select-picker-button,
-:root[data-theme="dark"] .app-select-button,
-:root[data-theme="dark"] .generate-page .model-picker-button,
-:root[data-theme="dark"] .generate-page .select-picker-button {
-  color: #f8fafc;
-  border-color: rgba(83, 103, 145, 0.74);
-  background:
-    linear-gradient(180deg, rgba(16, 28, 52, 0.96), rgba(6, 12, 29, 0.98)),
-    #070d1f;
+.prompt-library-filters .app-select-menu {
+  width: max-content;
+  min-width: 100%;
+  max-width: min(520px, calc(100vw - 32px));
 }
 
-:root[data-theme="dark"] .model-menu,
-:root[data-theme="dark"] .select-menu,
-:root[data-theme="dark"] .app-select-menu,
-:root[data-theme="dark"] .generate-page .model-menu {
+.prompt-library-filters .app-select-picker:nth-last-child(-n + 2) .app-select-menu {
+  left: auto;
+  right: 0;
+}
+
+:root[data-theme='dark'] .model-picker-button,
+:root[data-theme='dark'] .select-picker-button,
+:root[data-theme='dark'] .app-select-button,
+:root[data-theme='dark'] .generate-page .model-picker-button,
+:root[data-theme='dark'] .generate-page .select-picker-button {
+  color: #f8fafc;
+  border-color: rgba(83, 103, 145, 0.74);
+  background: linear-gradient(180deg, rgba(16, 28, 52, 0.96), rgba(6, 12, 29, 0.98)), #070d1f;
+}
+
+:root[data-theme='dark'] .model-menu,
+:root[data-theme='dark'] .select-menu,
+:root[data-theme='dark'] .app-select-menu,
+:root[data-theme='dark'] .generate-page .model-menu {
   border-color: rgba(83, 103, 145, 0.72);
-  background:
-    linear-gradient(180deg, rgba(8, 15, 35, 0.98), rgba(3, 8, 23, 0.99)),
-    #050a18;
+  background: linear-gradient(180deg, rgba(8, 15, 35, 0.98), rgba(3, 8, 23, 0.99)), #050a18;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     0 18px 38px rgba(2, 6, 23, 0.42);
 }
 
-:root[data-theme="dark"] .model-option,
-:root[data-theme="dark"] .select-option,
-:root[data-theme="dark"] .app-select-option,
-:root[data-theme="dark"] .generate-page .model-option {
+:root[data-theme='dark'] .model-option,
+:root[data-theme='dark'] .select-option,
+:root[data-theme='dark'] .app-select-option,
+:root[data-theme='dark'] .generate-page .model-option {
   color: #f8fafc;
   border-color: rgba(83, 103, 145, 0.28);
   background: rgba(3, 7, 18, 0.2);
 }
 
-:root[data-theme="dark"] .model-option:hover,
-:root[data-theme="dark"] .model-option:focus-visible,
-:root[data-theme="dark"] .model-option.active,
-:root[data-theme="dark"] .select-option:hover,
-:root[data-theme="dark"] .select-option:focus-visible,
-:root[data-theme="dark"] .select-option.active,
-:root[data-theme="dark"] .app-select-option:hover,
-:root[data-theme="dark"] .app-select-option:focus-visible,
-:root[data-theme="dark"] .app-select-option.active,
-:root[data-theme="dark"] .generate-page .model-option:hover,
-:root[data-theme="dark"] .generate-page .model-option:focus-visible,
-:root[data-theme="dark"] .generate-page .model-option.active {
+:root[data-theme='dark'] .model-option:hover,
+:root[data-theme='dark'] .model-option:focus-visible,
+:root[data-theme='dark'] .model-option.active,
+:root[data-theme='dark'] .select-option:hover,
+:root[data-theme='dark'] .select-option:focus-visible,
+:root[data-theme='dark'] .select-option.active,
+:root[data-theme='dark'] .app-select-option:hover,
+:root[data-theme='dark'] .app-select-option:focus-visible,
+:root[data-theme='dark'] .app-select-option.active,
+:root[data-theme='dark'] .generate-page .model-option:hover,
+:root[data-theme='dark'] .generate-page .model-option:focus-visible,
+:root[data-theme='dark'] .generate-page .model-option.active {
   color: #dbeafe;
   border-color: rgba(59, 130, 246, 0.72);
   background: rgba(14, 75, 139, 0.74);
 }
 
-:root[data-theme="dark"] .generate-page.batch-mode-page .batch-count-picker .select-picker-button {
+:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-picker .select-picker-button {
   border-color: rgba(83, 103, 145, 0.74);
-  background:
-    linear-gradient(180deg, rgba(16, 28, 52, 0.96), rgba(6, 12, 29, 0.98)),
-    #070d1f;
+  background: linear-gradient(180deg, rgba(16, 28, 52, 0.96), rgba(6, 12, 29, 0.98)), #070d1f;
 }
 
-:root[data-theme="dark"] .generate-page.batch-mode-page .batch-count-picker .model-menu {
+:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-picker .model-menu {
   border-color: rgba(83, 103, 145, 0.72);
-  background:
-    linear-gradient(180deg, rgba(8, 15, 35, 0.98), rgba(3, 8, 23, 0.99)),
-    #050a18;
+  background: linear-gradient(180deg, rgba(8, 15, 35, 0.98), rgba(3, 8, 23, 0.99)), #050a18;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.04),
     0 18px 38px rgba(2, 6, 23, 0.42);
@@ -283,7 +330,7 @@
   background: rgba(47, 102, 245, 0.12);
 }
 
-:root[data-theme="dark"] .generate-page.batch-mode-page .batch-count-option em {
+:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-option em {
   color: #bfdbfe;
   background: rgba(59, 130, 246, 0.2);
 }

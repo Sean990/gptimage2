@@ -3,6 +3,42 @@ const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '')
 const REQUEST_TIMEOUT_MS = 30000
 const RETRYABLE_METHODS = new Set(['GET', 'HEAD'])
 
+export class ApiError extends Error {
+  constructor(message = '接口请求失败', options = {}) {
+    super(message)
+    this.name = this.constructor.name
+    if (options.cause) this.cause = options.cause
+    if (options.status) this.status = options.status
+    if (options.payload) this.payload = options.payload
+    if (options.code) this.code = options.code
+  }
+}
+
+export class TimeoutError extends ApiError {
+  constructor(message = '请求超时，请稍后重试', options = {}) {
+    super(message, { ...options, status: options.status || 408, code: 'TIMEOUT' })
+    this.isTimeout = true
+  }
+}
+
+export class AuthExpiredError extends ApiError {
+  constructor(message = '登录状态已过期，请重新登录', options = {}) {
+    super(message, { ...options, status: 401, code: 'AUTH_EXPIRED' })
+  }
+}
+
+export class NetworkError extends ApiError {
+  constructor(message = '网络连接异常，请稍后重试', options = {}) {
+    super(message, { ...options, code: 'NETWORK_ERROR' })
+  }
+}
+
+export class BusinessError extends ApiError {
+  constructor(message = '接口请求失败', options = {}) {
+    super(message, { ...options, code: options.code || 'BUSINESS_ERROR' })
+  }
+}
+
 function createAbortError(message = '请求已取消') {
   const error = new Error(message)
   error.name = 'AbortError'
@@ -19,15 +55,21 @@ function clearToken() {
   localStorage.removeItem('token')
 }
 
+function emitAuthExpired(reason = 'expired') {
+  if (typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return
+  window.dispatchEvent(new CustomEvent('auth-expired', { detail: { reason } }))
+}
+
 function isJwtExpired(token) {
   const [, payload] = token.split('.')
   if (!payload) return false
 
   try {
     const normalizedPayload = payload.replace(/-/g, '+').replace(/_/g, '/')
-    const decodedPayload = typeof globalThis.atob === 'function'
-      ? globalThis.atob(normalizedPayload)
-      : globalThis.Buffer?.from(normalizedPayload, 'base64').toString('utf-8')
+    const decodedPayload =
+      typeof globalThis.atob === 'function'
+        ? globalThis.atob(normalizedPayload)
+        : globalThis.Buffer?.from(normalizedPayload, 'base64').toString('utf-8')
     if (!decodedPayload) return false
     const decoded = JSON.parse(decodedPayload)
     return Number(decoded.exp || 0) > 0 && decoded.exp * 1000 <= Date.now()
@@ -40,6 +82,7 @@ function authHeaders() {
   const token = getToken()
   if (token && isJwtExpired(token)) {
     clearToken()
+    emitAuthExpired('token-expired')
     return {}
   }
   return token ? { authorization: `Bearer ${token}` } : {}
@@ -55,9 +98,25 @@ function getRequestMethod(options = {}) {
 
 function shouldRetryRequest(error, method, attempt) {
   if (attempt > 0 || !RETRYABLE_METHODS.has(method)) return false
-  if (error.name === 'AbortError' && error.isTimeout !== true) return false
+  if (error.name === 'AbortError') return false
   if (!error.status) return true
   return error.status === 408 || error.status === 429 || error.status >= 500
+}
+
+function createResponseError(response, payload) {
+  const message = payload?.error?.message || payload?.message || `接口请求失败：${response.status}`
+
+  if (response.status === 401) {
+    const hadToken = Boolean(getToken())
+    clearToken()
+    if (hadToken) emitAuthExpired('unauthorized')
+    return new AuthExpiredError(message, { payload })
+  }
+
+  return new BusinessError(message, {
+    status: response.status,
+    payload,
+  })
 }
 
 function composeSignal(externalSignal, timeoutMs = REQUEST_TIMEOUT_MS) {
@@ -107,11 +166,11 @@ async function fetchWithTimeout(url, options = {}) {
     })
   } catch (error) {
     if (signalContext.didTimeout()) {
-      const timeoutError = createAbortError('请求超时，请稍后重试')
-      timeoutError.isTimeout = true
-      throw timeoutError
+      throw new TimeoutError('请求超时，请稍后重试', { cause: error })
     }
-    throw error
+    if (error?.name === 'AbortError') throw createAbortError(error.message || '请求已取消')
+    if (error instanceof ApiError) throw error
+    throw new NetworkError('网络连接异常，请稍后重试', { cause: error })
   } finally {
     signalContext.cleanup()
   }
@@ -136,10 +195,7 @@ async function request(path, options = {}) {
       const payload = await response.json().catch(() => null)
 
       if (!response.ok || payload?.success === false) {
-        const error = new Error(payload?.message || `接口请求失败：${response.status}`)
-        error.status = response.status
-        error.payload = payload
-        throw error
+        throw createResponseError(response, payload)
       }
 
       return normalizePayload(payload)
@@ -174,18 +230,14 @@ async function requestGenerateImages(payload, options = {}) {
   const body = await response.json().catch(() => null)
 
   if (!response.ok || body?.success === false || body?.error) {
-    throw new Error(body?.error?.message || body?.message || `接口请求失败：${response.status}`)
+    throw createResponseError(response, body)
   }
 
   return normalizePayload(body)
 }
 
 async function requestPromptOptimization(payload, options = {}) {
-  const paths = [
-    '/prompt/optimize',
-    '/prompt-optimizer/optimize',
-    '/generate/optimize-prompt',
-  ]
+  const paths = ['/prompt/optimize', '/prompt-optimizer/optimize', '/generate/optimize-prompt']
   let lastError = null
 
   for (const path of paths) {
@@ -215,53 +267,67 @@ export const api = {
   getShowcase: (params = {}) => request(`/showcase?${new URLSearchParams(params)}`),
   getLegal: (type) => request(`/legal/${encodeURIComponent(type)}`),
   getMe: () => request('/me'),
-  sendEmailCode: (payload) => request('/auth/email-code', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }),
-  sendPasswordResetCode: (payload) => request('/auth/reset-password-code', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }),
-  register: (payload) => request('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }),
-  login: (payload) => request('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }),
-  resetPassword: (payload) => request('/auth/reset-password', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }),
-  logout: () => request('/auth/logout', {
-    method: 'POST',
-    body: JSON.stringify({}),
-  }),
+  sendEmailCode: (payload) =>
+    request('/auth/email-code', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  sendPasswordResetCode: (payload) =>
+    request('/auth/reset-password-code', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  register: (payload) =>
+    request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  login: (payload) =>
+    request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  resetPassword: (payload) =>
+    request('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+  logout: () =>
+    request('/auth/logout', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    }),
   getCreditLedger: () => request('/me/credits'),
   getInvites: () => request('/me/invites'),
-  updateProfile: (payload) => request('/me/profile', {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  }),
-  reversePrompt: (payload) => request('/generate/reverse-prompt', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }),
+  updateProfile: (payload) =>
+    request('/me/profile', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    }),
+  reversePrompt: (payload) =>
+    request('/generate/reverse-prompt', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   optimizePrompt: requestPromptOptimization,
   generateImages: requestGenerateImages,
-  createOrder: (payload) => request('/orders', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  }),
+  createOrder: (payload) =>
+    request('/orders', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   getOrders: () => request('/orders'),
   getGallery: () => request('/gallery'),
+  deleteGalleryRecord: (id) =>
+    request(`/gallery/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }),
   getGenerationTask: (id) => request(`/generate/tasks/${encodeURIComponent(id)}`),
-  cancelGenerationTask: (id) => request(`/generate/tasks/${encodeURIComponent(id)}/cancel`, {
-    method: 'POST',
-    body: JSON.stringify({}),
-  }),
+  cancelGenerationTask: (id) =>
+    request(`/generate/tasks/${encodeURIComponent(id)}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    }),
   uploadFiles: async (files) => {
     const formData = new FormData()
     files.forEach((file) => formData.append('files', file))
@@ -276,7 +342,7 @@ export const api = {
     const payload = await response.json().catch(() => null)
 
     if (!response.ok || payload?.success === false) {
-      throw new Error(payload?.message || `上传失败：${response.status}`)
+      throw createResponseError(response, payload)
     }
 
     return payload?.data || []

@@ -98,9 +98,7 @@
   margin-bottom: 32px;
   padding: 26px 22px;
   border: 1px solid rgba(249, 115, 22, 0.2);
-  background:
-    linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(47, 102, 245, 0.04)),
-    var(--surface);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(47, 102, 245, 0.04)), var(--surface);
   text-align: center;
 }
 

@@ -403,6 +403,14 @@
     min-height: auto;
   }
 
+  .loading-status-body {
+    grid-template-columns: 1fr;
+  }
+
+  .loading-status p {
+    min-height: auto;
+  }
+
   .btn {
     white-space: normal;
   }

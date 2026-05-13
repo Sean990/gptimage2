@@ -20,6 +20,8 @@ const activeSection = ref('')
 const theme = ref('light')
 let themeMedia = null
 let inviteRegisterOpened = false
+const inviteStorageKey = 'imgsgen:invite-code'
+const storedInviteCode = ref('')
 
 const navItems = [
   { label: 'AI 生图', to: '/generate', path: '/generate' },
@@ -31,17 +33,20 @@ const navItems = [
   { label: '画廊', to: '/showcase', path: '/showcase' },
 ]
 const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
-const visibleNavItems = computed(() => navItems.filter(item => item.path !== '/pricing' || billingEnabled.value))
+const visibleNavItems = computed(() => navItems.filter((item) => item.path !== '/pricing' || billingEnabled.value))
 
 const routeInviteCode = computed(() => {
   const rawCode = route.query.inviteCode ?? route.query.invite ?? ''
   const code = Array.isArray(rawCode) ? rawCode[0] : rawCode
   return String(code || '').trim()
 })
+const boundInviteCode = computed(() => routeInviteCode.value || storedInviteCode.value)
 const isDark = computed(() => theme.value === 'dark')
 const currentUser = computed(() => auth.user.value)
 const isAuthenticated = computed(() => auth.isAuthenticated.value)
-const userInitial = computed(() => (currentUser.value?.name || currentUser.value?.email || 'U').trim().slice(0, 1).toUpperCase())
+const userInitial = computed(() =>
+  (currentUser.value?.name || currentUser.value?.email || 'U').trim().slice(0, 1).toUpperCase(),
+)
 
 function isActive(item) {
   if (item.soon) return false
@@ -61,8 +66,35 @@ function openLogin() {
   openAuthModal('login')
 }
 
+function onAuthExpired() {
+  openAuthModal('login')
+}
+
 function openRegister() {
   openAuthModal('register')
+}
+
+function readStoredInviteCode() {
+  if (typeof localStorage === 'undefined') return ''
+  return String(localStorage.getItem(inviteStorageKey) || '').trim()
+}
+
+function persistInviteCode(code) {
+  const normalizedCode = String(code || '').trim()
+  if (!normalizedCode) return
+
+  storedInviteCode.value = normalizedCode
+  if (typeof localStorage === 'undefined') return
+  localStorage.setItem(inviteStorageKey, normalizedCode)
+}
+
+function syncInviteCodeFromRoute() {
+  if (routeInviteCode.value) {
+    persistInviteCode(routeInviteCode.value)
+    return
+  }
+
+  storedInviteCode.value = readStoredInviteCode()
 }
 
 function maybeOpenInviteRegister() {
@@ -136,10 +168,9 @@ function updateActiveSection() {
   const sectionIds = ['feature', 'faq']
   const viewportFocusY = Math.min(window.innerHeight * 0.42, 420)
   const current = sectionIds.reduce((active, id) => {
-    const sections = [
-      document.getElementById(id),
-      ...document.querySelectorAll(`[data-nav-section="${id}"]`),
-    ].filter(Boolean)
+    const sections = [document.getElementById(id), ...document.querySelectorAll(`[data-nav-section="${id}"]`)].filter(
+      Boolean,
+    )
 
     return sections.reduce((sectionActive, section) => {
       const rect = section.getBoundingClientRect()
@@ -154,6 +185,7 @@ function updateActiveSection() {
 watch(
   () => route.fullPath,
   () => {
+    syncInviteCodeFromRoute()
     open.value = false
     accountMenuOpen.value = false
     window.requestAnimationFrame(updateActiveSection)
@@ -162,21 +194,27 @@ watch(
 )
 
 onMounted(() => {
+  syncInviteCodeFromRoute()
   themeMedia = window.matchMedia('(prefers-color-scheme: dark)')
   applyTheme(localStorage.getItem('theme') || (themeMedia.matches ? 'dark' : 'light'))
   themeMedia.addEventListener('change', syncSystemTheme)
   onScroll()
   window.addEventListener('open-login', openLogin)
+  window.addEventListener('auth-expired', onAuthExpired)
   window.addEventListener('keydown', onKeydown)
   window.addEventListener('click', onDocumentClick)
   window.addEventListener('scroll', onScroll, { passive: true })
-  auth.refreshMe().catch(() => {}).finally(maybeOpenInviteRegister)
+  auth
+    .refreshMe()
+    .catch(() => {})
+    .finally(maybeOpenInviteRegister)
   loadSiteData().catch(() => {})
 })
 
 onBeforeUnmount(() => {
   themeMedia?.removeEventListener('change', syncSystemTheme)
   window.removeEventListener('open-login', openLogin)
+  window.removeEventListener('auth-expired', onAuthExpired)
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('click', onDocumentClick)
   window.removeEventListener('scroll', onScroll)
@@ -195,11 +233,14 @@ onBeforeUnmount(() => {
       </RouterLink>
 
       <nav class="main-nav" aria-label="主导航">
-        <template
-          v-for="item in visibleNavItems"
-          :key="item.label"
-        >
-          <span v-if="item.soon" class="nav-soon" aria-disabled="true" :aria-label="`${item.label}，规划中`" title="规划中">
+        <template v-for="item in visibleNavItems" :key="item.label">
+          <span
+            v-if="item.soon"
+            class="nav-soon"
+            aria-disabled="true"
+            :aria-label="`${item.label}，规划中`"
+            title="规划中"
+          >
             {{ item.label }}
             <small>即将上线</small>
           </span>
@@ -266,15 +307,17 @@ onBeforeUnmount(() => {
 
     <nav v-if="open" id="mobile-menu" class="mobile-panel" aria-label="移动端导航">
       <template v-for="item in visibleNavItems" :key="item.label">
-        <span v-if="item.soon" class="nav-soon mobile-soon" aria-disabled="true" :aria-label="`${item.label}，规划中`" title="规划中">
+        <span
+          v-if="item.soon"
+          class="nav-soon mobile-soon"
+          aria-disabled="true"
+          :aria-label="`${item.label}，规划中`"
+          title="规划中"
+        >
           {{ item.label }}
           <small>即将上线</small>
         </span>
-        <RouterLink
-          v-else
-          :to="item.to"
-          :class="{ active: isActive(item) }"
-        >
+        <RouterLink v-else :to="item.to" :class="{ active: isActive(item) }">
           {{ item.label }}
         </RouterLink>
       </template>
@@ -287,7 +330,7 @@ onBeforeUnmount(() => {
   <AuthModal
     :open="loginOpen"
     :initial-mode="authInitialMode"
-    :invite-code="routeInviteCode"
+    :invite-code="boundInviteCode"
     :return-focus-el="loginReturnFocusEl"
     @close="closeLogin"
   />

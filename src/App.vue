@@ -30,7 +30,6 @@ useHead({
   link: [{ rel: 'canonical', href: canonicalUrl }],
 })
 
-
 const cursorRef = ref(null)
 let motionMedia = null
 let followFrame = 0

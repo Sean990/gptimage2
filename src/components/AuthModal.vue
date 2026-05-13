@@ -1,6 +1,19 @@
 <script setup>
-import { watch } from 'vue'
-import { CheckCircle2, Eye, EyeOff, Image, Images, KeyRound, LogIn, Mail, ShieldCheck, Sparkles, User, X } from 'lucide-vue-next'
+import { computed, watch } from 'vue'
+import {
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Image,
+  Images,
+  KeyRound,
+  LogIn,
+  Mail,
+  ShieldCheck,
+  Sparkles,
+  User,
+  X,
+} from 'lucide-vue-next'
 import { useAuthForm } from '../composables/useAuthForm'
 import { useAuthStore } from '../services/authStore'
 import ModalDialog from './ModalDialog.vue'
@@ -28,6 +41,7 @@ const emit = defineEmits(['close', 'authenticated'])
 
 const auth = useAuthStore()
 const form = useAuthForm(auth)
+const hasBoundInviteCode = computed(() => Boolean(String(props.inviteCode || '').trim()))
 
 function closeModal() {
   form.resetSensitiveFields()
@@ -108,9 +122,7 @@ watch(
       </button>
     </div>
     <div v-else class="auth-return-row">
-      <button class="auth-link-button" type="button" @click="form.setAuthMode('login')">
-        返回登录
-      </button>
+      <button class="auth-link-button" type="button" @click="form.setAuthMode('login')">返回登录</button>
     </div>
 
     <form class="auth-form" @submit.prevent="submitLogin">
@@ -133,7 +145,11 @@ watch(
           <Mail aria-hidden="true" />
           <input
             id="email"
-            :ref="(element) => { form.emailInputRef.value = element }"
+            :ref="
+              (element) => {
+                form.emailInputRef.value = element
+              }
+            "
             v-model.trim="form.email.value"
             type="email"
             placeholder="name@example.com"
@@ -166,7 +182,13 @@ watch(
           @click="form.sendEmailCode"
         >
           <Mail aria-hidden="true" />
-          {{ form.codeLoading.value ? '发送中' : (form.codeCooldown.value > 0 ? `${form.codeCooldown.value}s` : form.sendCodeIdleLabel.value) }}
+          {{
+            form.codeLoading.value
+              ? '发送中'
+              : form.codeCooldown.value > 0
+                ? `${form.codeCooldown.value}s`
+                : form.sendCodeIdleLabel.value
+          }}
         </button>
       </div>
       <div class="field">
@@ -194,13 +216,11 @@ watch(
         </div>
       </div>
       <div v-if="form.authMode.value === 'login'" class="auth-form-meta">
-        <button class="auth-link-button" type="button" @click="form.setAuthMode('reset')">
-          忘记密码？
-        </button>
+        <button class="auth-link-button" type="button" @click="form.setAuthMode('reset')">忘记密码？</button>
       </div>
       <div v-if="form.authMode.value === 'register'" class="field">
-        <label for="invite-code">邀请码</label>
-        <div class="auth-field-control">
+        <label for="invite-code">推荐邀请码</label>
+        <div class="auth-field-control" :class="{ 'auth-field-control-readonly': hasBoundInviteCode }">
           <Sparkles aria-hidden="true" />
           <input
             id="invite-code"
@@ -208,9 +228,13 @@ watch(
             type="text"
             placeholder="选填"
             autocomplete="off"
+            :readonly="hasBoundInviteCode"
+            :aria-describedby="hasBoundInviteCode ? 'invite-code-bound-note' : undefined"
           />
         </div>
-        <small v-if="inviteCode">已从邀请链接自动填入。</small>
+        <small v-if="hasBoundInviteCode" id="invite-code-bound-note">
+          已绑定推荐邀请码，注册时会自动使用，不可修改。
+        </small>
       </div>
       <p
         v-if="form.loginMessage.value"
@@ -222,7 +246,11 @@ watch(
         <CheckCircle2 aria-hidden="true" />
         {{ form.loginMessage.value }}
       </p>
-      <button class="btn btn-primary auth-submit-button" type="submit" :disabled="form.loginDisabled.value || form.loginLoading.value">
+      <button
+        class="btn btn-primary auth-submit-button"
+        type="submit"
+        :disabled="form.loginDisabled.value || form.loginLoading.value"
+      >
         <LogIn v-if="form.authMode.value === 'login'" aria-hidden="true" />
         <ShieldCheck v-else-if="form.authMode.value === 'reset'" aria-hidden="true" />
         <Image v-else aria-hidden="true" />

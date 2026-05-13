@@ -189,9 +189,7 @@
   border: 1px solid var(--line);
   border-radius: 50%;
   color: var(--text-strong);
-  background:
-    linear-gradient(135deg, rgba(47, 102, 245, 0.12), rgba(249, 115, 22, 0.12)),
-    var(--surface);
+  background: linear-gradient(135deg, rgba(47, 102, 245, 0.12), rgba(249, 115, 22, 0.12)), var(--surface);
   font-size: var(--fs-md);
   font-weight: var(--fw-bold);
   cursor: pointer;
@@ -201,7 +199,7 @@
 }
 
 .account-avatar-button:hover,
-.account-avatar-button[aria-expanded="true"] {
+.account-avatar-button[aria-expanded='true'] {
   border-color: var(--primary-ring);
   box-shadow: 0 0 0 4px rgba(47, 102, 245, 0.1);
 }
@@ -277,9 +275,7 @@
   margin: 0 auto;
   padding: 34px 36px;
   text-align: center;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.92)),
-    var(--surface);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(248, 250, 252, 0.92)), var(--surface);
   box-shadow: var(--shadow-md);
 }
 
@@ -312,15 +308,13 @@
   line-height: 1.7;
 }
 
-:root[data-theme="dark"] .auth-required-panel {
+:root[data-theme='dark'] .auth-required-panel {
   border-color: rgba(100, 116, 139, 0.38);
-  background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(9, 14, 27, 0.92)),
-    var(--surface);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(9, 14, 27, 0.92)), var(--surface);
   box-shadow: 0 22px 54px rgba(0, 0, 0, 0.42);
 }
 
-:root[data-theme="dark"] .auth-required-panel > svg {
+:root[data-theme='dark'] .auth-required-panel > svg {
   border-color: rgba(251, 146, 60, 0.24);
   color: var(--accent-strong);
   background: rgba(251, 146, 60, 0.13);

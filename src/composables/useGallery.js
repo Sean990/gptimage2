@@ -1,26 +1,128 @@
 import { computed, ref } from 'vue'
 
-export function useGallery({
-  generationWaitText,
-  isAuthenticated,
-  modes,
-  normalizeGenerationRecord,
-  showNotice,
-} = {}) {
-  const galleryStorageKey = 'gptImage2Gallery'
-  const maxLocalGalleryRecords = 20
-  const galleryProgressStatuses = new Set(['queued', 'running', 'saving', 'cancel_requested'])
-  const galleryRetainedEmptyStatuses = new Set([...galleryProgressStatuses, 'failed', 'canceled'])
-  const galleryStatusRank = {
-    queued: 1,
-    cancel_requested: 1,
-    running: 2,
-    saving: 3,
-    failed: 4,
-    canceled: 4,
-    completed: 5,
-  }
+const galleryStorageKey = 'gptImage2Gallery'
+const deletedGalleryStorageKey = 'gptImage2DeletedGalleryIds'
+const galleryClearedBeforeStorageKey = 'gptImage2GalleryClearedBefore'
+const maxLocalGalleryRecords = 20
+const maxDeletedGalleryIds = 500
+const galleryProgressStatuses = new Set(['queued', 'running', 'saving', 'cancel_requested'])
+const galleryRetainedEmptyStatuses = new Set([...galleryProgressStatuses, 'failed', 'canceled'])
+const galleryStatusRank = {
+  queued: 1,
+  cancel_requested: 1,
+  running: 2,
+  saving: 3,
+  failed: 4,
+  canceled: 4,
+  completed: 5,
+}
 
+function canUseLocalStorage() {
+  return typeof localStorage !== 'undefined'
+}
+
+function normalizeGalleryId(id) {
+  return String(id || '').trim()
+}
+
+function getGalleryRecordDeleteKeys(record = {}) {
+  const keys = []
+  const recordId = normalizeGalleryId(record.id)
+  const firstImageUrl = record.images?.[0]?.url || record.images?.[0]?.src || ''
+  const fallbackKey = [record.prompt, firstImageUrl || record.status].map((part) => String(part || '').trim()).join('|')
+
+  if (recordId) keys.push(`id:${recordId}`)
+  if (fallbackKey !== '|') keys.push(`record:${fallbackKey}`)
+
+  return keys
+}
+
+function parseGalleryTime(value) {
+  const time = new Date(value || 0).getTime()
+  return Number.isFinite(time) ? time : 0
+}
+
+export function loadDeletedGalleryIds() {
+  if (!canUseLocalStorage()) return new Set()
+
+  try {
+    const ids = JSON.parse(localStorage.getItem(deletedGalleryStorageKey) || '[]')
+    return new Set(
+      Array.isArray(ids)
+        ? ids
+            .map(normalizeGalleryId)
+            .filter(Boolean)
+            .map((id) => (id.includes(':') ? id : `id:${id}`))
+        : [],
+    )
+  } catch {
+    return new Set()
+  }
+}
+
+export function persistDeletedGalleryIds(ids) {
+  if (!canUseLocalStorage()) return
+
+  try {
+    const normalizedIds = Array.from(ids || [])
+      .map(normalizeGalleryId)
+      .filter(Boolean)
+    localStorage.setItem(deletedGalleryStorageKey, JSON.stringify(normalizedIds.slice(-maxDeletedGalleryIds)))
+  } catch {
+    return
+  }
+}
+
+export function markGalleryRecordsDeleted(recordIds = []) {
+  const deletedIds = loadDeletedGalleryIds()
+  recordIds
+    .flatMap((record) => (typeof record === 'object' && record ? getGalleryRecordDeleteKeys(record) : [`id:${record}`]))
+    .map(normalizeGalleryId)
+    .filter(Boolean)
+    .forEach((id) => deletedIds.add(id))
+  persistDeletedGalleryIds(deletedIds)
+  return deletedIds
+}
+
+export function loadGalleryClearedBefore() {
+  if (!canUseLocalStorage()) return 0
+  return parseGalleryTime(localStorage.getItem(galleryClearedBeforeStorageKey))
+}
+
+export function markGalleryClearedBefore(value = new Date()) {
+  if (!canUseLocalStorage()) return 0
+
+  const nextTime = parseGalleryTime(value)
+  if (!nextTime) return loadGalleryClearedBefore()
+
+  const clearedBefore = Math.max(loadGalleryClearedBefore(), nextTime)
+  try {
+    localStorage.setItem(galleryClearedBeforeStorageKey, new Date(clearedBefore).toISOString())
+  } catch {
+    return clearedBefore
+  }
+  return clearedBefore
+}
+
+export function isGalleryRecordDeleted(record, options = {}) {
+  const deletedIds = options.deletedIds || loadDeletedGalleryIds()
+  const deletedBefore = Number.isFinite(options.deletedBefore) ? options.deletedBefore : loadGalleryClearedBefore()
+
+  if (getGalleryRecordDeleteKeys(record).some((key) => deletedIds.has(key))) return true
+
+  const recordTime = parseGalleryTime(record?.createdAt || record?.updatedAt)
+  return deletedBefore > 0 && recordTime > 0 && recordTime <= deletedBefore
+}
+
+export function filterVisibleGalleryRecords(records = [], options = {}) {
+  const deletedIds = options.deletedIds || loadDeletedGalleryIds()
+  const deletedBefore = Number.isFinite(options.deletedBefore) ? options.deletedBefore : loadGalleryClearedBefore()
+  return (Array.isArray(records) ? records : []).filter(
+    (record) => !isGalleryRecordDeleted(record, { deletedIds, deletedBefore }),
+  )
+}
+
+export function useGallery({ generationWaitText, isAuthenticated, modes, normalizeGenerationRecord, showNotice } = {}) {
   const galleryOpen = ref(false)
   const gallery = ref([])
   const gallerySyncing = ref(false)
@@ -46,9 +148,11 @@ export function useGallery({
     try {
       const records = JSON.parse(localStorage.getItem(galleryStorageKey) || '[]')
       return Array.isArray(records)
-        ? records
-          .map(normalizeGenerationRecord)
-          .filter((record) => record.images.length || galleryRetainedEmptyStatuses.has(record.status))
+        ? filterVisibleGalleryRecords(
+            records
+              .map(normalizeGenerationRecord)
+              .filter((record) => record.images.length || galleryRetainedEmptyStatuses.has(record.status)),
+          )
         : []
     } catch {
       return []
@@ -57,7 +161,10 @@ export function useGallery({
 
   function persistLocalGallery(records = gallery.value) {
     try {
-      localStorage.setItem(galleryStorageKey, JSON.stringify(records.slice(0, maxLocalGalleryRecords)))
+      localStorage.setItem(
+        galleryStorageKey,
+        JSON.stringify(filterVisibleGalleryRecords(records).slice(0, maxLocalGalleryRecords)),
+      )
     } catch {
       showNotice?.('图库本地存储空间不足，已保留当前页面记录')
     }
@@ -65,10 +172,13 @@ export function useGallery({
 
   function mergeGalleryRecords(...recordGroups) {
     const recordsByKey = new Map()
+    const deletedIds = loadDeletedGalleryIds()
+    const deletedBefore = loadGalleryClearedBefore()
     recordGroups
       .flat()
       .map((record) => normalizeGenerationRecord(record))
       .forEach((record) => {
+        if (isGalleryRecordDeleted(record, { deletedIds, deletedBefore })) return
         const shouldKeepEmptyRecord = galleryRetainedEmptyStatuses.has(record.status)
         if (!record.images.length && !shouldKeepEmptyRecord) return
         const firstImageUrl = record.images[0]?.url || ''
@@ -169,9 +279,7 @@ export function useGallery({
 
   function galleryRecordMeta(record) {
     const imageCountText = record.images.length ? `${record.images.length} 张` : galleryRecordStatusLabel(record)
-    return [galleryRecordMode(record), record.resolution, record.ratio, imageCountText]
-      .filter(Boolean)
-      .join(' · ')
+    return [galleryRecordMode(record), record.resolution, record.ratio, imageCountText].filter(Boolean).join(' · ')
   }
 
   return {
@@ -199,6 +307,8 @@ export function useGallery({
     hasPendingGalleryRecords,
     isGalleryRecordPending,
     loadLocalGallery,
+    markGalleryClearedBefore,
+    markGalleryRecordsDeleted,
     maxLocalGalleryRecords,
     mergeGalleryRecords,
     persistLocalGallery,

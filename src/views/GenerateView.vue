@@ -1,26 +1,17 @@
 <script setup>
-import {
-  GalleryHorizontal,
-  Coins,
-  CreditCard,
-  Lightbulb,
-  LogIn,
-  Save,
-  Images,
-  Wand,
-} from 'lucide-vue-next'
+import { GalleryHorizontal, Coins, CreditCard, Lightbulb, LogIn, Save, Images, Wand } from 'lucide-vue-next'
 import Toast from '../components/Toast.vue'
 import GalleryDrawer from '../components/generate/GalleryDrawer.vue'
 import GenerateOutputGrid from '../components/generate/GenerateOutputGrid.vue'
 import GenerateToolPanel from '../components/generate/GenerateToolPanel.vue'
 import ImagePreviewModal from '../components/generate/ImagePreviewModal.vue'
 import { useGenerationTask } from '../composables/useGenerationTask'
+import '../assets/generate.css'
 
 const task = useGenerationTask()
 
 const {
   batchMode,
-  billingEnabled,
   disableBatchMode,
   enableBatchMode,
   footerTipText,
@@ -87,7 +78,12 @@ const {
                     <span>登录 / 注册</span>
                   </button>
                 </template>
-                <button v-if="output.length" class="btn hero-save-button" type="button" @click="saveCurrentOutputToGallery">
+                <button
+                  v-if="output.length"
+                  class="btn hero-save-button"
+                  type="button"
+                  @click="saveCurrentOutputToGallery"
+                >
                   <Save aria-hidden="true" />
                   <span>保存当前结果</span>
                 </button>

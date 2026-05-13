@@ -1,7 +1,5 @@
 .prompt-optimizer-page {
-  background:
-    linear-gradient(180deg, rgba(37, 99, 235, 0.04), transparent 360px),
-    transparent;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.04), transparent 360px), transparent;
 }
 
 .optimizer-container {
@@ -205,7 +203,7 @@
   height: 6px;
   border-radius: 999px;
   background: var(--primary);
-  content: "";
+  content: '';
 }
 
 .optimizer-credits {

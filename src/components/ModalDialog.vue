@@ -141,12 +141,7 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <div
-      v-if="open"
-      class="modal-backdrop"
-      :class="backdropClass"
-      @click="onBackdropClick"
-    >
+    <div v-if="open" class="modal-backdrop" :class="backdropClass" @click="onBackdropClick">
       <div
         class="modal-card"
         :class="cardClass"
