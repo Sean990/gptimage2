@@ -10,7 +10,7 @@ import '../assets/legal.css'
       <SearchX class="not-found-icon" aria-hidden="true" />
       <span class="eyebrow">404</span>
       <h1>页面未找到</h1>
-      <p>这个路由不在 ImgsGen 站点中。</p>
+      <p>这个页面不存在，或已经被移动。</p>
       <RouterLink class="btn btn-primary" to="/">
         <ArrowLeft aria-hidden="true" />
         返回首页

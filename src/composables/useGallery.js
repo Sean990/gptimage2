@@ -108,6 +108,11 @@ export function markGalleryClearedBefore(value = new Date()) {
   return clearedBefore
 }
 
+export function clearGalleryClearedBefore() {
+  if (!canUseLocalStorage()) return
+  localStorage.removeItem(galleryClearedBeforeStorageKey)
+}
+
 export function isGalleryRecordDeleted(record, options = {}) {
   const deletedIds = options.deletedIds || loadDeletedGalleryIds()
   const deletedBefore = Number.isFinite(options.deletedBefore) ? options.deletedBefore : loadGalleryClearedBefore()
@@ -141,8 +146,8 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
   })
   const hasPendingGalleryRecords = computed(() => gallery.value.some((record) => isGalleryRecordPending(record)))
   const galleryCloudStatusText = computed(() => {
-    if (!isAuthenticated?.value) return '未登录时仅显示本地临时图库，登录后会同步云端记录。'
-    if (gallerySyncing.value) return '正在同步云端图库和生成进度。'
+    if (!isAuthenticated?.value) return '未登录时仅显示本地临时图库，登录后可同步云端记录。'
+    if (gallerySyncing.value) return '正在同步云端图库与生成进度。'
     if (gallerySyncError.value) return gallerySyncError.value
     if (galleryLastSyncedAt.value) return `云端已同步：${formatGallerySyncTime(galleryLastSyncedAt.value)}`
     return '登录状态下会自动同步云端图库、图片结果和任务进度。'
@@ -170,7 +175,7 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
         JSON.stringify(filterVisibleGalleryRecords(records).slice(0, maxLocalGalleryRecords)),
       )
     } catch {
-      showNotice?.('图库本地存储空间不足，已保留当前页面记录')
+      showNotice?.('本地图库空间不足，已保留当前页面记录')
     }
   }
 
@@ -310,6 +315,7 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     gallerySyncMessage,
     hasPendingGalleryRecords,
     isGalleryRecordPending,
+    clearGalleryClearedBefore,
     loadLocalGallery,
     markGalleryClearedBefore,
     markGalleryRecordsDeleted,

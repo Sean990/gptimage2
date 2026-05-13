@@ -25,17 +25,17 @@ const modes = [
   {
     id: 'image',
     label: '图像生成',
-    description: '补齐主体、构图、光线、材质和画幅约束。',
+    description: '补齐主体、构图、光线、材质、比例和限制条件。',
   },
   {
     id: 'writing',
     label: '文案写作',
-    description: '明确受众、目标、语气、结构和输出长度。',
+    description: '明确受众、目标、语气、结构、长度和检查标准。',
   },
   {
     id: 'work',
     label: '办公任务',
-    description: '拆解背景、任务、限制、交付格式和检查标准。',
+    description: '拆解背景、任务、限制、交付格式和验收标准。',
   },
 ]
 const examples = [
@@ -63,8 +63,8 @@ const remainingCount = computed(() => Math.max(0, 10 - historyItems.value.length
 const optimizerStatusText = computed(() => {
   if (loading.value) return 'AI 正在分析场景、补齐约束并重写提示词'
   if (optimizeError.value) return optimizeError.value
-  if (optimizedPrompt.value) return '已由后端 AI 优化完成'
-  return '后端 AI 会根据场景生成可复制、可继续修改的提示词草稿'
+  if (optimizedPrompt.value) return '提示词草稿已生成，可继续修改'
+  return '后端 AI 会按场景生成可复制、可继续修改的提示词草稿'
 })
 const qualityScore = computed(() => {
   const text = inputPrompt.value.trim()
@@ -79,7 +79,7 @@ const qualityScore = computed(() => {
 const qualityLabel = computed(() => {
   if (!inputPrompt.value.trim()) return '等待输入'
   if (qualityScore.value >= 78) return '结构较完整'
-  if (qualityScore.value >= 52) return '可以继续补充'
+  if (qualityScore.value >= 52) return '还可补充细节'
   return '信息偏少'
 })
 
@@ -175,13 +175,13 @@ async function optimizePrompt() {
       id: result?.id,
       engine: result?.engine || result?.model || '后端 AI',
     })
-    showNotice('AI 提示词已优化')
+    showNotice('提示词已优化')
   } catch (error) {
     if (error.name === 'AbortError') {
       optimizeError.value = '已取消本次优化'
       showNotice('已取消优化')
     } else {
-      optimizeError.value = error.message || 'AI 提示词优化失败，请稍后重试'
+      optimizeError.value = error.message || '提示词优化失败，请稍后重试'
       showNotice(optimizeError.value)
     }
   } finally {
@@ -251,7 +251,7 @@ onBeforeUnmount(() => {
             提示词优化器
           </span>
           <h1>AI 提示词优化器</h1>
-          <p>辅助整理提示词结构，让描述更清晰。输入原始想法，选择使用场景，生成可继续修改和复核的提示词草稿。</p>
+          <p>把零散想法整理成结构清晰的 Prompt 草稿，方便继续修改、复制到生成器或交给团队复核。</p>
         </div>
 
         <div class="optimizer-layout" v-fade-up="{ delay: 100 }">
@@ -336,9 +336,9 @@ onBeforeUnmount(() => {
                 使用技巧
               </h2>
               <ul>
-                <li>描述要具体，避免“高级”“好看”这类孤立词。</li>
-                <li>说明受众、场景、目标和你不想要的结果。</li>
-                <li>指定输出格式、语气、篇幅或画幅比例。</li>
+                <li>描述要具体，避免只写“高级”“好看”。</li>
+                <li>说明受众、场景、目标和不希望出现的结果。</li>
+                <li>明确输出格式、语气、篇幅或画幅比例。</li>
                 <li>复杂需求拆成背景、任务、限制和交付物。</li>
               </ul>
             </section>
@@ -355,7 +355,7 @@ onBeforeUnmount(() => {
           <div class="optimizer-panel-head">
             <div>
               <h2 id="optimizer-result-title">优化结果</h2>
-              <p>复制后可作为图像生成、写作或办公类 AI 工具的输入草稿，正式使用前请自行复核事实、权利和合规边界。</p>
+              <p>复制后可作为图像生成、写作或办公类 AI 工具的输入草稿，正式使用前请复核事实、权利和内容边界。</p>
             </div>
             <button class="btn btn-soft" type="button" :disabled="!optimizedPrompt" @click="copyOptimizedPrompt">
               <Copy aria-hidden="true" />
@@ -388,7 +388,7 @@ onBeforeUnmount(() => {
             v-else
             class="optimizer-empty"
             title="优化后的提示词草稿会显示在这里"
-            description="输入原始提示词并点击“开始优化”，后端 AI 会补齐角色、任务、约束和输出格式。"
+            description="输入原始提示词并点击“开始优化”，AI 会补齐角色、任务、约束和输出格式。"
           >
             <template #icon>
               <WandSparkles aria-hidden="true" />

@@ -33,12 +33,12 @@ export function useGenerationTask() {
   ]
   const aspectRatios = [
     { label: '方图 1:1', value: '1:1' },
-    { label: '横向 3:2', value: '3:2' },
-    { label: '竖向 2:3', value: '2:3' },
+    { label: '横版 3:2', value: '3:2' },
+    { label: '竖版 2:3', value: '2:3' },
     { label: '宽屏 16:9', value: '16:9' },
     { label: '长图 9:16', value: '9:16' },
-    { label: '横向 4:3', value: '4:3' },
-    { label: '竖向 3:4', value: '3:4' },
+    { label: '横版 4:3', value: '4:3' },
+    { label: '竖版 3:4', value: '3:4' },
     { label: '自动', value: 'auto' },
   ]
   const resolutionOptions = [
@@ -96,8 +96,8 @@ export function useGenerationTask() {
     { label: '宽松审核 low', value: 'low' },
   ]
   const generationWaitText = '1~3 分钟'
-  const generationIdleTip = `生图等待时间约 ${generationWaitText}。点击生成后不用停留当前页面，可随时在我的图库查看生图任务进度。`
-  const generationSubmittedTip = `任务已提交，预计 ${generationWaitText} 完成。可以不用在当前页面等待，可随时在我的图库查看生图任务进度。`
+  const generationIdleTip = `生成通常需要 ${generationWaitText}。提交后可以离开当前页面，稍后在我的图库查看进度。`
+  const generationSubmittedTip = `任务已提交，预计 ${generationWaitText} 完成。你可以继续浏览，稍后在我的图库查看结果。`
 
   const selectMenuOpen = ref('')
   const {
@@ -210,8 +210,8 @@ export function useGenerationTask() {
     gallerySyncMessage,
     hasPendingGalleryRecords,
     isGalleryRecordPending,
+    clearGalleryClearedBefore,
     loadLocalGallery,
-    markGalleryClearedBefore,
     markGalleryRecordsDeleted,
     maxLocalGalleryRecords,
     mergeGalleryRecords,
@@ -256,6 +256,7 @@ export function useGenerationTask() {
   } = useGenerationPolling({
     activeTaskId,
     api,
+    clearGalleryClearedBefore,
     gallery,
     galleryLastSyncedAt,
     galleryOpen,
@@ -317,11 +318,11 @@ export function useGenerationTask() {
   const selectedBackgroundLabel = computed(() => getOptionLabel(backgroundOptions, background.value))
   const selectedModerationLabel = computed(() => getOptionLabel(moderationOptions, moderation.value))
   const selectedBatchCountLabel = computed(() => getOptionLabel(batchCountOptions, normalizedImageCount.value))
-  const heroTitle = computed(() => (batchMode.value ? '批量 AI 生图' : 'ImgsGen 照片生成'))
+  const heroTitle = computed(() => (batchMode.value ? '批量图片生成' : 'ImgsGen 图片生成'))
   const heroDescription = computed(() =>
     batchMode.value
-      ? '一次生成多张图片，提高创作效率；发布前请统一复核内容和授权。'
-      : '结合参考图和提示词，生成可下载、可复核并带有 AI 属性提示的视觉内容。',
+      ? '一次生成多张图片，快速比较风格方向；发布前请统一复核内容和授权。'
+      : '输入提示词或上传参考图，生成可下载、可复用，并带有 AI 属性提示的视觉内容。',
   )
   const { gptLoadingDots, loadingHint, loadingStatusText, loadingTitle, loadingVariant } = useGenerationLoading({
     activeModelKey,
@@ -335,8 +336,8 @@ export function useGenerationTask() {
     return Math.min(100, Math.round((0.12 + lengthScore * 0.62 + referenceScore + qualityScore) * 100))
   })
   const promptQualityLabel = computed(() => {
-    if (promptQualityScore.value >= 76) return '高质量提示词'
-    if (promptQualityScore.value >= 45) return '可生成，建议继续补充细节'
+    if (promptQualityScore.value >= 76) return '提示词信息较完整'
+    if (promptQualityScore.value >= 45) return '可以生成，补充细节会更稳'
     return '描述偏短，建议补充主体、光线和构图'
   })
   const promptLabel = computed(() => {
@@ -344,19 +345,19 @@ export function useGenerationTask() {
   })
   const promptPlaceholder = computed(() => {
     if (mode.value === 'image')
-      return '描述如何基于已授权参考图生成新图，例如：保持本人形象，替换为高级摄影棚背景，增强服装质感。'
+      return '描述如何基于已授权参考图生成新图，例如：保持主体形象，替换为摄影棚背景，增强服装质感。'
     if (mode.value === 'edit')
-      return '描述要精修的局部或整体，例如：只替换背景为高级摄影棚，主体保持不变。请勿编辑未获授权的人脸或隐私内容。'
-    return '详细描述你想要生成的图像，包括主体、风格、光线、色调等。请勿输入违法、侵权、虚假或侵犯他人权益的内容。'
+      return '描述要精修的局部或整体，例如：只替换背景为摄影棚，主体保持不变。请勿编辑未获授权的人脸或隐私内容。'
+    return '详细描述你想要生成的图像，包括主体、风格、光线、色调、画面比例和用途。'
   })
   const referenceLabel = computed(() => {
-    return mode.value === 'edit' ? '原图' : '参考图像'
+    return mode.value === 'edit' ? '原图' : '参考图'
   })
   const referenceInputLabel = computed(() => {
-    return mode.value === 'edit' ? '上传 1 张原图或输入图片 URL' : '上传参考图片或输入图片 URL'
+    return mode.value === 'edit' ? '上传 1 张原图或输入图片 URL' : '上传参考图或输入图片 URL'
   })
   const referenceUploadHint = computed(() => {
-    return mode.value === 'edit' ? '仅支持 1 张原图（PNG, JPEG, WEBP，最大 10MB）' : '支持 PNG, JPEG, WEBP（最大 10MB）'
+    return mode.value === 'edit' ? '仅支持 1 张原图（PNG、JPEG、WEBP，最大 10MB）' : '支持 PNG、JPEG、WEBP（最大 10MB）'
   })
   const advancedSummary = computed(() => {
     const items = [`${normalizedImageCount.value} 张`, outputFormat.value.toUpperCase(), selectedQualityLabel.value]
@@ -477,12 +478,12 @@ export function useGenerationTask() {
 
   function enableBatchMode() {
     batchMode.value = true
-    showNotice('已切换到高级批量生图')
+    showNotice('已切换到批量生成')
   }
 
   function disableBatchMode() {
     batchMode.value = false
-    showNotice('已返回普通生图')
+    showNotice('已返回单张生成')
   }
 
   function openLoginFromGenerate() {
@@ -517,7 +518,7 @@ export function useGenerationTask() {
     }
     if (!(await ensureAuthenticated())) {
       logGenerationDuration()
-      showNotice('请先登录后再提交生成任务')
+      showNotice('请先登录后提交生成任务')
       openLoginFromGenerate()
       return
     }
@@ -528,12 +529,12 @@ export function useGenerationTask() {
     }
     if (requiresReference.value && !referenceCount.value) {
       logGenerationDuration()
-      showNotice(mode.value === 'edit' ? '请先添加原图或参考图' : '请先添加参考图')
+      showNotice(mode.value === 'edit' ? '请先添加原图' : '请先添加参考图')
       return
     }
     if (hasUnreadyUpload({ includeMask: mode.value === 'edit' })) {
       logGenerationDuration()
-      showNotice('本地图片尚未上传成功，请等待上传完成或重新上传后再生成')
+      showNotice('图片还在上传，请完成上传后再生成')
       return
     }
     if (!hasUsageCostConfig.value) {
@@ -546,7 +547,7 @@ export function useGenerationTask() {
     }
     if (userCredits.value < creditCost.value) {
       logGenerationDuration()
-      showNotice(`积分不足，本次需要 ${creditCost.value} 积分`)
+      showNotice(`积分不足，本次预计需要 ${creditCost.value} 积分`)
       return
     }
     if (!selectedModelAvailable.value && modelOptions.value.length) {
@@ -580,7 +581,7 @@ export function useGenerationTask() {
         mask: mode.value === 'edit' ? getMaskReference() : '',
       })
       loadingStage.value = '任务已提交，后台生成中'
-      showNotice('任务已提交，可到我的图库查看进度')
+      showNotice('任务已提交，可在我的图库查看进度')
       const task = await api.generateImages(requestPayload, {
         signal: generationAbortController.value.signal,
       })
@@ -595,7 +596,7 @@ export function useGenerationTask() {
       output.value = mapRecordImages(normalizedResult)
       gallery.value = mergeGalleryRecords([normalizedResult], gallery.value)
       persistLocalGallery()
-      showNotice(batchMode.value ? '批量生成已完成' : '图像生成已完成')
+      showNotice(batchMode.value ? '批量生成完成' : '图像生成完成')
     } catch (error) {
       output.value = []
       if (error.isTimeout) showNotice(error.message || '请求超时，请稍后重试')
@@ -659,7 +660,7 @@ export function useGenerationTask() {
   function downloadGalleryRecord(record) {
     const images = Array.isArray(record?.images) ? record.images : []
     if (!images.length) {
-      showNotice('该记录暂无可下载图片')
+      showNotice('这条记录暂无可下载图片')
       return
     }
     const title = record.prompt?.slice(0, 40) || 'imgsgen-image'
@@ -708,7 +709,7 @@ export function useGenerationTask() {
       await navigator.clipboard.writeText(record.prompt || '')
       showNotice('图库提示词已复制')
     } catch {
-      showNotice(record.prompt || '该记录没有提示词')
+      showNotice(record.prompt || '这条记录没有提示词')
     }
   }
 
@@ -744,12 +745,10 @@ export function useGenerationTask() {
   }
 
   function clearGallery() {
-    markGalleryRecordsDeleted(gallery.value)
-    markGalleryClearedBefore()
     gallery.value = []
     persistLocalGallery([])
     gallerySyncMessage.value = ''
-    showNotice('已清空图库，刷新后不会再显示旧记录')
+    showNotice('已清空本地图库，点击同步云端可重新拉取云端记录')
   }
 
   function saveCurrentOutputToGallery() {
@@ -907,7 +906,6 @@ export function useGenerationTask() {
     loadingTitle,
     loadingVariant,
     loadLocalGallery,
-    markGalleryClearedBefore,
     markGalleryRecordsDeleted,
     mapRecordImages,
     maskCount,

@@ -122,7 +122,7 @@ const {
   <section class="card tool-panel">
     <div class="mode-switch-card">
       <div class="settings-section-head">
-        <h2>生成模式</h2>
+        <h2>选择模式</h2>
         <span>{{ batchMode ? `${normalizedImageCount} 张图片` : activeMode.badge }}</span>
       </div>
       <div class="mode-tabs" role="tablist" aria-label="图片生成模式">
@@ -201,7 +201,7 @@ const {
           </button>
         </div>
       </div>
-      <small>需要 {{ creditCost }} 积分</small>
+      <small>预计消耗 {{ creditCost }} 积分</small>
     </div>
     <div class="settings-grid">
       <div class="field model-field">
@@ -250,13 +250,13 @@ const {
         </div>
       </div>
       <div class="field">
-        <label for="aspect-ratio">纵横比</label>
+        <label for="aspect-ratio">画幅比例</label>
         <div class="model-picker select-picker">
           <button
             id="aspect-ratio"
             class="model-picker-button select-picker-button"
             type="button"
-            :aria-label="`纵横比，当前为 ${selectedAspectRatioLabel}`"
+            :aria-label="`画幅比例，当前为 ${selectedAspectRatioLabel}`"
             :aria-expanded="selectMenuOpen === 'aspectRatio'"
             aria-haspopup="listbox"
             aria-controls="aspect-ratio-menu"
@@ -400,7 +400,7 @@ const {
         />
       </label>
       <p class="compliance-hint">
-        请仅上传本人或已获授权的图片。包含人脸、证件、未成年人、商标、作品或隐私信息的素材，需先取得合法授权。
+        请仅上传本人或已获授权的图片。包含人脸、证件、未成年人、商标、作品或隐私信息的素材，需先确认授权。
       </p>
       <div v-if="referenceCount" class="reference-grid">
         <div v-if="imageUrl" class="reference-thumb">
@@ -474,7 +474,7 @@ const {
           <span class="quality-fill" :style="{ width: `${promptQualityScore}%` }"></span>
         </div>
       </div>
-      <small class="prompt-tip-line">{{ promptOptimizeCostTip }} · 不知道怎么写？试试下方的「AI 反推提示词」功能</small>
+      <small class="prompt-tip-line">{{ promptOptimizeCostTip }} · 不确定怎么写？试试下方的「AI 反推提示词」功能</small>
     </div>
 
     <details class="advanced-panel" :open="advancedOpen" @toggle="advancedOpen = $event.target.open">
@@ -644,13 +644,13 @@ const {
           </div>
         </div>
         <div class="field">
-          <label for="moderation">审核</label>
+          <label for="moderation">内容审核</label>
           <div class="model-picker select-picker">
             <button
               id="moderation"
               class="model-picker-button select-picker-button"
               type="button"
-              :aria-label="`审核，当前为 ${selectedModerationLabel}`"
+              :aria-label="`内容审核，当前为 ${selectedModerationLabel}`"
               :aria-expanded="selectMenuOpen === 'moderation'"
               aria-haspopup="listbox"
               aria-controls="moderation-menu"
@@ -781,12 +781,12 @@ const {
             <Sparkles aria-hidden="true" />
             AI 反推提示词 <span class="tag">核心功能</span>
           </h3>
-          <span>上传已授权照片，生成可修改的摄影提示词草稿</span>
+          <span>上传已授权图片，生成可修改的摄影提示词草稿</span>
         </div>
       </div>
       <p>
         AI
-        辅助分析照片并生成包含人物特征、服装细节、光线描述、镜头参数等信息的提示词草稿。上传真人照片前请确认已取得合法授权。
+        辅助分析参考图，生成包含主体特征、服装细节、光线描述和镜头参数的提示词草稿。上传真人照片前请确认已取得合法授权。
       </p>
       <button
         class="btn btn-soft reverse-action"
@@ -800,7 +800,7 @@ const {
       </button>
       <div class="reverse-meta">
         <span><Gem aria-hidden="true" />消耗 {{ reversePromptCost }} 积分</span>
-        <span><Zap aria-hidden="true" />10 秒生成</span>
+        <span><Zap aria-hidden="true" />约 10 秒</span>
       </div>
     </div>
 
@@ -824,8 +824,8 @@ const {
       </button>
     </div>
     <div class="compliance-notice" role="note">
-      <strong>提交即表示你确认素材来源合法，并同意平台进行内容安全审核和 AI 生成标识处理。</strong>
-      <span>不得生成违法违规、侵权、虚假新闻、冒用身份、侵犯肖像隐私、损害未成年人权益或危害公共利益的内容。</span>
+      <strong>提交前请确认素材来源合法，并同意平台进行内容安全审核和 AI 生成标识处理。</strong>
+      <span>不得生成违法违规、侵权、虚假新闻、冒用身份、侵犯肖像隐私或危害公共利益的内容。</span>
     </div>
     <div class="generation-inline-notice" :class="{ active: loading }" role="note">
       <div>

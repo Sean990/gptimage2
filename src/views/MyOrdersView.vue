@@ -187,7 +187,7 @@ async function copyInviteLink() {
   if (!text) return
   try {
     await navigator.clipboard.writeText(text)
-    copyMessage.value = '已复制邀请链接'
+    copyMessage.value = '邀请链接已复制'
   } catch {
     copyMessage.value = '复制失败，请手动复制'
   }
@@ -292,7 +292,7 @@ watch(isAuthenticated, (authenticated) => {
         <section v-if="!isAuthenticated" class="card auth-required-panel" v-fade-up>
           <LogIn aria-hidden="true" />
           <h1>登录后查看个人中心</h1>
-          <p>积分、邀请奖励和生成记录都会同步到你的账户。登录后才能提交生图任务。</p>
+          <p>积分、邀请奖励和生成记录会同步到你的账户。登录后才能提交生成任务。</p>
           <button class="btn btn-primary" type="button" @click="openLogin">
             <LogIn aria-hidden="true" />
             登录 / 注册
@@ -343,7 +343,7 @@ watch(isAuthenticated, (authenticated) => {
                 <h2>{{ currentPanelTitle }}</h2>
                 <button v-if="activeTab === 'orders'" class="btn btn-primary" type="button" @click="openDocs">
                   <ReceiptText aria-hidden="true" />
-                  阅读文档
+                  查看文档
                 </button>
                 <button
                   v-if="activeTab === 'credits' && billingEnabled"
@@ -352,7 +352,7 @@ watch(isAuthenticated, (authenticated) => {
                   @click="openPricing"
                 >
                   <CreditCard aria-hidden="true" />
-                  积分说明
+                  积分规则
                 </button>
                 <button v-if="activeTab === 'invites'" class="btn btn-soft" type="button" @click="copyInviteLink">
                   <Copy aria-hidden="true" />
@@ -415,7 +415,7 @@ watch(isAuthenticated, (authenticated) => {
                 aria-labelledby="account-tab-credits"
               >
                 <div class="credit-overview" v-fade-up="{ delay: 200 }">
-                  <span>剩余积分: {{ user.credits || 0 }}</span>
+                  <span>剩余积分：{{ user.credits || 0 }}</span>
                 </div>
                 <div class="account-table-wrap" v-fade-up="{ delay: 300 }">
                   <table class="account-table">

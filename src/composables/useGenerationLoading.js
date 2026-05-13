@@ -45,16 +45,16 @@ export function useGenerationLoading({ activeModelKey, activeModelLabel, loading
   })
 
   const loadingTitle = computed(() => {
-    if (loadingVariant.value === 'gpt-image-2') return 'ImgsGen 正在生成'
+    if (loadingVariant.value === 'gpt-image-2') return 'ImgsGen 正在出图'
     if (loadingVariant.value === 'nano-banana-2') return 'Nano Banana 2 正在推理'
     if (loadingVariant.value === 'nano-banana') return 'Nano Banana 正在组织画面'
     return `${activeModelLabel.value} 正在生成`
   })
 
   const loadingHint = computed(() => {
-    if (loadingVariant.value === 'gpt-image-2') return '正在生成图像，请稍候片刻，结果请在发布前人工复核'
-    if (loadingVariant.value === 'nano-banana-2') return '优先整理参考图一致性、材质细节和构图'
-    if (loadingVariant.value === 'nano-banana') return '正在快速铺开构图、色彩和主体风格'
+    if (loadingVariant.value === 'gpt-image-2') return '正在生成图像，请稍候片刻，结果发布前请人工复核'
+    if (loadingVariant.value === 'nano-banana-2') return '正在整理参考图一致性、材质细节和构图'
+    if (loadingVariant.value === 'nano-banana') return '正在铺开构图、色彩和主体风格'
     return '正在准备当前模型的输出结果'
   })
 

@@ -546,6 +546,52 @@
   color: #38bdf8;
 }
 
+:root:not([data-theme='dark']) .generate-page .tool-toolbar-row-secondary {
+  align-items: center;
+  gap: 10px;
+}
+
+:root:not([data-theme='dark']) .generate-page .hero-credit-group {
+  border-color: rgba(14, 116, 184, 0.16);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    0 8px 18px rgba(14, 116, 184, 0.08);
+}
+
+:root:not([data-theme='dark']) .generate-page .toolbar-credit.hero-balance-pill {
+  border-color: rgba(217, 119, 6, 0.26);
+  color: #92400e;
+  background: linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(254, 243, 199, 0.86));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 8px 18px rgba(217, 119, 6, 0.1);
+}
+
+:root:not([data-theme='dark']) .generate-page .toolbar-credit.hero-balance-pill svg {
+  color: #d97706;
+}
+
+:root:not([data-theme='dark']) .generate-page .tool-toolbar-row-secondary > .toolbar-credit {
+  color: #15803d;
+  border-color: rgba(22, 163, 74, 0.22);
+  background: rgba(240, 253, 244, 0.82);
+}
+
+:root:not([data-theme='dark']) .generate-page .tool-toolbar .hero-recharge-button {
+  border-color: rgba(14, 116, 184, 0.24);
+  color: #075985;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: none;
+}
+
+:root:not([data-theme='dark']) .generate-page .tool-toolbar .hero-recharge-button:hover {
+  border-color: transparent;
+  color: #ffffff;
+  background: #0284c7;
+  box-shadow: 0 10px 22px rgba(14, 116, 184, 0.22);
+}
+
 .generate-page.batch-mode-page .section-title h1 {
   background: linear-gradient(120deg, #a855f7 0%, #7c3aed 48%, #60a5fa 100%);
   -webkit-background-clip: text;

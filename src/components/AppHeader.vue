@@ -24,13 +24,13 @@ const inviteStorageKey = 'imgsgen:invite-code'
 const storedInviteCode = ref('')
 
 const navItems = [
-  { label: 'AI 生图', to: '/generate', path: '/generate' },
+  { label: '图片生成', to: '/generate', path: '/generate' },
   { label: 'AI 视频', soon: true },
-  { label: '提示词优化', to: '/prompt-optimizer', path: '/prompt-optimizer' },
-  { label: '功能亮点', to: '/#feature', path: '/', hash: '#feature' },
-  { label: '定价', to: '/pricing', path: '/pricing' },
-  { label: '常见问题', to: '/#faq', path: '/', hash: '#faq' },
-  { label: '画廊', to: '/showcase', path: '/showcase' },
+  { label: 'Prompt 优化', to: '/prompt-optimizer', path: '/prompt-optimizer' },
+  { label: '核心能力', to: '/#feature', path: '/', hash: '#feature' },
+  { label: '积分方案', to: '/pricing', path: '/pricing' },
+  { label: 'FAQ', to: '/#faq', path: '/', hash: '#faq' },
+  { label: '案例库', to: '/showcase', path: '/showcase' },
 ]
 const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
 const visibleNavItems = computed(() => navItems.filter((item) => item.path !== '/pricing' || billingEnabled.value))
@@ -280,7 +280,7 @@ onBeforeUnmount(() => {
           </button>
           <div v-if="accountMenuOpen" class="account-popover" role="menu">
             <strong>{{ currentUser.name || currentUser.email }}</strong>
-            <RouterLink role="menuitem" to="/my-orders" @click="closeAccountMenu">用户中心</RouterLink>
+            <RouterLink role="menuitem" to="/my-orders" @click="closeAccountMenu">个人中心</RouterLink>
             <button type="button" role="menuitem" @click="logout">
               <LogOut aria-hidden="true" />
               退出登录

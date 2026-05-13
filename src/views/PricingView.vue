@@ -51,7 +51,7 @@ async function ensureAuthenticated() {
 
 async function selectPlan(plan) {
   if (!billingEnabled.value) {
-    orderMessage.value = '积分服务暂未开放，请查看积分说明。'
+    orderMessage.value = '积分方案暂未开放，请先查看积分规则。'
     return
   }
   if (!(await ensureAuthenticated())) {
@@ -69,11 +69,11 @@ async function selectPlan(plan) {
 async function submitOrder() {
   if (!selectedPlan.value) return
   if (!billingEnabled.value) {
-    orderMessage.value = '积分服务暂未开放，暂不支持创建订单。'
+    orderMessage.value = '积分方案暂未开放，暂不支持创建订单。'
     return
   }
   if (!auth.isAuthenticated.value) {
-    orderMessage.value = '请先登录后查看积分服务'
+    orderMessage.value = '请先登录后查看积分方案'
     window.dispatchEvent(new CustomEvent('open-login'))
     return
   }
@@ -88,7 +88,7 @@ async function submitOrder() {
     })
     createdOrder.value = order
     await auth.refreshMe().catch(() => {})
-    orderMessage.value = `订单 ${order.id} 已创建。请复制订单号并联系管理员，管理员确认后会给账户发放 ${order.credits} 积分。`
+    orderMessage.value = `订单 ${order.id} 已创建。请复制订单号并联系管理员，确认后会为账户发放 ${order.credits} 积分。`
   } catch (error) {
     orderMessage.value = error.message || '订单创建失败，请稍后重试'
   } finally {
@@ -126,26 +126,26 @@ onMounted(() => {
       <div class="container">
         <article v-fade-up class="card sale-banner">
           <Tag aria-hidden="true" />
-          <h2>{{ billingEnabled ? '创作者积分服务' : '积分说明' }}</h2>
+          <h2>{{ billingEnabled ? '创作者积分方案' : '积分说明' }}</h2>
           <p>
             {{
               billingEnabled
-                ? '展示积分包等使用路径，便于按预计使用量对比成本；最终权益以下单页面和订单记录为准。'
-                : '积分服务暂未开放。你仍可查看积分消耗规则，并在后台开启后恢复定价与订单入口。'
+                ? '按预计使用量对比套餐成本；最终权益以下单页面和订单记录为准。'
+                : '积分方案暂未开放。你仍可查看积分消耗规则，后台开启后会恢复定价与订单入口。'
             }}
           </p>
         </article>
 
         <SectionTitle
-          :title="billingEnabled ? 'ImgsGen 定价' : 'ImgsGen 积分说明'"
+          :title="billingEnabled ? 'ImgsGen 积分方案' : 'ImgsGen 积分说明'"
           :description="
             billingEnabled
-              ? '选择适合你预计使用量的积分包。生成结果公开使用前仍需完成授权和内容复核。'
+              ? '选择适合预计使用量的积分包。生成结果公开使用前仍需完成授权和内容复核。'
               : '当前仅展示积分消耗说明，不提供在线下单或支付入口。'
           "
         />
 
-        <div v-if="billingEnabled" class="segmented" role="tablist" aria-label="定价模式">
+        <div v-if="billingEnabled" class="segmented" role="tablist" aria-label="积分方案模式">
           <button
             v-for="mode in modes"
             :key="mode.key"
@@ -177,8 +177,8 @@ onMounted(() => {
         <div v-else class="section-tight">
           <FeatureCard
             v-fade-up
-            title="积分服务暂未开放"
-            description="当前站点隐藏定价、订单和支付相关入口。需要开放时，可在后台“积分配置”中开启 billingEnabled。"
+            title="积分方案暂未开放"
+            description="当前站点隐藏定价、订单和支付入口。需要开放时，可在后台“积分配置”中开启 billingEnabled。"
           >
             <template #icon>
               <ShieldCheck aria-hidden="true" />
@@ -191,7 +191,7 @@ onMounted(() => {
             <FeatureCard
               v-fade-up
               title="按创作频率选择"
-              description="轻量体验选积分包，稳定创作测试选进阶积分包，团队长期项目可考虑团队积分包。"
+              description="轻量体验选积分包，稳定内容生产选月度积分，团队长期项目可考虑年度积分。"
             >
               <template #icon>
                 <Sparkles aria-hidden="true" />
@@ -199,7 +199,7 @@ onMounted(() => {
             </FeatureCard>
             <FeatureCard
               v-fade-up="{ delay: 100 }"
-              title="商用前合规确认"
+              title="商用前完成检查"
               description="套餐适合商业视觉草稿、广告素材探索和团队协作，发布前仍需确认素材授权、广告合规和 AI 标识。"
             >
               <template #icon>
@@ -209,7 +209,7 @@ onMounted(() => {
             <FeatureCard
               v-fade-up="{ delay: 200 }"
               title="人民币支付"
-              description="提交订单后复制订单号联系管理员，管理员确认后积分会自动到账。"
+              description="提交订单后复制订单号联系管理员，确认后积分会自动到账。"
             >
               <template #icon>
                 <CreditCard aria-hidden="true" />
@@ -227,7 +227,7 @@ onMounted(() => {
           <X aria-hidden="true" />
         </button>
       </div>
-      <p>你选择了 {{ selectedPlan.name }}，提交后只会创建订单，请把订单号发给管理员处理。</p>
+      <p>你选择了 {{ selectedPlan.name }}。提交后会创建订单，请把订单号发给管理员处理。</p>
       <p v-if="orderMessage" class="form-message" aria-live="polite">
         <ShieldCheck aria-hidden="true" />
         {{ orderMessage }}
@@ -264,7 +264,7 @@ onMounted(() => {
             <dd>{{ createdOrder.credits }} 积分</dd>
           </div>
         </dl>
-        <p>请把订单号发给管理员。管理员在后台将订单标记为已支付后，积分会自动到账。</p>
+        <p>请把订单号发给管理员。后台将订单标记为已支付后，积分会自动到账。</p>
         <p v-if="copyMessage" class="form-message" aria-live="polite">
           <ShieldCheck aria-hidden="true" />
           {{ copyMessage }}

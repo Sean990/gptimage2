@@ -36,12 +36,12 @@ async function gotoAndScan(page, path, headingPattern) {
 }
 
 const pageScenarios = [
-  ['/', /AI 图片生成平台/],
-  ['/generate', /ImgsGen 照片生成/],
-  ['/showcase', /ImgsGen 画廊/],
+  ['/', /AI 图片生成与编辑工作台/],
+  ['/generate', /ImgsGen 图片生成/],
+  ['/showcase', /ImgsGen 案例库/],
   ['/prompt-optimizer', /AI 提示词优化器/],
-  ['/pricing', /ImgsGen 定价/],
-  ['/docs', /ImgsGen 文档/],
+  ['/pricing', /ImgsGen 积分方案/],
+  ['/docs', /ImgsGen 使用文档/],
   ['/my-orders', /个人中心|登录后查看/],
 ]
 

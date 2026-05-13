@@ -6,7 +6,7 @@ const fallbackModelCatalog = [
     value: 'gpt-image-2',
     name: 'ImgsGen',
     badge: '推荐',
-    description: '适合文字渲染、海报草稿、摄影质感图像与参考图编辑。',
+    description: '适合文字渲染、海报草稿、摄影质感图像和参考图编辑。',
     meta: 'ImgsGen 等待态',
   },
   {

@@ -15,19 +15,19 @@ export const sitePayload = {
     },
     pricingModes: {
       monthly: {
-        label: '月卡',
+        label: '月度积分',
         plans: [
           {
             name: '专业月卡',
             oldPrice: '￥99.9',
             price: '￥39.9',
             cycle: '/月',
-            note: '适合稳定创作',
+            note: '适合稳定内容产出',
             badge: '推荐',
             cta: '选择方案',
             credits: 300,
             unit: '约 ￥0.13 / 积分',
-            features: ['包含功能', '批量生成支持', '客服支持'],
+            features: ['包含功能', '批量生成支持', '问题支持'],
           },
         ],
       },

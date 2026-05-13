@@ -255,8 +255,8 @@ onMounted(loadLocalLibrary)
         <SectionTitle
           level="h1"
           align="left"
-          title="ImgsGen 画廊"
-          :description="`内置 Prompt 案例与模板快照。${sourceSummary}，内容仅供学习参考，复用前请自行核验来源、授权和发布合规。`"
+          title="ImgsGen 案例库"
+          :description="`内置 Prompt 案例与模板快照。${sourceSummary}，内容仅供学习参考，复用前请自行核验来源、授权和发布边界。`"
         />
 
         <div v-fade-up="{ delay: 100 }" class="library-tabs" role="tablist" aria-label="内容类型">
@@ -270,7 +270,7 @@ onMounted(loadLocalLibrary)
             @click="activeTab = 'cases'"
           >
             <Images aria-hidden="true" />
-            画廊
+            案例
             <span>{{ filteredItems.length }}</span>
           </button>
           <button
@@ -288,7 +288,7 @@ onMounted(loadLocalLibrary)
           </button>
         </div>
 
-        <div v-fade-up="{ delay: 200 }" class="filter-row prompt-library-filters">
+        <div class="filter-row prompt-library-filters">
           <label class="field compact-field" for="showcase-search">
             <span class="sr-only">搜索作品</span>
             <input
@@ -311,8 +311,8 @@ onMounted(loadLocalLibrary)
           aria-labelledby="library-tab-cases"
         >
           <div class="section-title align-left" style="margin-bottom: 18px">
-            <h2>画廊</h2>
-            <p>当前显示 {{ filteredItems.length }} 个案例。每条保留 Prompt、来源链接和快照信息，仅供学习提示词结构。</p>
+            <h2>案例</h2>
+            <p>当前显示 {{ filteredItems.length }} 个案例。每条保留 Prompt、来源链接和快照信息，适合学习提示词结构。</p>
           </div>
           <EmptyState v-if="loading" title="正在加载本地 Prompt 内容库" description="案例和模板来自项目内置快照。">
             <template #icon>
@@ -370,7 +370,7 @@ onMounted(loadLocalLibrary)
               </div>
             </article>
           </div>
-          <EmptyState v-else title="没有匹配的案例" description="换一个关键词或恢复全部分类后再试。">
+          <EmptyState v-else title="没有匹配的案例" description="换一个关键词或重置筛选后再试。">
             <template #icon>
               <Search aria-hidden="true" />
             </template>
@@ -386,7 +386,7 @@ onMounted(loadLocalLibrary)
             <h2>工业模板库</h2>
             <p>
               当前显示 {{ filteredTemplates.length }} 个模板。模板会被转换成结构化 ImgsGen Prompt
-              草稿，使用前请按业务和合规要求修改。
+              草稿，使用前请按业务目标和内容边界修改。
             </p>
           </div>
           <EmptyState v-if="loading" title="正在加载本地模板库" description="模板数据会按需载入，不影响首页首屏。">
@@ -442,7 +442,7 @@ onMounted(loadLocalLibrary)
               </div>
             </article>
           </div>
-          <EmptyState v-else title="没有匹配的模板" description="换一个关键词或恢复全部分类后再试。">
+          <EmptyState v-else title="没有匹配的模板" description="换一个关键词或重置筛选后再试。">
             <template #icon>
               <Search aria-hidden="true" />
             </template>

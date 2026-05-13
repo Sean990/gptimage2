@@ -4,44 +4,44 @@ export const assets = {
 
 export const homeImages = [
   {
-    title: '优雅御姐风写真',
+    title: '柔光棚拍人像',
     src: 'https://gptimage2.asia/_next/image?url=%2Fimgs%2Fhome-showcase%2Fsoft-white-studio.png&w=1920&q=75',
   },
   {
-    title: '蕾丝系氛围写真',
+    title: '室内自然光人像',
     src: 'https://gptimage2.asia/_next/image?url=%2Fimgs%2Fhome-showcase%2Fautumn-dark-fashion.png&w=1920&q=75',
   },
   {
-    title: '温柔纯白写真',
+    title: '纯白高调写真',
     src: 'https://gptimage2.asia/_next/image?url=%2Fimgs%2Fhome-showcase%2Fwinter-snow-portrait.png&w=1920&q=75',
   },
   {
-    title: '气质瑟伽写真',
+    title: '清爽运动风写真',
     src: 'https://gptimage2.asia/_next/image?url=%2Fimgs%2Fhome-showcase%2Fblack-editorial-look.png&w=1920&q=75',
   },
 ]
 
 export const features = [
-  ['清晰可读的文字渲染', '适合海报、封面、KV、包装图和社媒宣传图中的标题与排版文本，发布前仍需人工校对。'],
-  ['更稳的语义理解', '更容易理解复杂物体关系、品牌场景、人物动作和视觉语义，Prompt 更容易落地。'],
-  ['接近实拍的视觉效果', '产品、人物、空间和营销画面可用于方案预览、创意沟通和素材草稿，正式发布前需人工审核。'],
-  ['16:9 和多比例支持', '适配横版广告、视频缩略图、竖版海报、方图社媒封面等多种主流场景。'],
-  ['高级指令编辑', '通过自然语言继续修改局部元素、背景、服饰和主体关系，而不必每次整张重做。'],
-  ['合规生产流程', '围绕内容审核、生成标识、授权确认和人工复核设计，更适合国内内容发布场景。'],
+  ['可读文字与版式控制', '适合海报、封面、KV、包装图和社媒宣传图中的标题排版，发布前仍建议人工校对。'],
+  ['复杂画面理解更稳', '能更好理解物体关系、品牌场景、人物动作和视觉语义，让 Prompt 更容易落地。'],
+  ['接近实拍的视觉质感', '产品、人物、空间和营销画面可用于方案预览、创意沟通和素材草稿。'],
+  ['多比例输出', '覆盖横版广告、视频缩略图、竖版海报、方图社媒封面等主流内容尺寸。'],
+  ['基于参考图继续编辑', '用自然语言修改局部元素、背景、服饰和主体关系，减少整张重做的成本。'],
+  ['上线前检查提示', '围绕内容安全、AI 标识、素材授权和人工复核给出清晰提示，降低发布风险。'],
 ]
 
 export const faqItems = [
   [
     'ImgsGen 是什么？',
-    'ImgsGen 是面向图片生成、参考图编辑和提示词优化的 AI 创作工具，适合在合法合规前提下制作营销、电商、社媒和设计素材。',
+    'ImgsGen 是面向图片生成、参考图编辑和提示词优化的 AI 创作工具，适合制作营销、电商、社媒和设计素材草稿。',
   ],
   [
     '生成内容会标识为 AI 生成吗？',
-    '会。平台将在生成结果展示、下载或发布相关场景中提示 AI 生成属性；用户对外发布时也应主动声明并保留必要标识。',
+    '会。平台会在生成结果展示、下载等场景提示 AI 生成属性；对外发布时，也请按法律法规和平台规则保留必要标识。',
   ],
   [
     '哪些内容不能生成？',
-    '不得生成、上传或传播违法违规、虚假新闻、侵权、暴力色情、诈骗引流、损害他人名誉隐私或危害国家安全、公共利益的内容。',
+    '不得生成、上传或传播违法违规、虚假新闻、侵权、暴力色情、诈骗引流、损害他人名誉隐私或危害公共利益的内容。',
   ],
   [
     '使用真人照片需要注意什么？',
@@ -49,11 +49,11 @@ export const faqItems = [
   ],
   [
     '生成结果可以用于商业场景吗？',
-    '商业使用前请自行确认素材来源、人物授权、商标字体、广告法合规、平台规则和内容真实性，必要时进行人工审核或寻求专业意见。',
+    '可以作为商业素材草稿使用。正式投放或售卖前，请确认素材来源、人物授权、商标字体、广告合规、平台规则和内容真实性。',
   ],
   [
     '如何投诉或举报问题内容？',
-    '如发现违法违规、侵权、冒用身份或未标识的 AI 生成内容，可通过页面底部邮箱联系我们。平台会按规则受理、核查并处理。',
+    '如发现违法违规、侵权、冒用身份或未标识的 AI 生成内容，可通过页面底部邮箱联系我们，我们会按规则受理和核查。',
   ],
 ]
 
@@ -66,7 +66,7 @@ export const pricingModes = {
         oldPrice: '￥19.9',
         price: '￥6.9',
         cycle: '一次性',
-        note: '小额体验，先评估效果',
+        note: '小额试用，先看效果',
         badge: '',
         cta: '查看说明',
         credits: 30,
@@ -78,15 +78,15 @@ export const pricingModes = {
           '支持当前可用模型',
           '支持参考图上传',
           '图片下载',
-          '基础客服支持',
+          '基础问题支持',
         ],
       },
       {
-        name: '超值包',
+        name: '创作包',
         oldPrice: '￥59.9',
         price: '￥19.9',
         cycle: '一次性',
-        note: '适合持续创作测试',
+        note: '适合连续测试多版方案',
         badge: '热销',
         cta: '选择方案',
         credits: 150,
@@ -98,12 +98,12 @@ export const pricingModes = {
           '按队列规则优先处理',
           '批量生成支持',
           '可用模型访问',
-          '客服支持',
+          '问题支持',
           '功能更新以实际上线为准',
         ],
       },
       {
-        name: '进阶包',
+        name: '专业包',
         oldPrice: '￥149.9',
         price: '￥49.9',
         cycle: '一次性',
@@ -113,12 +113,12 @@ export const pricingModes = {
         credits: 500,
         unit: '约 ￥0.1 / 积分，省 67%',
         features: [
-          '包含超值包所有功能，另加',
+          '包含创作包所有功能，另加',
           '500 积分，可用于 500 次标准文生图',
           '有效期 6 个月',
           '按队列规则优先处理',
           'API 访问以实际开通为准',
-          '商用前合规提示',
+          '商用前检查提示',
           '技术支持',
           '定制化服务需另行确认',
         ],
@@ -126,14 +126,14 @@ export const pricingModes = {
     ],
   },
   monthly: {
-    label: '进阶积分包',
+    label: '月度积分',
     plans: [
       {
         name: '基础月卡',
         oldPrice: '￥39.9',
         price: '￥19.9',
         cycle: '/月',
-        note: '每月稳定创作',
+        note: '每月轻量创作',
         badge: '',
         cta: '查看说明',
         credits: 100,
@@ -144,7 +144,7 @@ export const pricingModes = {
           '支持当前可用模型',
           '支持参考图上传',
           '图片下载',
-          '客服支持',
+          '问题支持',
         ],
       },
       {
@@ -152,7 +152,7 @@ export const pricingModes = {
         oldPrice: '￥99.9',
         price: '￥49.9',
         cycle: '/月',
-        note: '专业创作者首选',
+        note: '适合稳定内容产出',
         badge: '推荐',
         cta: '选择方案',
         credits: 300,
@@ -164,7 +164,7 @@ export const pricingModes = {
           '按队列规则优先处理',
           '批量生成支持',
           '可用模型访问',
-          '客服支持',
+          '问题支持',
         ],
       },
       {
@@ -183,21 +183,21 @@ export const pricingModes = {
           '续费和取消规则以下单页面为准',
           '按队列规则优先处理',
           'API 访问以实际开通为准',
-          '商用前合规提示',
+          '商用前检查提示',
           '技术支持',
         ],
       },
     ],
   },
   yearly: {
-    label: '团队积分包',
+    label: '年度积分',
     plans: [
       {
         name: '基础年卡',
         oldPrice: '￥399',
         price: '￥199',
         cycle: '/年',
-        note: '全年轻量内容生产',
+        note: '全年轻量创作',
         badge: '',
         cta: '查看说明',
         credits: 1200,
@@ -208,7 +208,7 @@ export const pricingModes = {
           '支持当前可用模型',
           '支持参考图上传',
           '图片下载',
-          '客服支持',
+          '问题支持',
         ],
       },
       {
@@ -216,7 +216,7 @@ export const pricingModes = {
         oldPrice: '￥999',
         price: '￥499',
         cycle: '/年',
-        note: '团队长期内容创作',
+        note: '团队长期内容生产',
         badge: '推荐',
         cta: '选择方案',
         credits: 3600,
@@ -227,7 +227,7 @@ export const pricingModes = {
           '按队列规则优先处理',
           '批量生成支持',
           '可用模型访问',
-          '客服支持',
+          '问题支持',
         ],
       },
       {
@@ -235,7 +235,7 @@ export const pricingModes = {
         oldPrice: '￥1999',
         price: '￥999',
         cycle: '/年',
-        note: '批量项目与商业交付',
+        note: '批量项目和商业交付',
         badge: '',
         cta: '查看说明',
         credits: 12000,
@@ -244,7 +244,7 @@ export const pricingModes = {
           '全年到账 12000 积分，可用于 12000 次标准文生图',
           '按队列规则优先处理',
           'API 访问以实际开通为准',
-          '商用前合规提示',
+          '商用前检查提示',
           '技术支持',
           '定制化服务需另行确认',
         ],
@@ -255,75 +255,75 @@ export const pricingModes = {
 
 export const showcaseItems = [
   [
-    'Nano Banana生成优雅御姐风写真(附提示词)',
+    'Nano Banana 生成柔光棚拍人像（附提示词）',
     '人像写真',
-    '今天调了一组酒店氛围感的 AI 写真提示词，AI 拍出了静谧又高级的御姐风。',
+    '以酒店室内光线为基底，生成安静、克制、有质感的人像写真方案。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2Fd1c3868e57045c08c69fe82c3fa90472.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
   [
-    'Nano Banana生成蕾丝系美女写真（附提示词）',
+    'Nano Banana 生成室内自然光人像（附提示词）',
     '人像写真',
-    '柔光穿过纱帘，白色蕾丝纹理与深色柜体反射微光构成室内浪漫时刻。',
+    '柔光穿过纱帘，服装纹理与室内反射共同营造轻盈的自然光氛围。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2Fe8113d1ed0b5c62c40207cbb6d7d81ed.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
   [
-    'Nano Banana生成温柔纯白写真(附提示词)',
+    'Nano Banana 生成纯白高调写真（附提示词）',
     '人像写真',
-    '高调纯白棚拍加大窗漫射光，肤色自然、轻颗粒、有呼吸感。',
+    '纯白棚拍、大窗漫射光和轻颗粒质感，适合清爽干净的人像封面。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F0b45bca723402d2cad677f5e57c7ed5c.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
   [
-    'Nano Banana生成气质瑟伽写真(附提示词)',
+    'Nano Banana 生成清爽运动风写真（附提示词）',
     '人像写真',
-    '清爽、气质、带运动感的窗边写真，酒红色运动连体服搭配白色罩身上衣。',
+    '窗边自然光与运动穿搭结合，输出清爽、有活力的人像方案。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F8c2b4add441e5030e876b92a8f6594e8.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
   [
-    'Nano Banana生成网球少女写真（附提示词）',
+    'Nano Banana 生成网球运动写真（附提示词）',
     '运动风格',
-    '参考商业人像效果，白色网球穿搭、冷青色调和相机质感。',
+    '用商业人像思路组织白色网球穿搭、冷青色调和相机质感。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2Fc4ccf2bc242fc0835995d8470405c5ca.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
   [
-    'Nano Banana生成秋冬黑灰写真(附提示词)',
+    'Nano Banana 生成秋冬黑灰写真（附提示词）',
     '人像写真',
-    '都市极简风时尚大片，纱帘柔光加黑灰造型，秋冬氛围更强。',
+    '都市极简风时尚大片，纱帘柔光搭配黑灰造型，适合秋冬视觉方向。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2Fd1dc061b5bab89ff6c16348748cc56a0.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
   [
-    '魔法爆炸箱，打造爆火的动漫主题房间',
+    '魔法爆炸箱：生成动漫主题房间',
     '场景氛围',
-    '用结构化提示词生成动漫主题空间，把角色周边、墙面和灯光整合成可传播海报。',
+    '用结构化提示词组织角色周边、墙面装饰和灯光，生成适合传播的主题空间。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F65de496d7a0d240335c081dc38721412.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
   [
-    '用AI一步创建有质感的国家立方体风格图像',
+    '用 AI 创建国家立方体风格图像',
     '风格探索',
-    '把国家符号、材质、建筑和色彩压缩进统一立方体视觉系统。',
+    '把国家符号、材质、建筑和色彩压缩进统一的立方体视觉系统。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F0c9459a13bbb7843a558da73891f0517.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
   [
-    '有质感的护照风格提示词大揭秘！',
+    '护照风格图像提示词拆解',
     '技巧教程',
     '从纸张纹理、印章、证件字体和留白比例拆解护照风格的生成方法。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F7393a127fc702259168e76253adef862.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
   [
-    '艺术照 + AI = 桌搭手办',
+    '艺术照延展为桌搭手办场景',
     '创意玩法',
-    '把人物艺术照延展为桌搭手办场景，适合社媒内容和个性化周边概念。',
+    '把人物艺术照延展为桌搭手办概念，适合社媒内容和个性化周边方案。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F811b786eec2ef46b9f982dd44a0f2195.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
   [
-    'Nano Banana生成窗边自然光写真(附提示词)',
+    'Nano Banana 生成窗边自然光写真（附提示词）',
     '人像写真',
-    '自然光、轻窗纱、肤色质感和中景构图构成人像写真模板。',
+    '自然光、轻窗纱、肤色质感和中景构图，构成稳定的人像写真模板。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F889b43a50c5d8037cecdef82c25eca9c.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
   [
-    'Nano Banana生成街头氛围感写真（附提示词）',
+    'Nano Banana 生成街头氛围写真（附提示词）',
     '街拍风格',
-    '街头光影、松弛站姿和镜头压缩感，适合做头像草稿和内容封面方案。',
+    '街头光影、松弛站姿和镜头压缩感，适合头像草稿与内容封面方案。',
     'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F35e6cac926de13ea455a4774dfb45fd2.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
   ],
 ].map(([title, category, description, image], index) => ({
@@ -332,7 +332,7 @@ export const showcaseItems = [
   category,
   description,
   image,
-  prompt: `${title}，仅在已取得合法授权的前提下参考人物身份与主要五官特征，摄影质感，细腻肤质，专业布光，杂志级构图，发布前需人工复核。`,
+  prompt: `${title}，仅在已取得合法授权的前提下参考人物身份与主要五官特征，摄影质感，细腻肤质，专业布光，杂志级构图，发布前请人工复核。`,
 }))
 
 export const legalSections = {
@@ -342,7 +342,7 @@ export const legalSections = {
     sections: [
       [
         '引言',
-        '欢迎使用 ImgsGen。我们依据个人信息保护、网络安全、数据安全以及生成式人工智能服务相关要求，说明我们如何收集、使用、保存、共享和保护你在使用 AI 图像服务时提供的信息。',
+        '欢迎使用 ImgsGen。本政策说明我们如何在提供 AI 图像生成、编辑和图库服务时收集、使用、保存、共享和保护你的信息。',
       ],
       [
         '账户与实名合规',
@@ -382,7 +382,7 @@ export const legalSections = {
       ],
       [
         '联系我们',
-        '如有隐私、个人信息、侵权、AI 标识或内容安全相关问题，请通过 bgnwd15@gmail.com 联系我们。我们将在核验身份和事实后依法处理。',
+        '如有隐私、个人信息、侵权、AI 标识或内容安全相关问题，请通过 imgsgen@163.com 联系我们。我们会在核验身份和事实后依法处理。',
       ],
     ],
   },
@@ -392,7 +392,7 @@ export const legalSections = {
     sections: [
       [
         '接受条款',
-        '访问或使用 ImgsGen 即表示你已阅读并同意本服务条款、隐私政策以及平台发布的内容安全规则。如不同意，请停止使用服务。',
+        '访问或使用 ImgsGen，即表示你已阅读并同意本服务条款、隐私政策以及平台发布的内容安全规则。如不同意，请停止使用服务。',
       ],
       [
         '服务性质',
@@ -428,7 +428,7 @@ export const legalSections = {
       ],
       [
         '积分与支付',
-        '如平台开放积分服务，使用前请确认方案、积分、有效期、消耗规则、到账方式和服务规则。除法律法规另有规定或平台明确承诺外，已完成订单通常不支持退款；涉嫌违规使用的订单和积分可能被限制。',
+        '如平台开放积分方案，使用前请确认方案、积分、有效期、消耗规则、到账方式和服务规则。除法律法规另有规定或平台明确承诺外，已完成订单通常不支持退款；涉嫌违规使用的订单和积分可能被限制。',
       ],
       [
         '结果审核与风险',
@@ -440,9 +440,9 @@ export const legalSections = {
       ],
       [
         '投诉举报',
-        '如你认为平台内容涉及违法违规、侵权、冒用身份、未成年人权益、个人信息或 AI 标识问题，请通过 bgnwd15@gmail.com 提交链接、截图、权属证明和联系方式。平台会在核验后依法处理。',
+        '如你认为平台内容涉及违法违规、侵权、冒用身份、未成年人权益、个人信息或 AI 标识问题，请通过 imgsgen@163.com 提交链接、截图、权属证明和联系方式。平台会在核验后依法处理。',
       ],
-      ['联系我们', '如对条款、隐私、内容安全或合规要求有疑问，请联系 bgnwd15@gmail.com。'],
+      ['联系我们', '如对条款、隐私、内容安全或合规要求有疑问，请联系 imgsgen@163.com。'],
     ],
   },
 }

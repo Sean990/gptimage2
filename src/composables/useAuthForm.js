@@ -32,9 +32,9 @@ export function useAuthForm(auth) {
     return '登录 ImgsGen'
   })
   const authSubtitle = computed(() => {
-    if (authMode.value === 'register') return '通过邮箱验证码完成账号创建。'
+    if (authMode.value === 'register') return '使用邮箱验证码创建账号，登录后可同步任务和图库。'
     if (authMode.value === 'reset') return '通过邮箱验证码设置新密码，完成后自动登录。'
-    return '使用邮箱和密码进入你的工作区。'
+    return '使用邮箱和密码进入你的 ImgsGen 工作台。'
   })
   const submitLabel = computed(() => {
     if (loginLoading.value) {

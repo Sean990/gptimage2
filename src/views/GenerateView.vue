@@ -45,11 +45,11 @@ const {
               <div class="tool-toolbar-row tool-toolbar-row-primary">
                 <button v-if="!batchMode" class="btn hero-utility-button" type="button" @click="enableBatchMode">
                   <Images aria-hidden="true" />
-                  <span>需要批量生成？试试高级批量生图功能</span>
+                  <span>需要多版方案？切换批量生成</span>
                 </button>
                 <button v-else class="btn hero-utility-button" type="button" @click="disableBatchMode">
                   <Wand aria-hidden="true" />
-                  <span>只需要单张？返回普通生图</span>
+                  <span>只要单张？返回单张生成</span>
                 </button>
                 <button class="btn hero-utility-button hero-gallery-button" type="button" @click="openGallery">
                   <GalleryHorizontal aria-hidden="true" />
@@ -65,7 +65,7 @@ const {
                   </span>
                   <button class="btn hero-recharge-button" type="button" @click="openPricingFromGenerate">
                     <CreditCard aria-hidden="true" />
-                    <span>积分说明</span>
+                    <span>积分规则</span>
                   </button>
                 </div>
                 <template v-else>

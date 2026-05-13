@@ -35,9 +35,9 @@ export function usePromptTools({
     randomPromptLoading.value = true
     try {
       prompt.value = await getRandomPromptFromGallery()
-      showNotice('已从画廊案例随机填充提示词')
+      showNotice('已从案例库随机填充提示词')
     } catch (error) {
-      showNotice(error.message || '画廊案例加载失败，请稍后重试')
+      showNotice(error.message || '案例库加载失败，请稍后重试')
     } finally {
       randomPromptLoading.value = false
     }
@@ -59,11 +59,11 @@ export function usePromptTools({
       return
     }
     if (userCredits.value < reversePromptCost.value) {
-      showNotice(`积分不足，本次需要 ${reversePromptCost.value} 积分`)
+      showNotice(`积分不足，本次预计需要 ${reversePromptCost.value} 积分`)
       return
     }
     if (hasUnreadyUpload()) {
-      showNotice('参考图尚未上传成功，请等待上传完成或重新上传后再反推')
+      showNotice('参考图还在上传，请完成上传后再反推')
       return
     }
 
@@ -74,7 +74,7 @@ export function usePromptTools({
       })
       prompt.value = result.prompt
       await auth.refreshMe().catch(() => {})
-      showNotice('已生成 AI 反推提示词')
+      showNotice('AI 反推提示词已生成')
     } catch (error) {
       showNotice(error.message || '提示词反推失败')
     } finally {
@@ -98,7 +98,7 @@ export function usePromptTools({
     const usesFree = promptOptimizeUsesFreeQuota.value
     const cost = promptOptimizeCost.value
     if (!usesFree && cost > 0 && userCredits.value < cost) {
-      showNotice(`积分不足，本次需要 ${cost} 积分`)
+      showNotice(`积分不足，本次预计需要 ${cost} 积分`)
       return
     }
 

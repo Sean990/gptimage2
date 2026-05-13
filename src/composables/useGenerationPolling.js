@@ -1,6 +1,7 @@
 export function useGenerationPolling({
   activeTaskId,
   api,
+  clearGalleryClearedBefore,
   gallery,
   galleryLastSyncedAt,
   galleryOpen,
@@ -113,6 +114,7 @@ export function useGenerationPolling({
   }
 
   async function syncCloudGallery({ silent = false } = {}) {
+    if (!silent) clearGalleryClearedBefore?.()
     gallery.value = mergeGalleryRecords(gallery.value, loadLocalGallery())
     gallerySyncError.value = ''
 

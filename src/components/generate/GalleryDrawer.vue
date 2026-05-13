@@ -150,9 +150,9 @@ const {
     </div>
     <EmptyState
       v-else
-      :title="isAuthenticated ? '云端图库暂无记录' : '还没有本地生成记录'"
+      :title="isAuthenticated ? '云端图库暂无记录' : '本地暂无生成记录'"
       :description="
-        isAuthenticated ? '完成一次生成后，任务进度和图片结果会同步到这里。' : '登录后可查看云端图库和生成进度。'
+        isAuthenticated ? '完成一次生成后，任务进度和图片结果会同步到这里。' : '登录后可以同步云端图库和生成进度。'
       "
     >
       <template #icon>

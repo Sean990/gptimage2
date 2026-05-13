@@ -106,10 +106,10 @@ export async function loadPromptCaseById(id) {
 
 export async function loadRandomCasePrompt() {
   const caseIndex = await loadPromptCaseIndex()
-  if (!caseIndex.length) throw new Error('画廊案例暂无可用提示词')
+  if (!caseIndex.length) throw new Error('案例库暂无可用提示词')
   const item = caseIndex[Math.floor(Math.random() * caseIndex.length)]
   const fullCase = await loadPromptCaseById(item.id)
-  if (!fullCase?.prompt) throw new Error('画廊案例暂无可用提示词')
+  if (!fullCase?.prompt) throw new Error('案例库暂无可用提示词')
   return fullCase.prompt
 }
 

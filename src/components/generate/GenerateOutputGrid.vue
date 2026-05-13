@@ -39,8 +39,8 @@ const {
       <div class="output-title">
         <Layers3 aria-hidden="true" />
         <div>
-          <h2>{{ batchMode ? '生成结果' : 'AI生成结果' }}</h2>
-          <p>{{ batchMode ? '批量生成的图像将显示在这里' : `${activeMode.label} · ${resolutionLabel}` }}</p>
+          <h2>{{ batchMode ? '生成结果' : 'AI 生成结果' }}</h2>
+          <p>{{ batchMode ? '批量生成的图片会显示在这里' : `${activeMode.label} · ${resolutionLabel}` }}</p>
         </div>
       </div>
       <div class="output-meta-row">
@@ -123,7 +123,7 @@ const {
             <p>{{ loadingHint }}</p>
             <p class="loading-progress-tip">{{ generationSubmittedTip }}</p>
           </div>
-          <small class="loading-review-note">审核设置不代表内容一定可发布，商用和公开传播前仍需人工复核。</small>
+          <small class="loading-review-note">审核设置不等于发布许可，商用和公开传播前仍需人工复核。</small>
         </div>
       </div>
       <div
@@ -167,7 +167,7 @@ const {
       <div v-else class="empty-output output-canvas output-grid--single" :style="outputAspectStyle">
         <div v-for="slot in outputPlaceholders" :key="slot" class="empty-output-slot">
           <ImagePlus v-if="slot === 1" aria-hidden="true" />
-          <strong>{{ batchMode ? '批量生成的图像将显示在这里' : '生成的图像将显示在这里' }}</strong>
+          <strong>{{ batchMode ? '批量生成的图片会显示在这里' : '生成的图片会显示在这里' }}</strong>
           <span>{{ batchMode ? '选择数量并点击“批量生成”' : '输入提示词并点击“开始生成”' }}</span>
         </div>
       </div>

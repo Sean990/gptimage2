@@ -7,14 +7,14 @@ test.beforeEach(async ({ page }) => {
 
 test('首页预取后可以进入生成页并使用基础控件', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { name: /AI 图片生成平台/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /AI 图片生成与编辑工作台/ })).toBeVisible()
 
-  await page.getByRole('link', { name: /开始使用 ImgsGen/ }).click()
+  await page.getByRole('link', { name: /开始生成图片/ }).click()
   await expect(page).toHaveURL(/\/generate/)
-  await expect(page.getByRole('heading', { name: /ImgsGen 照片生成/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /ImgsGen 图片生成/ })).toBeVisible()
 
-  await page.getByRole('button', { name: /需要批量生成/ }).click()
-  await expect(page.getByRole('button', { name: /返回普通生图/ })).toBeVisible()
+  await page.getByRole('button', { name: /需要多版方案/ }).click()
+  await expect(page.getByRole('button', { name: /返回单张生成/ })).toBeVisible()
 
   await page.getByRole('tab', { name: /图生图/ }).click()
   await page.getByPlaceholder('输入图片 URL').fill('https://example.com/reference.png')
@@ -89,7 +89,7 @@ test('画廊使用索引筛选，打开详情后加载完整 Prompt', async ({ p
 
 test('定价页未登录选择方案会触发登录弹窗', async ({ page }) => {
   await page.goto('/pricing')
-  await expect(page.getByRole('heading', { name: /ImgsGen 定价/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /ImgsGen 积分方案/ })).toBeVisible()
 
   await page.getByRole('button', { name: '选择方案' }).first().click()
   await expect(page.getByRole('heading', { name: /登录/ })).toBeVisible()

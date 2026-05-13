@@ -1,7 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useGenerationBilling } from '../../src/composables/useGenerationBilling'
 import { createGptLoadingDots } from '../../src/composables/useGenerationLoading'
+import { useGenerationPolling } from '../../src/composables/useGenerationPolling'
 import { normalizeGenerationRecord } from '../../src/composables/useGenerationPayload'
 import { filterVisibleGalleryRecords, useGallery } from '../../src/composables/useGallery'
 import {
@@ -165,5 +166,96 @@ describe('生成页拆分 composables', () => {
     expect(filterVisibleGalleryRecords([firstFailed, secondFailed]).map((record) => record.id)).toEqual([
       'task-failed-2',
     ])
+  })
+
+  it('清空本地图库不会写入删除标记，后续云端记录可以重新显示', () => {
+    const { gallery, mergeGalleryRecords, persistLocalGallery } = useGallery({
+      normalizeGenerationRecord,
+    })
+    const cloudRecord = {
+      id: 'task-cloud-restored',
+      prompt: '清空本地后重新显示的云端记录',
+      status: 'completed',
+      createdAt: '2026-05-13T08:00:00.000Z',
+      images: [{ url: '/uploads/task-cloud-restored.png' }],
+    }
+
+    gallery.value = mergeGalleryRecords([cloudRecord])
+    expect(gallery.value).toHaveLength(1)
+
+    gallery.value = []
+    persistLocalGallery([])
+
+    expect(localStorage.getItem('gptImage2DeletedGalleryIds')).toBeNull()
+    expect(mergeGalleryRecords(gallery.value, [cloudRecord]).map((record) => record.id)).toEqual([
+      'task-cloud-restored',
+    ])
+    expect(filterVisibleGalleryRecords([cloudRecord]).map((record) => record.id)).toEqual(['task-cloud-restored'])
+  })
+
+  it('手动同步云端会清除旧版整库清空标记，但保留单条删除标记', async () => {
+    const {
+      clearGalleryClearedBefore,
+      gallery,
+      loadLocalGallery,
+      markGalleryClearedBefore,
+      markGalleryRecordsDeleted,
+      mergeGalleryRecords,
+      persistLocalGallery,
+    } = useGallery({
+      normalizeGenerationRecord,
+    })
+    const restoredRecord = {
+      id: 'task-cleared-before',
+      prompt: '旧版清空标记隐藏的云端记录',
+      status: 'completed',
+      createdAt: '2026-05-13T08:00:00.000Z',
+      images: [{ url: '/uploads/task-cleared-before.png' }],
+    }
+    const deletedRecord = {
+      id: 'task-deleted-single',
+      prompt: '单条删除过的云端记录',
+      status: 'completed',
+      createdAt: '2026-05-13T10:00:00.000Z',
+      images: [{ url: '/uploads/task-deleted-single.png' }],
+    }
+    const api = {
+      getGallery: vi.fn().mockResolvedValue([restoredRecord, deletedRecord]),
+      getGenerationTask: vi.fn(),
+    }
+    const { syncCloudGallery } = useGenerationPolling({
+      activeTaskId: ref(''),
+      api,
+      clearGalleryClearedBefore,
+      gallery,
+      galleryLastSyncedAt: ref(''),
+      galleryOpen: ref(false),
+      gallerySyncError: ref(''),
+      gallerySyncing: ref(false),
+      gallerySyncMessage: ref(''),
+      generationAbortController: ref(null),
+      hasPendingGalleryRecords: ref(false),
+      isAuthenticated: ref(true),
+      isGalleryRecordPending: () => false,
+      loadLocalGallery,
+      loading: ref(false),
+      loadingStage: ref(''),
+      mergeGalleryRecords,
+      normalizeGenerationRecord,
+      persistLocalGallery,
+      setGallerySyncMessage: vi.fn(),
+      showNotice: vi.fn(),
+    })
+
+    markGalleryClearedBefore('2026-05-13T09:00:00.000Z')
+    markGalleryRecordsDeleted(['task-deleted-single'])
+    expect(mergeGalleryRecords([], [restoredRecord, deletedRecord])).toEqual([])
+
+    await syncCloudGallery({ silent: false })
+
+    expect(api.getGallery).toHaveBeenCalledTimes(1)
+    expect(localStorage.getItem('gptImage2GalleryClearedBefore')).toBeNull()
+    expect(localStorage.getItem('gptImage2DeletedGalleryIds')).toContain('id:task-deleted-single')
+    expect(gallery.value.map((record) => record.id)).toEqual(['task-cleared-before'])
   })
 })

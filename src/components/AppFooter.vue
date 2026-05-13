@@ -24,7 +24,7 @@ onMounted(() => {
             </span>
             <span>ImgsGen</span>
           </RouterLink>
-          <p>面向国内内容发布场景的 AI 图像生成与编辑工具，适用于海报、品牌、电商和社媒视觉的方案创作与发布前复核。</p>
+          <p>面向内容团队和创作者的 AI 图片生成与编辑工作台，适用于海报、电商、品牌视觉和社媒素材的快速打样。</p>
           <div class="header-actions">
             <a class="icon-button" href="https://weixin.com" alt="微信" aria-label="微信">
               <MessageCircle aria-hidden="true" />
@@ -40,15 +40,15 @@ onMounted(() => {
 
         <div class="footer-links">
           <strong>产品</strong>
-          <RouterLink to="/generate">AI 生图</RouterLink>
-          <RouterLink to="/prompt-optimizer">提示词优化</RouterLink>
-          <RouterLink v-if="billingEnabled" to="/pricing">定价</RouterLink>
+          <RouterLink to="/generate">图片生成</RouterLink>
+          <RouterLink to="/prompt-optimizer">Prompt 优化</RouterLink>
+          <RouterLink v-if="billingEnabled" to="/pricing">积分方案</RouterLink>
         </div>
 
         <div class="footer-links">
           <strong>资源</strong>
-          <RouterLink to="/showcase">画廊</RouterLink>
-          <RouterLink to="/docs">文档</RouterLink>
+          <RouterLink to="/showcase">案例库</RouterLink>
+          <RouterLink to="/docs">使用文档</RouterLink>
         </div>
       </div>
 

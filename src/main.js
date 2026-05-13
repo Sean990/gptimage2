@@ -28,7 +28,7 @@ const routes = [
     name: 'home',
     component: HomeView,
     meta: {
-      title: 'ImgsGen - AI 图片生成与编辑平台',
+      title: 'ImgsGen - AI 图片生成与编辑工作台',
       description: DEFAULT_DESCRIPTION,
     },
   },
@@ -37,9 +37,9 @@ const routes = [
     name: 'generate',
     component: GenerateView,
     meta: {
-      title: 'AI 图片生成 - 提示词与参考图创作工具 | ImgsGen',
+      title: 'AI 图片生成 - 文生图、参考图编辑与批量出图 | ImgsGen',
       description:
-        '使用 ImgsGen 生成 AI 图片：输入提示词或上传授权参考图，支持文生图、图生图、局部编辑、批量出图与发布前人工复核。',
+        '使用 ImgsGen 生成 AI 图片：输入提示词或上传已授权参考图，支持文生图、图生图、局部编辑、批量出图和上线前检查提示。',
     },
   },
   { path: '/batch-generate', redirect: '/generate' },
@@ -48,9 +48,9 @@ const routes = [
     name: 'prompt-optimizer',
     component: PromptOptimizerView,
     meta: {
-      title: 'AI 提示词优化器 - 生成可复核 Prompt 草稿 | ImgsGen',
+      title: 'AI 提示词优化器 - 生成可直接修改的 Prompt 草稿 | ImgsGen',
       description:
-        'ImgsGen 提示词优化器可将简短想法扩展为结构化的 AI 作图 Prompt，覆盖主体、风格、镜头、光线、材质与合规要点。',
+        'ImgsGen 提示词优化器可把简短想法扩展为结构化 Prompt，覆盖主体、风格、镜头、光线、材质、限制条件和检查要点。',
     },
   },
   {
@@ -58,9 +58,8 @@ const routes = [
     name: 'pricing',
     component: PricingView,
     meta: {
-      title: 'ImgsGen 积分说明 - AI 图片生成积分与套餐',
-      description:
-        'ImgsGen 提供体验包、超值包和专业年卡等积分套餐，按张消耗、发票开具、团队协作与商用合规提示一目了然。',
+      title: 'ImgsGen 积分说明 - AI 图片生成用量与套餐',
+      description: '查看 ImgsGen 积分套餐、预计消耗、有效期和到账方式，按个人创作、稳定生产和团队交付选择合适用量。',
     },
   },
   {
@@ -69,7 +68,7 @@ const routes = [
     component: MyOrdersView,
     meta: {
       title: '个人中心 | ImgsGen',
-      description: 'ImgsGen 个人中心：查看订单、积分明细、邀请记录和账户信息。',
+      description: 'ImgsGen 个人中心：查看订单、积分明细、邀请记录、图库数量和账户资料。',
       robots: 'noindex,nofollow',
       prerender: false,
     },
@@ -80,7 +79,7 @@ const routes = [
     component: MyOrdersView,
     meta: {
       title: '我的积分 | ImgsGen',
-      description: '查看 ImgsGen 积分余额、消耗记录与充值明细。',
+      description: '查看 ImgsGen 积分余额、到账记录、生成消耗和调整明细。',
       robots: 'noindex,nofollow',
       prerender: false,
     },
@@ -112,9 +111,8 @@ const routes = [
     name: 'showcase',
     component: ShowcaseView,
     meta: {
-      title: 'AI 图片案例库 - 学习提示词结构与模板 | ImgsGen',
-      description:
-        'ImgsGen 案例库精选 AI 图片作品与对应提示词模板，涵盖人像、电商、海报、场景氛围与创意玩法，便于快速复用。',
+      title: 'AI 图片案例库 - Prompt 案例与工业模板 | ImgsGen',
+      description: 'ImgsGen 案例库收录 AI 图片作品、完整 Prompt 和工业模板，涵盖人像、电商、海报、场景氛围与创意玩法。',
     },
   },
   { path: '/tutorial', redirect: '/showcase' },
@@ -124,7 +122,7 @@ const routes = [
     component: DocsView,
     meta: {
       title: 'ImgsGen 文档 - 功能说明与使用指南',
-      description: 'ImgsGen 使用文档，包含功能说明、提示词写法、积分规则、合规要点与常见问题解答。',
+      description: 'ImgsGen 使用文档，包含注册登录、图片生成、参考图编辑、提示词优化、图库管理、积分规则和安全边界。',
     },
   },
   { path: '/posts', redirect: '/showcase' },
@@ -136,7 +134,7 @@ const routes = [
     props: { type: 'privacy' },
     meta: {
       title: '隐私政策 | ImgsGen',
-      description: 'ImgsGen 隐私政策：说明我们收集、使用、存储和保护用户数据的方式，以及用户可以行使的权利。',
+      description: 'ImgsGen 隐私政策：说明我们如何收集、使用、保存、共享和保护用户数据，以及用户可行使的权利。',
     },
   },
   {
@@ -146,7 +144,7 @@ const routes = [
     props: { type: 'terms' },
     meta: {
       title: '服务条款 | ImgsGen',
-      description: 'ImgsGen 服务条款：使用平台需遵守的规则、内容合规要求、知识产权约定与责任限制说明。',
+      description: 'ImgsGen 服务条款：说明平台使用规则、内容安全要求、知识产权约定、积分支付和责任边界。',
     },
   },
   { path: '/zh', redirect: '/' },
@@ -171,7 +169,7 @@ const routes = [
     component: NotFoundView,
     meta: {
       title: '页面未找到 | ImgsGen',
-      description: '您访问的页面不存在或已被移除，回到首页继续使用 ImgsGen。',
+      description: '你访问的页面不存在或已被移除，返回首页继续使用 ImgsGen。',
       robots: 'noindex,follow',
       prerender: false,
     },

@@ -50,8 +50,8 @@ export function useGenerationBilling({
   })
   const footerTipText = computed(() =>
     batchMode.value
-      ? `批量生成 ${normalizedImageCount.value} 张图片预计消耗 ${creditCost.value} 积分，${generationBillingTipInline.value}，请在下载或发布前统一审核 AI 标识、授权和内容合规。`
-      : '提示：提供越详细的描述，生成效果越好。请使用合法素材，并避免输入违法、侵权、虚假或侵犯他人权益的内容。',
+      ? `批量生成 ${normalizedImageCount.value} 张图片预计消耗 ${creditCost.value} 积分，${generationBillingTipInline.value}，下载或发布前请统一检查 AI 标识、授权和内容边界。`
+      : '提示：描述越具体，结果越稳定。请使用合法素材，避免输入违法、侵权、虚假或侵犯他人权益的内容。',
   )
   const generationCostText = computed(() => `预计消耗 ${creditCost.value} 积分，${generationBillingTipInline.value}`)
 
