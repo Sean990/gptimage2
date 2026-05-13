@@ -9,7 +9,7 @@ const { siteData, loadSiteData } = useSiteStore()
 const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
 
 onMounted(() => {
-  loadSiteData().catch(() => { })
+  loadSiteData().catch(() => {})
 })
 </script>
 
