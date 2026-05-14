@@ -10,3 +10,4 @@ nano-banana-loading-check.png
 tmp-*.png
 playwright-report/
 test-results/
+.gstack/
