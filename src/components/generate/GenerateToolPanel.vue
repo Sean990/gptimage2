@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue'
 import {
   Check,
   ChevronDown,
@@ -72,6 +73,8 @@ const {
   outputCompression,
   outputFormat,
   outputFormats,
+  processMaskFiles,
+  processReferenceFiles,
   prompt,
   promptLabel,
   promptOptimizeCostTip,
@@ -116,6 +119,69 @@ const {
   uploads,
   urlInput,
 } = props.task
+
+const referenceDragActive = ref(false)
+const maskDragActive = ref(false)
+
+function hasFiles(event) {
+  const types = event.dataTransfer?.types
+  if (!types) return false
+  return Array.from(types).includes('Files')
+}
+
+function onReferenceDragEnter(event) {
+  if (!hasFiles(event)) return
+  event.preventDefault()
+  referenceDragActive.value = true
+}
+
+function onReferenceDragOver(event) {
+  if (!hasFiles(event)) return
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy'
+  referenceDragActive.value = true
+}
+
+function onReferenceDragLeave(event) {
+  if (event.currentTarget.contains(event.relatedTarget)) return
+  referenceDragActive.value = false
+}
+
+async function onReferenceDrop(event) {
+  if (!hasFiles(event)) return
+  event.preventDefault()
+  referenceDragActive.value = false
+  const files = event.dataTransfer?.files
+  if (!files || !files.length) return
+  await processReferenceFiles(files)
+}
+
+function onMaskDragEnter(event) {
+  if (!hasFiles(event)) return
+  event.preventDefault()
+  maskDragActive.value = true
+}
+
+function onMaskDragOver(event) {
+  if (!hasFiles(event)) return
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy'
+  maskDragActive.value = true
+}
+
+function onMaskDragLeave(event) {
+  if (event.currentTarget.contains(event.relatedTarget)) return
+  maskDragActive.value = false
+}
+
+async function onMaskDrop(event) {
+  if (!hasFiles(event)) return
+  event.preventDefault()
+  maskDragActive.value = false
+  const files = event.dataTransfer?.files
+  if (!files || !files.length) return
+  await processMaskFiles(files)
+}
 </script>
 
 <template>
@@ -386,10 +452,17 @@ const {
           </button>
         </div>
       </div>
-      <label class="upload-zone">
+      <label
+        class="upload-zone"
+        :class="{ 'drag-over': referenceDragActive }"
+        @dragenter="onReferenceDragEnter"
+        @dragover="onReferenceDragOver"
+        @dragleave="onReferenceDragLeave"
+        @drop="onReferenceDrop"
+      >
         <ImagePlus aria-hidden="true" />
         <strong>点击上传</strong>
-        <span>或拖拽图片</span>
+        <span>或拖拽图片到此区域</span>
         <span>{{ referenceUploadHint }}</span>
         <input
           type="file"
@@ -723,10 +796,17 @@ const {
             <LinkIcon aria-hidden="true" />
           </button>
         </div>
-        <label class="upload-zone upload-zone-compact">
+        <label
+          class="upload-zone upload-zone-compact"
+          :class="{ 'drag-over': maskDragActive }"
+          @dragenter="onMaskDragEnter"
+          @dragover="onMaskDragOver"
+          @dragleave="onMaskDragLeave"
+          @drop="onMaskDrop"
+        >
           <ImagePlus aria-hidden="true" />
           <strong>点击上传蒙版</strong>
-          <span>仅支持 PNG，透明区域会被编辑</span>
+          <span>或拖拽 PNG 蒙版到此区域，透明区域会被编辑</span>
           <input type="file" accept="image/png" hidden @change="onMaskFileChange" />
         </label>
         <p class="compliance-hint">请勿通过蒙版编辑未获授权的人脸、身体、证件、隐私区域或可能造成误导的敏感内容。</p>

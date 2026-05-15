@@ -147,22 +147,22 @@ export function useReferenceImages({
     return hasUnuploadedLocalFiles(uploads.value) || (includeMask && hasUnuploadedLocalFiles(maskUploads.value))
   }
 
-  async function onFileChange(event) {
+  async function processReferenceFiles(rawFiles) {
     if (!isAuthenticated.value) {
       showNotice('请先登录后上传参考图')
       openLogin()
-      event.target.value = ''
       return
     }
 
     if (!canAddReference.value) {
       showNotice(mode.value === 'edit' ? '精修图仅支持 1 张原图' : `最多添加 ${maxReferenceCount.value} 张参考图`)
-      event.target.value = ''
       return
     }
 
     const availableSlots = Math.max(0, maxReferenceCount.value - referenceCount.value)
-    const selectedFiles = Array.from(event.target.files || []).slice(0, availableSlots)
+    const selectedFiles = Array.from(rawFiles || []).slice(0, availableSlots)
+    if (!selectedFiles.length) return
+
     const files = []
     for (const file of selectedFiles) {
       const error = await validateImageFileWithDimensions(file)
@@ -173,10 +173,7 @@ export function useReferenceImages({
       }
     }
 
-    if (!files.length) {
-      event.target.value = ''
-      return
-    }
+    if (!files.length) return
 
     const mapped = files.map((file) => ({
       name: file.name,
@@ -195,30 +192,33 @@ export function useReferenceImages({
     } catch (error) {
       showNotice(error.message || '参考图上传失败，已保留本地预览')
     }
-
-    event.target.value = ''
   }
 
-  async function onMaskFileChange(event) {
+  async function onFileChange(event) {
+    try {
+      await processReferenceFiles(event.target.files)
+    } finally {
+      event.target.value = ''
+    }
+  }
+
+  async function processMaskFiles(rawFiles) {
     if (!isAuthenticated.value) {
       showNotice('请先登录后上传蒙版')
       openLogin()
-      event.target.value = ''
       return
     }
 
     if (!canAddMask.value) {
       showNotice('最多添加 1 张蒙版')
-      event.target.value = ''
       return
     }
 
-    const file = Array.from(event.target.files || [])[0]
+    const file = Array.from(rawFiles || [])[0]
     if (!file) return
     const error = await validateImageFileWithDimensions(file, { requirePng: true })
     if (error) {
       showNotice(`${file.name}：${error}`)
-      event.target.value = ''
       return
     }
 
@@ -238,8 +238,14 @@ export function useReferenceImages({
     } catch (error) {
       showNotice(error.message || '蒙版上传失败，已保留本地预览')
     }
+  }
 
-    event.target.value = ''
+  async function onMaskFileChange(event) {
+    try {
+      await processMaskFiles(event.target.files)
+    } finally {
+      event.target.value = ''
+    }
   }
 
   function removeUpload(index) {
@@ -353,6 +359,8 @@ export function useReferenceImages({
     maxReferenceCount,
     onFileChange,
     onMaskFileChange,
+    processMaskFiles,
+    processReferenceFiles,
     referenceCount,
     removeMaskUpload,
     removeMaskUrlReference,
