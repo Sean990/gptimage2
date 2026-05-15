@@ -1,6 +1,6 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import { Github, Images, Mail, MessageCircle } from 'lucide-vue-next'
+import { AlertTriangle, Github, Images, Mail, MessageCircle } from 'lucide-vue-next'
 import { computed, onMounted } from 'vue'
 import { useSiteStore } from '../services/siteStore'
 
@@ -50,6 +50,13 @@ onMounted(() => {
           <RouterLink to="/showcase">案例库</RouterLink>
           <RouterLink to="/docs">使用文档</RouterLink>
         </div>
+      </div>
+
+      <div class="footer-region-notice" role="note">
+        <AlertTriangle aria-hidden="true" />
+        <p>
+          <strong>地区限制：</strong>由于法律与合规要求，本服务暂不向位于中国大陆地区的用户提供。如您位于中国大陆地区，或代表中国大陆地区主体使用，请停止访问、注册或使用。
+        </p>
       </div>
 
       <div class="footer-bottom">

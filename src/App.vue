@@ -1,12 +1,14 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { RouterView, useRoute } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
+import { ShieldAlert } from 'lucide-vue-next'
 import AppFooter from './components/AppFooter.vue'
 import AppHeader from './components/AppHeader.vue'
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE } from './seo/constants.js'
 
 const SITE_URL = (import.meta.env.VITE_SITE_URL || '').replace(/\/+$/, '')
+const REGION_NOTICE_STORAGE_KEY = 'imgsgen-region-notice-accepted-v1'
 
 const route = useRoute()
 
@@ -31,6 +33,8 @@ useHead({
 })
 
 const cursorRef = ref(null)
+const showRegionNotice = ref(false)
+const regionNoticePrimaryRef = ref(null)
 let motionMedia = null
 let followFrame = 0
 let targetPointer = { x: 0.5, y: 0.24 }
@@ -182,16 +186,53 @@ function syncMotionPreference(event) {
   addBackgroundListeners()
 }
 
+function lockRegionNoticeScroll() {
+  document.body.classList.add('region-notice-locked')
+}
+
+function unlockRegionNoticeScroll() {
+  document.body.classList.remove('region-notice-locked')
+}
+
+function hasAcceptedRegionNotice() {
+  try {
+    return window.localStorage.getItem(REGION_NOTICE_STORAGE_KEY) === 'accepted'
+  } catch {
+    return false
+  }
+}
+
+function storeRegionNoticeAcceptance() {
+  try {
+    window.localStorage.setItem(REGION_NOTICE_STORAGE_KEY, 'accepted')
+  } catch {
+    // If storage is blocked, still allow the current session to proceed after explicit confirmation.
+  }
+}
+
+function acceptRegionNotice() {
+  storeRegionNoticeAcceptance()
+  showRegionNotice.value = false
+  unlockRegionNoticeScroll()
+}
+
 onMounted(() => {
   motionMedia = window.matchMedia('(prefers-reduced-motion: reduce)')
   if (motionMedia.matches) cursorStrength = 0.58
   jumpBackgroundToTarget()
   if (!motionMedia.matches) addBackgroundListeners()
   motionMedia.addEventListener('change', syncMotionPreference)
+
+  if (!hasAcceptedRegionNotice()) {
+    showRegionNotice.value = true
+    lockRegionNoticeScroll()
+    nextTick(() => regionNoticePrimaryRef.value?.focus())
+  }
 })
 
 onBeforeUnmount(() => {
   removeBackgroundListeners()
+  unlockRegionNoticeScroll()
   motionMedia?.removeEventListener('change', syncMotionPreference)
   if (followFrame) window.cancelAnimationFrame(followFrame)
 })
@@ -208,4 +249,33 @@ onBeforeUnmount(() => {
     <RouterView />
   </div>
   <AppFooter />
+
+  <Teleport to="body">
+    <div
+      v-if="showRegionNotice"
+      class="modal-backdrop region-notice-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="region-notice-title"
+      aria-describedby="region-notice-description"
+    >
+      <div class="modal-card region-notice-card">
+        <span class="region-notice-icon" aria-hidden="true">
+          <ShieldAlert />
+        </span>
+        <div>
+          <h2 id="region-notice-title">地区限制提示</h2>
+          <p id="region-notice-description">
+            由于法律与合规要求，本服务暂不向位于中国大陆地区的用户提供。若您位于中国大陆地区，或代表中国大陆地区主体使用本服务，请立即停止访问、注册或使用。继续访问或使用即表示您确认自己不位于中国大陆地区，且不会将本服务用于违反适用法律法规的用途。因您违反本地区限制或适用法律法规而产生的责任，由您自行承担；法律规定不得排除或限制的责任，不受本提示影响。
+          </p>
+        </div>
+        <div class="region-notice-actions">
+          <RouterLink class="btn btn-ghost" to="/terms-of-service">查看服务条款</RouterLink>
+          <button ref="regionNoticePrimaryRef" class="btn btn-primary" type="button" @click="acceptRegionNotice">
+            我确认不在中国大陆并继续
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>

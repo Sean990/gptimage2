@@ -190,6 +190,7 @@ body {
 
 html.gallery-scroll-locked,
 body.no-scroll,
+body.region-notice-locked,
 body.gallery-scroll-locked {
   overflow: hidden;
 }

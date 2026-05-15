@@ -345,6 +345,36 @@
   line-height: 1.7;
 }
 
+.footer-region-notice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 28px;
+  border: 1px solid rgba(217, 119, 6, 0.22);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  color: var(--muted);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.footer-region-notice svg {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  color: #b45309;
+}
+
+.footer-region-notice p {
+  margin: 0;
+  font-size: var(--fs-sm);
+  line-height: 1.65;
+}
+
+.footer-region-notice strong {
+  color: var(--text-strong);
+  font-weight: var(--fw-semibold);
+}
+
 .footer-links {
   display: grid;
   gap: 10px;

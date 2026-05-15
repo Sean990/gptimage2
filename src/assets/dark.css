@@ -533,6 +533,17 @@
   background: var(--surface);
 }
 
+:root[data-theme='dark'] .footer-region-notice,
+:root[data-theme='dark'] .region-notice-icon {
+  border-color: rgba(251, 191, 36, 0.28);
+  background: rgba(251, 191, 36, 0.12);
+}
+
+:root[data-theme='dark'] .footer-region-notice svg,
+:root[data-theme='dark'] .region-notice-icon {
+  color: #fbbf24;
+}
+
 :root[data-theme='dark'] .image-preview-stage {
   border-color: rgba(148, 163, 184, 0.24);
   background:
