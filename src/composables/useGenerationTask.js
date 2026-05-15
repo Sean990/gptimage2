@@ -142,6 +142,7 @@ export function useGenerationTask() {
   const output = ref([])
   const loading = ref(false)
   const loadingStage = ref('准备提交生成任务')
+  const queuePosition = ref(null)
   const generationAbortController = ref(null)
   const activeTaskId = ref('')
   const notice = ref('')
@@ -273,6 +274,7 @@ export function useGenerationTask() {
     mergeGalleryRecords,
     normalizeGenerationRecord,
     persistLocalGallery,
+    queuePosition,
     setGallerySyncMessage,
     showNotice,
   })
@@ -905,6 +907,7 @@ export function useGenerationTask() {
     loadingTileCount,
     loadingTitle,
     loadingVariant,
+    queuePosition,
     loadLocalGallery,
     markGalleryRecordsDeleted,
     mapRecordImages,

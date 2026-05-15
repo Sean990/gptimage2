@@ -2213,6 +2213,26 @@
   border-color: rgba(37, 99, 235, 0.14);
 }
 
+.loading-status .loading-queue-tip {
+  color: #c2410c;
+  background: rgba(251, 146, 60, 0.1);
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.loading-status .loading-queue-tip strong {
+  color: #9a3412;
+  margin-right: 4px;
+}
+
+.loading-status .loading-queue-tip span {
+  color: #78350f;
+  font-size: 12px;
+}
+
 .loading-review-note {
   border-top: 1px solid rgba(148, 163, 184, 0.18);
   padding-top: 10px;

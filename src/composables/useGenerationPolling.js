@@ -17,6 +17,7 @@ export function useGenerationPolling({
   mergeGalleryRecords,
   normalizeGenerationRecord,
   persistLocalGallery,
+  queuePosition,
   setGallerySyncMessage,
   showNotice,
 }) {
@@ -29,6 +30,16 @@ export function useGenerationPolling({
     taskPollTimer = null
   }
 
+  async function fetchQueuePosition(taskId) {
+    if (!queuePosition) return
+    try {
+      const position = await api.getQueuePosition(taskId)
+      queuePosition.value = position
+    } catch {
+      // 队列位置查询失败不影响主流程
+    }
+  }
+
   async function waitForGenerationTask(taskId) {
     clearTaskPollTimer()
     return new Promise((resolve, reject) => {
@@ -37,8 +48,18 @@ export function useGenerationPolling({
           const task = await api.getGenerationTask(taskId)
           gallery.value = mergeGalleryRecords([normalizeGenerationRecord(task, task)], gallery.value)
           persistLocalGallery()
+
+          // 如果任务在排队，更新队列位置信息
+          if (task.status === 'queued' && queuePosition) {
+            await fetchQueuePosition(taskId)
+          } else if (queuePosition) {
+            queuePosition.value = null
+          }
+
           const statusText = {
-            queued: '任务排队中',
+            queued: queuePosition?.value?.position
+              ? `队列中（前面还有 ${Math.max(0, queuePosition.value.position - 1)} 个任务）`
+              : '任务排队中',
             running: '后台生成中',
             saving: '正在保存图片',
             cancel_requested: '正在取消任务',
@@ -47,12 +68,14 @@ export function useGenerationPolling({
 
           if (task.status === 'completed') {
             clearTaskPollTimer()
+            if (queuePosition) queuePosition.value = null
             if (galleryOpen.value) syncCloudGallery({ silent: true })
             resolve(task)
             return
           }
           if (['failed', 'canceled'].includes(task.status)) {
             clearTaskPollTimer()
+            if (queuePosition) queuePosition.value = null
             persistLocalGallery()
             reject(new Error(task.errorMessage || (task.status === 'canceled' ? '生成已取消' : '生成失败')))
             return

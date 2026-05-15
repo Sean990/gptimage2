@@ -323,6 +323,7 @@ export const api = {
       method: 'DELETE',
     }),
   getGenerationTask: (id) => request(`/generate/tasks/${encodeURIComponent(id)}`),
+  getQueuePosition: (id) => request(`/generate/tasks/${encodeURIComponent(id)}/position`),
   cancelGenerationTask: (id) =>
     request(`/generate/tasks/${encodeURIComponent(id)}/cancel`, {
       method: 'POST',

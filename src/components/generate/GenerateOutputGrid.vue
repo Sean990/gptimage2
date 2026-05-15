@@ -28,6 +28,7 @@ const {
   outputAspectStyle,
   outputGridClass,
   outputPlaceholders,
+  queuePosition,
   resolutionLabel,
   selectedModel,
 } = props.task
@@ -121,6 +122,10 @@ const {
           </div>
           <div class="loading-status-body">
             <p>{{ loadingHint }}</p>
+            <p v-if="queuePosition && queuePosition.position > 0" class="loading-queue-tip">
+              <strong>队列位置：</strong>第 {{ queuePosition.position }} / {{ queuePosition.total }} 位
+              <span v-if="queuePosition.position > 1">（前面还有 {{ queuePosition.position - 1 }} 个任务）</span>
+            </p>
             <p class="loading-progress-tip">{{ generationSubmittedTip }}</p>
           </div>
           <small class="loading-review-note">审核设置不等于发布许可，商用和公开传播前仍需人工复核。</small>
