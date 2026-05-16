@@ -9,6 +9,7 @@ import './assets/polish.css'
 import './assets/auth-modal.css'
 import './assets/selectors.css'
 import './assets/responsive-late.css'
+import './assets/mobile-tuning.css'
 import { DEFAULT_DESCRIPTION } from './seo/constants.js'
 import { initWebVitals } from './services/webVitals.js'
 

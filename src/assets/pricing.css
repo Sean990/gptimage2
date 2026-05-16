@@ -382,3 +382,19 @@
   font-size: 14px;
   text-align: center;
 }
+
+@media (max-width: 820px) {
+  .pricing-hero {
+    padding-top: 102px;
+  }
+}
+
+@media (max-width: 640px) {
+  .sale-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .sale-banner > svg {
+    grid-row: auto;
+  }
+}

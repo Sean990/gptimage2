@@ -985,3 +985,39 @@
     radial-gradient(ellipse 60% 50% at 28% 22%, rgba(110, 164, 255, 0.32), transparent 60%),
     radial-gradient(ellipse 60% 50% at 72% 78%, rgba(251, 146, 60, 0.22), transparent 60%), #02060f;
 }
+
+/* ===== Mobile dark mode polish ===== */
+@media (max-width: 820px) {
+  :root[data-theme='dark'] .nav-shell {
+    border-color: rgba(148, 163, 184, 0.28);
+    background: rgba(15, 23, 42, 0.78);
+  }
+
+  :root[data-theme='dark'] .site-header.is-scrolled .nav-shell {
+    background: rgba(15, 23, 42, 0.94);
+  }
+
+  :root[data-theme='dark'] .mobile-panel {
+    border-color: rgba(148, 163, 184, 0.32);
+    background: rgba(15, 23, 42, 0.96);
+  }
+
+  :root[data-theme='dark'] .mobile-panel a,
+  :root[data-theme='dark'] .mobile-panel button,
+  :root[data-theme='dark'] .mobile-panel .nav-soon {
+    border-color: rgba(148, 163, 184, 0.22);
+    background: rgba(30, 41, 59, 0.62);
+    color: #e2e8f0;
+  }
+
+  :root[data-theme='dark'] .mobile-panel a.active {
+    color: #93c5fd;
+    background: rgba(59, 130, 246, 0.18);
+    border-color: rgba(59, 130, 246, 0.42);
+  }
+
+  :root[data-theme='dark'] .generation-actions {
+    background: rgba(15, 23, 42, 0.86);
+    box-shadow: 0 -1px 0 rgba(148, 163, 184, 0.18);
+  }
+}

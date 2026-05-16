@@ -14,9 +14,10 @@
   gap: 0.04em;
   margin: 18px 0;
   color: var(--text-strong);
-  font-size: clamp(44px, 6.6vw, 78px);
+  font-size: clamp(36px, 5.4vw, 64px);
   font-weight: var(--fw-bold);
   letter-spacing: -0.03em;
+  line-height: normal;
 }
 
 .hero-copy h1 span {
@@ -431,4 +432,47 @@
 .browse-more-link svg {
   width: 17px;
   height: 17px;
+}
+
+@media (max-width: 1024px) {
+  .hero-grid,
+  .position-grid,
+  .workflow-panel,
+  .credits-guide {
+    grid-template-columns: 1fr;
+  }
+
+  .credits-guide {
+    gap: 28px;
+  }
+}
+
+@media (max-width: 820px) {
+  .hero {
+    padding-top: 126px;
+  }
+
+  .hero-frame,
+  .hero-frame img {
+    min-height: 360px;
+  }
+
+  .faq-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .hero-copy h1 {
+    font-size: clamp(32px, 9vw, 38px);
+    line-height: normal;
+  }
+
+  .hero-actions {
+    display: grid;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
 }

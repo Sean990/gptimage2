@@ -68,3 +68,52 @@
   font-size: 14px;
   line-height: 1.7;
 }
+
+@media (max-width: 1024px) {
+  .docs-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .side-nav {
+    position: static;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 10px;
+  }
+
+  .side-nav a,
+  .side-nav button {
+    flex: 0 0 auto;
+    width: auto;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 520px) {
+  .side-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .side-nav a,
+  .side-nav button {
+    width: 100%;
+    min-height: 42px;
+    justify-content: center;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .doc-section {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 360px) {
+  .side-nav {
+    grid-template-columns: 1fr;
+  }
+}

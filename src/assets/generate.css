@@ -2315,6 +2315,16 @@
   line-height: 1.6;
 }
 
+@media (max-width: 1024px) {
+  .generator-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .output-panel {
+    position: static;
+  }
+}
+
 @media (max-width: 820px) {
   .generate-page .tool-panel,
   .generate-page .output-panel {
@@ -2598,5 +2608,101 @@
   .generate-page .tool-panel,
   .generate-page .output-panel {
     padding: 12px;
+  }
+}
+
+/* 移动端最优方案：生成页异步样式兜底，避免覆盖全局 mobile-tuning。 */
+@media (max-width: 820px) {
+  .generate-page .section-tight {
+    padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .generate-page .tool-toolbar {
+    gap: 12px;
+  }
+
+  .generate-page .tool-toolbar-row,
+  .generate-page .tool-toolbar-row-primary,
+  .generate-page .tool-toolbar-row-secondary {
+    display: grid;
+    grid-template-columns: 1fr;
+    max-width: 100%;
+    gap: 8px;
+  }
+
+  .generate-page .tool-toolbar .btn,
+  .generate-page .tool-toolbar .toolbar-credit {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 14px;
+    justify-content: center;
+    white-space: normal;
+  }
+
+  .generate-page .hero-credit-group {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+    border-radius: 16px;
+  }
+
+  .generate-page .tool-panel,
+  .generate-page .output-panel {
+    border-radius: 12px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.09);
+  }
+
+  .generate-page .field textarea {
+    min-height: 152px;
+    max-height: 42dvh;
+  }
+
+  .generate-page .output-workbench {
+    min-height: 0;
+    border-radius: 14px;
+  }
+
+  .generate-page .empty-output,
+  .generate-page .generated-output,
+  .generate-page .chatgpt-image-loading,
+  .generate-page .model-loading-state {
+    min-height: min(360px, 74dvw);
+  }
+
+  .generate-page .output-grid--two,
+  .generate-page .output-grid--three,
+  .generate-page .output-grid--four,
+  .generate-page .output-grid--many {
+    grid-template-columns: 1fr;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .generate-page .output-actions {
+    opacity: 1;
+  }
+
+  .mobile-generate-dock {
+    grid-template-columns: minmax(0, 1fr) minmax(86px, 0.32fr);
+    min-height: 68px;
+  }
+
+  .mobile-generate-dock .btn {
+    min-height: 50px;
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .generate-page .section-tight {
+    padding-bottom: calc(116px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .generate-page .mode-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .generate-page .mode-tabs button {
+    min-height: 48px;
   }
 }

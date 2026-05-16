@@ -206,6 +206,20 @@ function onScroll() {
   updateActiveSection()
 }
 
+function lockBodyScroll() {
+  document.body.classList.add('mobile-menu-open')
+}
+
+function unlockBodyScroll() {
+  document.body.classList.remove('mobile-menu-open')
+}
+
+watch(open, (next) => {
+  if (typeof document === 'undefined') return
+  if (next) lockBodyScroll()
+  else unlockBodyScroll()
+})
+
 function onDocumentClick(event) {
   if (!accountMenuOpen.value) return
   if (accountMenuRef.value?.contains(event.target)) return
@@ -271,6 +285,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
   window.removeEventListener('click', onDocumentClick)
   window.removeEventListener('scroll', onScroll)
+  unlockBodyScroll()
 })
 </script>
 
@@ -378,6 +393,7 @@ onBeforeUnmount(() => {
       <button v-if="isAuthenticated" type="button" @click="logout">退出登录</button>
       <button v-else type="button" @click="openLogin">登录</button>
     </nav>
+    <div v-if="open" class="mobile-panel-backdrop" aria-hidden="true" @click="open = false"></div>
   </header>
 
   <AuthModal

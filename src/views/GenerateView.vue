@@ -1,5 +1,16 @@
 <script setup>
-import { GalleryHorizontal, Coins, CreditCard, Lightbulb, LogIn, Save, Images, Wand } from 'lucide-vue-next'
+import {
+  GalleryHorizontal,
+  Coins,
+  CreditCard,
+  Lightbulb,
+  LogIn,
+  Save,
+  Images,
+  Square,
+  Wand,
+  Sparkles,
+} from 'lucide-vue-next'
 import Toast from '../components/Toast.vue'
 import GalleryDrawer from '../components/generate/GalleryDrawer.vue'
 import GenerateOutputGrid from '../components/generate/GenerateOutputGrid.vue'
@@ -16,15 +27,19 @@ const {
   enableBatchMode,
   footerTipText,
   gallery,
+  generate,
   heroDescription,
   heroTitle,
   isAuthenticated,
+  loading,
+  normalizedImageCount,
   notice,
   openGallery,
   openLoginFromGenerate,
   openPricingFromGenerate,
   output,
   saveCurrentOutputToGallery,
+  stopGeneration,
   userCredits,
 } = task
 </script>
@@ -102,6 +117,22 @@ const {
           <Lightbulb aria-hidden="true" />
           <span>{{ footerTipText }}</span>
         </p>
+
+        <div class="mobile-generate-dock" aria-label="移动端快捷生图操作">
+          <button v-if="!loading" class="btn btn-primary" type="button" @click="generate">
+            <Sparkles aria-hidden="true" />
+            <span>{{ batchMode ? `生成 ${normalizedImageCount} 张` : '开始生图' }}</span>
+          </button>
+          <button v-else class="btn btn-primary" type="button" @click="stopGeneration">
+            <Square aria-hidden="true" />
+            <span>停止生成</span>
+          </button>
+          <button class="btn btn-soft" type="button" @click="openGallery">
+            <GalleryHorizontal aria-hidden="true" />
+            <span>图库</span>
+            <span v-if="gallery.length" class="mobile-generate-dock-count">{{ gallery.length }}</span>
+          </button>
+        </div>
       </div>
     </section>
 

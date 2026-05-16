@@ -36,6 +36,7 @@ const cursorRef = ref(null)
 const showRegionNotice = ref(false)
 const regionNoticePrimaryRef = ref(null)
 let motionMedia = null
+let pointerFineMedia = null
 let followFrame = 0
 let targetPointer = { x: 0.5, y: 0.24 }
 let visiblePointer = { x: 0.5, y: 0.24 }
@@ -169,7 +170,8 @@ function removeBackgroundListeners() {
 }
 
 function syncMotionPreference(event) {
-  if (event.matches) {
+  const shouldReduceMotion = event.matches || !pointerFineMedia?.matches
+  if (shouldReduceMotion) {
     removeBackgroundListeners()
     if (followFrame) window.cancelAnimationFrame(followFrame)
     followFrame = 0
@@ -184,6 +186,10 @@ function syncMotionPreference(event) {
   targetFocusProgress = 0
   jumpBackgroundToTarget()
   addBackgroundListeners()
+}
+
+function syncPointerPreference() {
+  syncMotionPreference(motionMedia || { matches: false })
 }
 
 function lockRegionNoticeScroll() {
@@ -218,10 +224,12 @@ function acceptRegionNotice() {
 
 onMounted(() => {
   motionMedia = window.matchMedia('(prefers-reduced-motion: reduce)')
-  if (motionMedia.matches) cursorStrength = 0.58
+  pointerFineMedia = window.matchMedia('(hover: hover) and (pointer: fine)')
+  if (motionMedia.matches || !pointerFineMedia.matches) cursorStrength = 0.58
   jumpBackgroundToTarget()
-  if (!motionMedia.matches) addBackgroundListeners()
+  if (!motionMedia.matches && pointerFineMedia.matches) addBackgroundListeners()
   motionMedia.addEventListener('change', syncMotionPreference)
+  pointerFineMedia.addEventListener('change', syncPointerPreference)
 
   if (!hasAcceptedRegionNotice()) {
     showRegionNotice.value = true
@@ -234,6 +242,7 @@ onBeforeUnmount(() => {
   removeBackgroundListeners()
   unlockRegionNoticeScroll()
   motionMedia?.removeEventListener('change', syncMotionPreference)
+  pointerFineMedia?.removeEventListener('change', syncPointerPreference)
   if (followFrame) window.cancelAnimationFrame(followFrame)
 })
 </script>

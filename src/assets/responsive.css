@@ -273,7 +273,8 @@
   }
 
   .hero-copy h1 {
-    font-size: clamp(40px, 11vw, 46px);
+    font-size: clamp(32px, 9vw, 38px);
+    line-height: normal;
   }
 
   .hero-actions,

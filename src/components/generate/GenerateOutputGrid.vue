@@ -1,4 +1,5 @@
 <script setup>
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { Copy, Download, Eye, ImagePlus, Layers3 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -32,6 +33,23 @@ const {
   resolutionLabel,
   selectedModel,
 } = props.task
+
+const prefersLightweightLoading = ref(false)
+let lightweightLoadingMedia = null
+
+function syncLightweightLoadingPreference(event) {
+  prefersLightweightLoading.value = Boolean(event.matches)
+}
+
+onMounted(() => {
+  lightweightLoadingMedia = window.matchMedia('(max-width: 820px), (prefers-reduced-motion: reduce)')
+  syncLightweightLoadingPreference(lightweightLoadingMedia)
+  lightweightLoadingMedia.addEventListener('change', syncLightweightLoadingPreference)
+})
+
+onBeforeUnmount(() => {
+  lightweightLoadingMedia?.removeEventListener('change', syncLightweightLoadingPreference)
+})
 </script>
 
 <template>
@@ -59,7 +77,7 @@ const {
         role="status"
         aria-live="polite"
       >
-        <template v-if="loadingVariant === 'gpt-image-2'">
+        <template v-if="loadingVariant === 'gpt-image-2' && !prefersLightweightLoading">
           <div class="gpt-loading-card" aria-hidden="true">
             <div class="gpt-loading-dot-field">
               <svg viewBox="0 0 280 280" focusable="false" aria-hidden="true">
@@ -87,7 +105,11 @@ const {
             </div>
           </div>
         </template>
-        <template v-else-if="loadingVariant === 'nano-banana-2' || loadingVariant === 'nano-banana'">
+        <template
+          v-else-if="
+            (loadingVariant === 'nano-banana-2' || loadingVariant === 'nano-banana') && !prefersLightweightLoading
+          "
+        >
           <div class="banana-thinking-loading" aria-hidden="true">
             <div class="banana-thinking-canvas"></div>
           </div>
