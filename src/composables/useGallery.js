@@ -7,6 +7,13 @@ const maxLocalGalleryRecords = 20
 const maxDeletedGalleryIds = 500
 const galleryProgressStatuses = new Set(['queued', 'running', 'saving', 'cancel_requested'])
 const galleryRetainedEmptyStatuses = new Set([...galleryProgressStatuses, 'failed', 'canceled'])
+
+const technicalErrorPattern = /upstream|上游|连接中断|connection|ECONNRE|socket|timeout|5\d{2}\s|内部错误|internal/i
+function sanitizeErrorMessage(raw, fallback) {
+  if (!raw) return fallback
+  if (technicalErrorPattern.test(raw)) return fallback
+  return raw
+}
 const galleryStatusRank = {
   queued: 1,
   cancel_requested: 1,
@@ -262,8 +269,8 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     if (record.status === 'queued') return '任务已进入队列'
     if (record.status === 'saving') return '正在保存生成图片'
     if (record.status === 'cancel_requested') return '正在取消任务'
-    if (record.status === 'failed') return record.errorMessage || '后台生成失败'
-    if (record.status === 'canceled') return record.errorMessage || '用户已取消生成'
+    if (record.status === 'failed') return sanitizeErrorMessage(record.errorMessage, '生成失败，请稍后重试')
+    if (record.status === 'canceled') return sanitizeErrorMessage(record.errorMessage, '用户已取消生成')
     return `预计 ${generationWaitText} 完成`
   }
 

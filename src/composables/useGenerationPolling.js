@@ -1,3 +1,10 @@
+const technicalErrorPattern = /upstream|上游|连接中断|connection|ECONNRE|socket|timeout|5\d{2}\s|内部错误|internal/i
+function sanitizeErrorMessage(raw, fallback) {
+  if (!raw) return fallback
+  if (technicalErrorPattern.test(raw)) return fallback
+  return raw
+}
+
 export function useGenerationPolling({
   activeTaskId,
   api,
@@ -77,7 +84,7 @@ export function useGenerationPolling({
             clearTaskPollTimer()
             if (queuePosition) queuePosition.value = null
             persistLocalGallery()
-            reject(new Error(task.errorMessage || (task.status === 'canceled' ? '生成已取消' : '生成失败')))
+            reject(new Error(sanitizeErrorMessage(task.errorMessage, task.status === 'canceled' ? '生成已取消' : '生成失败，请稍后重试')))
             return
           }
           taskPollTimer = window.setTimeout(poll, 1800)
