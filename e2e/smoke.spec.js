@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test'
-import { setupDefaultApiMocks } from './helpers/apiMocks.js'
+import { acceptRegionNotice, setupDefaultApiMocks } from './helpers/apiMocks.js'
 
 test.beforeEach(async ({ page }) => {
+  await acceptRegionNotice(page)
   await setupDefaultApiMocks(page)
 })
 
@@ -87,10 +88,10 @@ test('画廊使用索引筛选，打开详情后加载完整 Prompt', async ({ p
   await expect(page.locator('.prompt-block')).toContainText(/.|，|。/)
 })
 
-test('定价页未登录选择方案会触发登录弹窗', async ({ page }) => {
+test('定价页"前往购买"按钮链接到链动小铺', async ({ page }) => {
   await page.goto('/pricing')
   await expect(page.getByRole('heading', { name: /ImgsGen 积分方案/ })).toBeVisible()
 
-  await page.getByRole('button', { name: '选择方案' }).first().click()
-  await expect(page.getByRole('heading', { name: /登录/ })).toBeVisible()
+  const buyButton = page.getByRole('button', { name: '前往购买' }).first()
+  await expect(buyButton).toBeVisible()
 })

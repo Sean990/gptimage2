@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { sitePayload } from './helpers/apiMocks.js'
+import { acceptRegionNotice, sitePayload } from './helpers/apiMocks.js'
 
 const authUser = {
   id: 'user-e2e-gallery',
@@ -52,6 +52,7 @@ async function setupAuthenticatedGalleryMocks(page) {
   let galleryRecords = createGalleryRecords()
   const deletedGalleryIds = []
 
+  await acceptRegionNotice(page)
   await page.addInitScript(() => {
     localStorage.setItem('token', 'valid.e2e.token')
   })

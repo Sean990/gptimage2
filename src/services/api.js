@@ -317,6 +317,11 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   getOrders: () => request('/orders'),
+  redeemCode: (payload) =>
+    request('/redeem-codes/redeem', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   getGallery: () => request('/gallery'),
   deleteGalleryRecord: (id) =>
     request(`/gallery/${encodeURIComponent(id)}`, {

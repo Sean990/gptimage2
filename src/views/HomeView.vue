@@ -320,9 +320,9 @@ onMounted(() => {
       <div class="container">
         <SectionTitle
           title="ImgsGen 积分方案"
-          description="按预计使用量选择套餐。具体权益、有效期和消耗规则以下单页与个人中心记录为准。"
+          description="注册即送 30 积分，套餐低至约 5 分一张。具体权益、有效期和消耗规则以下单页与个人中心记录为准。"
         />
-        <PricingCards :plans="pricingModes.credits.plans" button-text="查看说明" @select="openPricing" />
+        <PricingCards :plans="pricingModes.credits.plans" button-text="查看方案" @select="openPricing" />
       </div>
     </section>
 
@@ -331,19 +331,19 @@ onMounted(() => {
         <div class="credits-copy">
           <span class="eyebrow">按用途选套餐</span>
           <h2>多少积分才刚好？</h2>
-          <p>从首次试用到稳定产出，再到团队批量交付，用量越明确，套餐越好选。</p>
+          <p>从新人首单到稳定产出，再到团队批量交付，用量越明确，套餐越好选。</p>
         </div>
         <div class="credits-list">
           <article class="card credits-card">
-            <h3>30 积分：小预算试水</h3>
-            <p>适合首次体验和小批量测试。先跑 3-5 个风格方向，确认参考图、提示词、下载流程和成图质感。</p>
+            <h3>30 积分：注册即送</h3>
+            <p>新用户注册后即可试跑基础流程，适合确认提示词、参考图、下载和个人图库是否符合预期。</p>
           </article>
           <article class="card credits-card">
-            <h3>150 积分：稳定内容产出</h3>
-            <p>适合头像、社媒配图、活动 KV、电商主图等高频任务，一次探索多版方案，方便筛选和复用。</p>
+            <h3>740 积分：主推创作档</h3>
+            <p>39.9 元覆盖日常高频任务，99.9 元与 199 元更适合批量素材池和团队持续投放。</p>
           </article>
           <article class="card credits-card">
-            <h3>500 积分：团队批量交付</h3>
+            <h3>1950 积分：约 5.1 分一张</h3>
             <p>适合广告素材、商品视觉、品牌风格测试和长期内容生产，覆盖团队集中出图需求。</p>
           </article>
         </div>

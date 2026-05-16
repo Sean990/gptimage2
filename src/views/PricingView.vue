@@ -1,31 +1,20 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Copy, CreditCard, QrCode, ShieldCheck, Sparkles, Tag, X } from 'lucide-vue-next'
+import { CreditCard, ShieldCheck, Sparkles, Tag } from 'lucide-vue-next'
 import FeatureCard from '../components/FeatureCard.vue'
-import ModalDialog from '../components/ModalDialog.vue'
 import PricingCards from '../components/PricingCards.vue'
 import SectionTitle from '../components/SectionTitle.vue'
-import { api } from '../services/api'
-import { useAuthStore } from '../services/authStore'
 import { useSiteStore } from '../services/siteStore'
 import '../assets/pricing.css'
 
 const { siteData, loadSiteData } = useSiteStore()
-const auth = useAuthStore()
 const router = useRouter()
-const activeMode = ref('monthly')
-const selectedPlan = ref(null)
-const createdOrder = ref(null)
-const orderLoading = ref(false)
-const orderMessage = ref('')
-const copyMessage = ref('')
+const activeMode = ref('credits')
 const pricingModes = computed(() => siteData.value.pricingModes)
 const billingEnabled = computed(() => Boolean(siteData.value.billingEnabled))
 const modes = computed(() => Object.entries(pricingModes.value).map(([key, value]) => ({ key, label: value.label })))
 const plans = computed(() => pricingModes.value[activeMode.value]?.plans || [])
-const paymentImage = computed(() => siteData.value.assets?.cnpay || '')
-const paymentRemark = computed(() => createdOrder.value?.id || '')
 
 function setMode(key) {
   activeMode.value = key
@@ -41,82 +30,17 @@ function changeModeByOffset(offset) {
   })
 }
 
-async function ensureAuthenticated() {
-  if (auth.isAuthenticated.value) return true
-  if (auth.token.value && !auth.initialized.value) {
-    await auth.refreshMe().catch(() => {})
-  }
-  return auth.isAuthenticated.value
-}
-
-async function selectPlan(plan) {
-  if (!billingEnabled.value) {
-    orderMessage.value = '积分方案暂未开放，请先查看积分规则。'
+function selectPlan(plan) {
+  if (!billingEnabled.value) return
+  if (plan.buyUrl) {
+    window.open(plan.buyUrl, '_blank', 'noopener')
     return
   }
-  if (!(await ensureAuthenticated())) {
-    orderMessage.value = ''
-    copyMessage.value = ''
-    window.dispatchEvent(new CustomEvent('open-login'))
-    return
-  }
-  selectedPlan.value = plan
-  createdOrder.value = null
-  orderMessage.value = ''
-  copyMessage.value = ''
-}
-
-async function submitOrder() {
-  if (!selectedPlan.value) return
-  if (!billingEnabled.value) {
-    orderMessage.value = '积分方案暂未开放，暂不支持创建订单。'
-    return
-  }
-  if (!auth.isAuthenticated.value) {
-    orderMessage.value = '请先登录后查看积分方案'
-    window.dispatchEvent(new CustomEvent('open-login'))
-    return
-  }
-  orderLoading.value = true
-  orderMessage.value = ''
-  copyMessage.value = ''
-
-  try {
-    const order = await api.createOrder({
-      mode: activeMode.value,
-      planName: selectedPlan.value.name,
-    })
-    createdOrder.value = order
-    await auth.refreshMe().catch(() => {})
-    orderMessage.value = `订单 ${order.id} 已创建。请复制订单号并联系管理员，确认后会为账户发放 ${order.credits} 积分。`
-  } catch (error) {
-    orderMessage.value = error.message || '订单创建失败，请稍后重试'
-  } finally {
-    orderLoading.value = false
-  }
-}
-
-async function copyPaymentRemark() {
-  if (!paymentRemark.value) return
-  try {
-    await navigator.clipboard.writeText(paymentRemark.value)
-    copyMessage.value = '订单号已复制'
-  } catch {
-    copyMessage.value = '复制失败，请手动复制订单号'
-  }
-  window.setTimeout(() => {
-    copyMessage.value = ''
-  }, 2200)
-}
-
-function openOrders() {
-  selectedPlan.value = null
   router.push('/my-orders')
 }
 
 onMounted(() => {
   loadSiteData()
-  auth.refreshMe().catch(() => {})
 })
 </script>
 
@@ -126,11 +50,11 @@ onMounted(() => {
       <div class="container">
         <article v-fade-up class="card sale-banner">
           <Tag aria-hidden="true" />
-          <h2>{{ billingEnabled ? '创作者积分方案' : '积分说明' }}</h2>
+          <h2>{{ billingEnabled ? '高效创作积分方案' : '积分说明' }}</h2>
           <p>
             {{
               billingEnabled
-                ? '按预计使用量对比套餐成本；最终权益以下单页面和订单记录为准。'
+                ? '新人注册赠送 30 积分，邀请好友可叠加奖励；常规套餐低至约 0.05 元一张。'
                 : '积分方案暂未开放。你仍可查看积分消耗规则，后台开启后会恢复定价与订单入口。'
             }}
           </p>
@@ -140,7 +64,7 @@ onMounted(() => {
           :title="billingEnabled ? 'ImgsGen 积分方案' : 'ImgsGen 积分说明'"
           :description="
             billingEnabled
-              ? '选择适合预计使用量的积分包。生成结果公开使用前仍需完成授权和内容复核。'
+              ? '按预计使用量选择积分包。标准文生图按 1 积分约等于 1 张计算，生成失败不扣积分。'
               : '当前仅展示积分消耗说明，不提供在线下单或支付入口。'
           "
         />
@@ -171,10 +95,14 @@ onMounted(() => {
           :aria-labelledby="`pricing-tab-${activeMode}`"
           v-fade-up="{ delay: 100 }"
         >
-          <PricingCards :plans="plans" button-text="选择方案" @select="selectPlan" />
+          <PricingCards :plans="plans" button-text="前往购买" @select="selectPlan" />
         </div>
 
-        <div v-else class="section-tight">
+        <div v-if="billingEnabled" class="redeem-hint" v-fade-up="{ delay: 150 }">
+          <p>购买后会收到卡密兑换码，请前往 <router-link to="/my-orders">我的订单</router-link> 页面输入兑换码领取积分。</p>
+        </div>
+
+        <div v-if="!billingEnabled" class="section-tight">
           <FeatureCard
             v-fade-up
             title="积分方案暂未开放"
@@ -190,8 +118,8 @@ onMounted(() => {
           <div class="grid-3">
             <FeatureCard
               v-fade-up
-              title="按创作频率选择"
-              description="轻量体验选积分包，稳定内容生产选月度积分，团队长期项目可考虑年度积分。"
+              title="新人先试，复购更划算"
+              description="注册赠送 30 积分，新人首单 4.9 元起；高频使用可选 39.9、99.9 或 199 元套餐。"
             >
               <template #icon>
                 <Sparkles aria-hidden="true" />
@@ -208,8 +136,8 @@ onMounted(() => {
             </FeatureCard>
             <FeatureCard
               v-fade-up="{ delay: 200 }"
-              title="人民币支付"
-              description="提交订单后复制订单号联系管理员，确认后积分会自动到账。"
+              title="邀请阶梯奖励"
+              description="好友完成首次生成双方各得 10 积分；好友首充满 19.9 元或 69.9 元时继续追加奖励。"
             >
               <template #icon>
                 <CreditCard aria-hidden="true" />
@@ -219,68 +147,5 @@ onMounted(() => {
         </div>
       </div>
     </section>
-
-    <ModalDialog :open="billingEnabled && Boolean(selectedPlan)" title-id="checkout-title" @close="selectedPlan = null">
-      <div class="modal-head">
-        <h2 id="checkout-title">确认套餐</h2>
-        <button class="icon-button" type="button" aria-label="关闭" @click="selectedPlan = null">
-          <X aria-hidden="true" />
-        </button>
-      </div>
-      <p>你选择了 {{ selectedPlan.name }}。提交后会创建订单，请把订单号发给管理员处理。</p>
-      <p v-if="orderMessage" class="form-message" aria-live="polite">
-        <ShieldCheck aria-hidden="true" />
-        {{ orderMessage }}
-      </p>
-      <div class="price-line">
-        <span class="old-price">{{ selectedPlan.oldPrice }}</span>
-        <span class="new-price">{{ selectedPlan.price }}</span>
-        <span class="cycle">{{ selectedPlan.cycle }}</span>
-      </div>
-      <section
-        v-if="createdOrder && createdOrder.status !== 'paid'"
-        class="checkout-payment-panel"
-        aria-label="订单付款信息"
-      >
-        <div class="checkout-payment-qr">
-          <img v-if="paymentImage" :src="paymentImage" alt="人民币支付二维码" />
-          <QrCode v-else aria-hidden="true" />
-        </div>
-        <div class="checkout-payment-copy">
-          <span>付款备注</span>
-          <strong>{{ paymentRemark }}</strong>
-          <button class="btn btn-soft" type="button" @click="copyPaymentRemark">
-            <Copy aria-hidden="true" />
-            复制订单号
-          </button>
-        </div>
-        <dl class="checkout-order-lines">
-          <div>
-            <dt>订单金额</dt>
-            <dd>{{ createdOrder.amountText || selectedPlan.price }}</dd>
-          </div>
-          <div>
-            <dt>到账积分</dt>
-            <dd>{{ createdOrder.credits }} 积分</dd>
-          </div>
-        </dl>
-        <p>请把订单号发给管理员。后台将订单标记为已支付后，积分会自动到账。</p>
-        <p v-if="copyMessage" class="form-message" aria-live="polite">
-          <ShieldCheck aria-hidden="true" />
-          {{ copyMessage }}
-        </p>
-        <button class="btn btn-soft" type="button" @click="openOrders">查看我的订单</button>
-      </section>
-      <button
-        v-if="!createdOrder || createdOrder.status === 'paid'"
-        class="btn btn-primary"
-        type="button"
-        :disabled="orderLoading"
-        @click="submitOrder"
-      >
-        <ShieldCheck aria-hidden="true" />
-        {{ orderLoading ? '创建中...' : '创建订单' }}
-      </button>
-    </ModalDialog>
   </main>
 </template>

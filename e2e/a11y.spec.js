@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { setupDefaultApiMocks } from './helpers/apiMocks.js'
+import { acceptRegionNotice, setupDefaultApiMocks } from './helpers/apiMocks.js'
 
 const blockingImpacts = new Set(['critical', 'serious'])
 
@@ -46,6 +46,7 @@ const pageScenarios = [
 ]
 
 test.beforeEach(async ({ page }) => {
+  await acceptRegionNotice(page)
   await setupDefaultApiMocks(page)
 })
 
@@ -79,26 +80,8 @@ test('图片预览弹窗没有严重可访问性问题', async ({ page }) => {
   await expectNoBlockingA11yViolations(page, '图片预览弹窗')
 })
 
-test('套餐确认弹窗没有严重可访问性问题', async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('token', 'valid.token.value')
-  })
-  await page.route('**/api/me', (route) =>
-    route.fulfill({
-      json: {
-        success: true,
-        data: {
-          id: 'user-1',
-          name: '测试用户',
-          email: 'test@example.com',
-          credits: 100,
-        },
-      },
-    }),
-  )
+test('定价页"前往购买"按钮可见', async ({ page }) => {
   await page.goto('/pricing')
-  await expect(page.getByRole('button', { name: '打开用户菜单' })).toBeVisible()
-  await page.getByRole('button', { name: '选择方案' }).first().click()
-  await expect(page.getByRole('dialog', { name: '确认套餐' })).toBeVisible()
-  await expectNoBlockingA11yViolations(page, '套餐确认弹窗')
+  await expect(page.getByRole('button', { name: '前往购买' }).first()).toBeVisible()
+  await expectNoBlockingA11yViolations(page, '定价页')
 })

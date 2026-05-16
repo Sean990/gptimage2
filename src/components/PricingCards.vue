@@ -25,7 +25,12 @@ function formatCredits(credits) {
 
 <template>
   <div class="grid-3">
-    <article v-for="plan in plans" :key="plan.name" class="card price-card" :class="{ featured: plan.badge }">
+    <article
+      v-for="(plan, index) in plans"
+      :key="plan.name"
+      class="card price-card"
+      :class="{ featured: index === Math.floor(plans.length / 2) }"
+    >
       <div class="plan-head">
         <h3>{{ plan.name }}</h3>
         <span v-if="plan.badge" class="badge">

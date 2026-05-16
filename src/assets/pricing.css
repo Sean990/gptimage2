@@ -359,6 +359,23 @@
   color: var(--primary);
 }
 
+.redeem-hint {
+  margin: 24px auto 0;
+  padding: 14px 20px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-md);
+  max-width: 600px;
+}
+
+.redeem-hint a {
+  color: var(--primary);
+  font-weight: var(--fw-semibold);
+}
+
 .unit-note {
   margin-top: 12px;
   color: var(--muted);

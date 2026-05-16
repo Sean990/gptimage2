@@ -10,6 +10,23 @@ import {
 } from '../data/siteData'
 import { api } from './api'
 
+const SHOP_URL = 'https://pay.ldxp.cn/shop/imgsgen'
+
+function injectBuyUrl(pricingModes) {
+  if (!pricingModes) return pricingModes
+  const result = {}
+  for (const [key, mode] of Object.entries(pricingModes)) {
+    result[key] = {
+      ...mode,
+      plans: (mode.plans || []).map((plan) => ({
+        ...plan,
+        buyUrl: plan.buyUrl || SHOP_URL,
+      })),
+    }
+  }
+  return result
+}
+
 const fallbackSiteData = {
   assets: fallbackAssets,
   homeImages: fallbackHomeImages,
@@ -40,6 +57,7 @@ export function useSiteStore() {
         siteData.value = {
           ...fallbackSiteData,
           ...data,
+          pricingModes: injectBuyUrl(data.pricingModes || fallbackPricingModes),
         }
         return siteData.value
       })
