@@ -516,3 +516,23 @@ img {
     will-change: auto;
   }
 }
+
+/* 主题切换：以触发按钮为圆心的环形展开/收拢动画 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html[data-theme-anim='to-light']::view-transition-old(root) {
+  z-index: 1;
+}
+html[data-theme-anim='to-light']::view-transition-new(root) {
+  z-index: 2;
+}
+html[data-theme-anim='to-dark']::view-transition-new(root) {
+  z-index: 1;
+}
+html[data-theme-anim='to-dark']::view-transition-old(root) {
+  z-index: 2;
+}

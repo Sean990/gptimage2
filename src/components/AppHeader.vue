@@ -115,10 +115,61 @@ function applyTheme(nextTheme) {
   document.documentElement.style.colorScheme = nextTheme
 }
 
-function toggleTheme() {
+function toggleTheme(event) {
   const nextTheme = isDark.value ? 'light' : 'dark'
   localStorage.setItem('theme', nextTheme)
-  applyTheme(nextTheme)
+
+  const button = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  const startTransition = document.startViewTransition?.bind(document)
+
+  if (!startTransition || reduceMotion || !button) {
+    applyTheme(nextTheme)
+    return
+  }
+
+  const rect = button.getBoundingClientRect()
+  const originX = rect.left + rect.width / 2
+  const originY = rect.top + rect.height / 2
+  const endRadius = Math.hypot(
+    Math.max(originX, window.innerWidth - originX),
+    Math.max(originY, window.innerHeight - originY),
+  )
+  const isToLight = nextTheme === 'light'
+  const direction = isToLight ? 'to-light' : 'to-dark'
+  const root = document.documentElement
+
+  root.dataset.themeAnim = direction
+
+  const transition = startTransition(() => {
+    applyTheme(nextTheme)
+  })
+
+  transition.ready
+    .then(() => {
+      const clipPath = [
+        `circle(0px at ${originX}px ${originY}px)`,
+        `circle(${endRadius}px at ${originX}px ${originY}px)`,
+      ]
+      root.animate(
+        { clipPath: isToLight ? clipPath : [...clipPath].reverse() },
+        {
+          duration: 520,
+          easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+          pseudoElement: isToLight ? '::view-transition-new(root)' : '::view-transition-old(root)',
+          fill: 'both',
+        },
+      )
+    })
+    .catch(() => {})
+
+  transition.finished
+    .catch(() => {})
+    .finally(() => {
+      if (root.dataset.themeAnim === direction) {
+        delete root.dataset.themeAnim
+      }
+    })
 }
 
 function syncSystemTheme(event) {
