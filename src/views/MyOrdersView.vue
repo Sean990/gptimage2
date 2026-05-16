@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   BadgeDollarSign,
@@ -13,10 +13,13 @@ import {
   ReceiptText,
   RefreshCw,
   ShieldCheck,
+  Ticket,
+  Upload,
   UserRound,
   UsersRound,
+  X,
 } from 'lucide-vue-next'
-import { api } from '../services/api'
+import { api, resolveApiUrl } from '../services/api'
 import { useAuthStore } from '../services/authStore'
 import { useSiteStore } from '../services/siteStore'
 import { filterVisibleGalleryRecords } from '../composables/useGallery'
@@ -46,8 +49,22 @@ const profileName = ref('')
 const profileAvatarUrl = ref('')
 const profileSaving = ref(false)
 const profileMessage = ref('')
+const avatarFileInput = ref(null)
+const avatarCropDialogOpen = ref(false)
+const avatarCropImageUrl = ref('')
+const avatarCropNaturalWidth = ref(0)
+const avatarCropNaturalHeight = ref(0)
+const avatarCropZoom = ref(1)
+const avatarCropOffsetX = ref(0)
+const avatarCropOffsetY = ref(0)
+const avatarCropUploading = ref(false)
+const avatarCropMessage = ref('')
+const avatarDragState = ref(null)
 const copyMessage = ref('')
 const profileGalleryCount = ref(0)
+const redeemCode = ref('')
+const redeemLoading = ref(false)
+const redeemMessage = ref('')
 
 const isAuthenticated = computed(() => auth.isAuthenticated.value)
 const user = computed(() => auth.user.value || {})
@@ -81,7 +98,7 @@ const profileRewardRequirementText = computed(() => {
   if (!profileRewardCredits.value) return '填写昵称即可保存资料。'
   return (
     profileRewardRequirements.value.description ||
-    `填写至少 ${profileMinNameLength.value} 个字符昵称，并设置有效头像 URL 后，仅可领取一次。`
+    `填写至少 ${profileMinNameLength.value} 个字符昵称，并上传头像后，仅可领取一次。`
   )
 })
 const isProfileAvatarValid = computed(() => {
@@ -90,6 +107,7 @@ const isProfileAvatarValid = computed(() => {
   if (avatar.startsWith('/uploads/')) return true
   return /^https?:\/\/\S+$/i.test(avatar)
 })
+const profileAvatarPreviewUrl = computed(() => resolveApiUrl(profileAvatarUrl.value || user.value?.avatarUrl || ''))
 const canClaimProfileReward = computed(() => {
   if (user.value?.profileCompleted) return true
   if (!profileRewardCredits.value) return true
@@ -131,6 +149,184 @@ function resetAccountState() {
   profileMessage.value = ''
   copyMessage.value = ''
   profileGalleryCount.value = 0
+  redeemCode.value = ''
+  redeemMessage.value = ''
+}
+
+function revokeAvatarCropImage() {
+  if (avatarCropImageUrl.value?.startsWith('blob:')) {
+    URL.revokeObjectURL(avatarCropImageUrl.value)
+  }
+  avatarCropImageUrl.value = ''
+}
+
+function openAvatarFilePicker() {
+  avatarFileInput.value?.click()
+}
+
+function resetAvatarCropState() {
+  avatarCropNaturalWidth.value = 0
+  avatarCropNaturalHeight.value = 0
+  avatarCropZoom.value = 1
+  avatarCropOffsetX.value = 0
+  avatarCropOffsetY.value = 0
+  avatarCropMessage.value = ''
+  avatarDragState.value = null
+}
+
+function handleAvatarFileChange(event) {
+  const file = event.target?.files?.[0]
+  event.target.value = ''
+  if (!file) return
+  if (!file.type?.startsWith('image/')) {
+    profileMessage.value = '请选择图片文件'
+    return
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    profileMessage.value = '头像图片不能超过 10MB'
+    return
+  }
+
+  revokeAvatarCropImage()
+  resetAvatarCropState()
+  avatarCropImageUrl.value = URL.createObjectURL(file)
+  avatarCropDialogOpen.value = true
+  profileMessage.value = ''
+}
+
+function onAvatarCropImageLoad(event) {
+  const image = event.target
+  avatarCropNaturalWidth.value = image.naturalWidth || 0
+  avatarCropNaturalHeight.value = image.naturalHeight || 0
+  clampAvatarCropOffset()
+}
+
+const avatarCropBoxSize = 280
+const avatarCropOutputSize = 512
+
+const avatarCropScale = computed(() => {
+  const width = avatarCropNaturalWidth.value
+  const height = avatarCropNaturalHeight.value
+  if (!width || !height) return 1
+  return Math.max(avatarCropBoxSize / width, avatarCropBoxSize / height) * Number(avatarCropZoom.value || 1)
+})
+
+const avatarCropImageStyle = computed(() => {
+  const width = avatarCropNaturalWidth.value * avatarCropScale.value
+  const height = avatarCropNaturalHeight.value * avatarCropScale.value
+  return {
+    width: `${width}px`,
+    height: `${height}px`,
+    transform: `translate(${avatarCropOffsetX.value}px, ${avatarCropOffsetY.value}px)`,
+  }
+})
+
+function clampAvatarCropOffset() {
+  const displayWidth = avatarCropNaturalWidth.value * avatarCropScale.value
+  const displayHeight = avatarCropNaturalHeight.value * avatarCropScale.value
+  const maxX = Math.max(0, (displayWidth - avatarCropBoxSize) / 2)
+  const maxY = Math.max(0, (displayHeight - avatarCropBoxSize) / 2)
+  avatarCropOffsetX.value = Math.min(maxX, Math.max(-maxX, Number(avatarCropOffsetX.value || 0)))
+  avatarCropOffsetY.value = Math.min(maxY, Math.max(-maxY, Number(avatarCropOffsetY.value || 0)))
+}
+
+function handleAvatarZoomChange() {
+  nextTick(clampAvatarCropOffset)
+}
+
+function startAvatarDrag(event) {
+  if (avatarCropUploading.value) return
+  event.currentTarget.setPointerCapture?.(event.pointerId)
+  avatarDragState.value = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    offsetX: avatarCropOffsetX.value,
+    offsetY: avatarCropOffsetY.value,
+  }
+}
+
+function moveAvatarDrag(event) {
+  if (!avatarDragState.value || avatarDragState.value.pointerId !== event.pointerId) return
+  avatarCropOffsetX.value = avatarDragState.value.offsetX + event.clientX - avatarDragState.value.startX
+  avatarCropOffsetY.value = avatarDragState.value.offsetY + event.clientY - avatarDragState.value.startY
+  clampAvatarCropOffset()
+}
+
+function stopAvatarDrag(event) {
+  if (avatarDragState.value?.pointerId === event.pointerId) {
+    event.currentTarget.releasePointerCapture?.(event.pointerId)
+    avatarDragState.value = null
+  }
+}
+
+function closeAvatarCropDialog() {
+  if (avatarCropUploading.value) return
+  avatarCropDialogOpen.value = false
+  revokeAvatarCropImage()
+  resetAvatarCropState()
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    image.onerror = reject
+    image.src = src
+  })
+}
+
+async function createAvatarCropFile() {
+  const image = await loadImage(avatarCropImageUrl.value)
+  const scale = avatarCropScale.value
+  const displayWidth = avatarCropNaturalWidth.value * scale
+  const displayHeight = avatarCropNaturalHeight.value * scale
+  const imageLeft = (avatarCropBoxSize - displayWidth) / 2 + avatarCropOffsetX.value
+  const imageTop = (avatarCropBoxSize - displayHeight) / 2 + avatarCropOffsetY.value
+  const sourceX = Math.max(0, -imageLeft / scale)
+  const sourceY = Math.max(0, -imageTop / scale)
+  const sourceSize = avatarCropBoxSize / scale
+
+  const canvas = document.createElement('canvas')
+  canvas.width = avatarCropOutputSize
+  canvas.height = avatarCropOutputSize
+  const context = canvas.getContext('2d')
+  context.fillStyle = '#ffffff'
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    sourceSize,
+    sourceSize,
+    0,
+    0,
+    avatarCropOutputSize,
+    avatarCropOutputSize,
+  )
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
+  if (!blob) throw new Error('头像裁剪失败，请重新选择图片')
+  return new File([blob], 'avatar.jpg', { type: 'image/jpeg' })
+}
+
+async function uploadCroppedAvatar() {
+  avatarCropUploading.value = true
+  avatarCropMessage.value = ''
+  try {
+    const file = await createAvatarCropFile()
+    const [uploaded] = await api.uploadFiles([file])
+    if (!uploaded?.url) throw new Error('头像上传失败，请重试')
+    profileAvatarUrl.value = uploaded.url
+    profileMessage.value = '头像已上传，保存资料后生效'
+    avatarCropDialogOpen.value = false
+    revokeAvatarCropImage()
+    resetAvatarCropState()
+  } catch (error) {
+    avatarCropMessage.value = error.message || '头像上传失败，请重试'
+  } finally {
+    avatarCropUploading.value = false
+  }
 }
 
 async function loadAccount() {
@@ -208,6 +404,27 @@ function openDocs() {
   router.push('/docs')
 }
 
+async function submitRedeemCode() {
+  const code = redeemCode.value.trim()
+  if (!code) {
+    redeemMessage.value = '请输入卡密后再兑换'
+    return
+  }
+
+  redeemLoading.value = true
+  redeemMessage.value = ''
+  try {
+    const result = await api.redeemCode({ code })
+    redeemCode.value = ''
+    redeemMessage.value = `兑换成功，已到账 ${result.credits} 积分，当前余额 ${result.balance} 积分`
+    await Promise.all([auth.refreshMe().catch(() => {}), loadAccount()])
+  } catch (error) {
+    redeemMessage.value = error.message || '卡密兑换失败，请检查后重试'
+  } finally {
+    redeemLoading.value = false
+  }
+}
+
 function formatDate(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '未知时间'
@@ -231,9 +448,14 @@ function formatLedgerType(type) {
     recharge: '积分到账',
     credit_purchase: '积分到账',
     order_purchase: '积分到账',
+    redeem_code: '卡密兑换',
     signup_bonus: '注册奖励',
     profile_bonus: '资料奖励',
     invite_bonus: '邀请奖励',
+    invite_generation_bonus: '邀请首图奖励',
+    invite_purchase_bonus: '邀请首充奖励',
+    invitee_generation_bonus: '受邀首图奖励',
+    invitee_purchase_bonus: '受邀首充奖励',
     prompt_reverse: '提示词反推',
     generation_consume: '生成消耗',
     generation_reserve: '生成预扣',
@@ -263,6 +485,10 @@ onMounted(async () => {
   await Promise.all([loadSiteData(), auth.refreshMe().catch(() => {})])
   activeTab.value = tabFromRoute(route.path, route.query.tab)
   await loadAccount()
+})
+
+onBeforeUnmount(() => {
+  revokeAvatarCropImage()
 })
 
 watch(
@@ -414,6 +640,32 @@ watch(isAuthenticated, (authenticated) => {
                 role="tabpanel"
                 aria-labelledby="account-tab-credits"
               >
+                <form class="redeem-code-card" v-fade-up="{ delay: 180 }" @submit.prevent="submitRedeemCode">
+                  <div class="redeem-code-copy">
+                    <Ticket aria-hidden="true" />
+                    <div>
+                      <strong>卡密兑换</strong>
+                      <span>从发卡网购买后，把卡密粘贴到这里，兑换成功后积分自动到账。</span>
+                    </div>
+                  </div>
+                  <div class="redeem-code-actions">
+                    <input
+                      v-model.trim="redeemCode"
+                      type="text"
+                      autocomplete="off"
+                      inputmode="text"
+                      placeholder="请输入卡密"
+                      :disabled="redeemLoading"
+                      aria-label="卡密"
+                    />
+                    <button class="btn btn-primary" type="submit" :disabled="redeemLoading">
+                      <ShieldCheck aria-hidden="true" />
+                      {{ redeemLoading ? '兑换中...' : '立即兑换' }}
+                    </button>
+                  </div>
+                  <p v-if="redeemMessage" class="form-message" aria-live="polite">{{ redeemMessage }}</p>
+                </form>
+
                 <div class="credit-overview" v-fade-up="{ delay: 200 }">
                   <span>剩余积分：{{ user.credits || 0 }}</span>
                 </div>
@@ -457,7 +709,7 @@ watch(isAuthenticated, (authenticated) => {
                     <p>
                       {{
                         inviteOverview.rewardRule ||
-                        `每邀请 1 位新用户注册，奖励 ${inviteOverview.rewardCredits || 0} 积分。`
+                        `每邀请 1 位新用户完成首次生成，奖励 ${inviteOverview.rewardCredits || 0} 积分。`
                       }}
                     </p>
                     <button class="btn btn-soft" type="button" @click="copyInviteLink">
@@ -517,7 +769,7 @@ watch(isAuthenticated, (authenticated) => {
               >
                 <div class="profile-overview" v-fade-up="{ delay: 200 }">
                   <span class="profile-avatar">
-                    <img v-if="user.avatarUrl" :src="user.avatarUrl" alt="" />
+                    <img v-if="profileAvatarPreviewUrl" :src="profileAvatarPreviewUrl" alt="" />
                     <UserRound v-else aria-hidden="true" />
                   </span>
                   <div>
@@ -558,15 +810,27 @@ watch(isAuthenticated, (authenticated) => {
                     />
                   </div>
                   <div class="field">
-                    <label for="profile-avatar">头像 URL</label>
-                    <input
-                      id="profile-avatar"
-                      v-model.trim="profileAvatarUrl"
-                      type="url"
-                      placeholder="https://..."
-                      autocomplete="off"
-                      :required="profileAvatarRequired"
-                    />
+                    <label for="profile-avatar-file">头像{{ profileAvatarRequired ? '（必填）' : '' }}</label>
+                    <div class="avatar-upload-row">
+                      <span class="profile-avatar profile-avatar-preview">
+                        <img v-if="profileAvatarPreviewUrl" :src="profileAvatarPreviewUrl" alt="" />
+                        <UserRound v-else aria-hidden="true" />
+                      </span>
+                      <div>
+                        <input
+                          id="profile-avatar-file"
+                          ref="avatarFileInput"
+                          class="avatar-file-input"
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/gif"
+                          @change="handleAvatarFileChange"
+                        />
+                        <button class="btn btn-soft" type="button" @click="openAvatarFilePicker">
+                          <Upload aria-hidden="true" />
+                          选择并裁剪头像
+                        </button>
+                      </div>
+                    </div>
                     <small>{{ profileRewardRequirementText }}</small>
                   </div>
                   <p v-if="profileMessage" class="form-message" aria-live="polite">{{ profileMessage }}</p>
@@ -575,6 +839,76 @@ watch(isAuthenticated, (authenticated) => {
                     {{ profileSaving ? '保存中...' : '保存资料' }}
                   </button>
                 </form>
+
+                <Teleport to="body">
+                  <div v-if="avatarCropDialogOpen" class="avatar-crop-backdrop" role="presentation">
+                    <section
+                      class="avatar-crop-dialog"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="avatar-crop-title"
+                    >
+                      <header>
+                        <div>
+                          <h2 id="avatar-crop-title">裁剪头像</h2>
+                          <p>拖动画面调整位置，缩放后确认上传。</p>
+                        </div>
+                        <button
+                          class="icon-button"
+                          type="button"
+                          aria-label="关闭裁剪"
+                          :disabled="avatarCropUploading"
+                          @click="closeAvatarCropDialog"
+                        >
+                          <X aria-hidden="true" />
+                        </button>
+                      </header>
+
+                      <div
+                        class="avatar-crop-stage"
+                        @pointerdown.prevent="startAvatarDrag"
+                        @pointermove.prevent="moveAvatarDrag"
+                        @pointerup="stopAvatarDrag"
+                        @pointercancel="stopAvatarDrag"
+                      >
+                        <img
+                          v-if="avatarCropImageUrl"
+                          :src="avatarCropImageUrl"
+                          :style="avatarCropImageStyle"
+                          alt=""
+                          draggable="false"
+                          @load="onAvatarCropImageLoad"
+                        />
+                        <span class="avatar-crop-mask" aria-hidden="true" />
+                      </div>
+
+                      <label class="avatar-crop-zoom">
+                        <span>缩放</span>
+                        <input
+                          v-model.number="avatarCropZoom"
+                          type="range"
+                          min="1"
+                          max="3"
+                          step="0.01"
+                          :disabled="avatarCropUploading"
+                          @input="handleAvatarZoomChange"
+                        />
+                      </label>
+
+                      <p v-if="avatarCropMessage" class="form-message" aria-live="polite">{{ avatarCropMessage }}</p>
+
+                      <footer>
+                        <button class="btn btn-soft" type="button" :disabled="avatarCropUploading" @click="closeAvatarCropDialog">
+                          取消
+                        </button>
+                        <button class="btn btn-primary" type="button" :disabled="avatarCropUploading" @click="uploadCroppedAvatar">
+                          <Upload aria-hidden="true" />
+                          {{ avatarCropUploading ? '上传中...' : '确认上传' }}
+                        </button>
+                      </footer>
+                    </section>
+                  </div>
+                </Teleport>
               </section>
             </div>
           </section>

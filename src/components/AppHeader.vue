@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { Images, LogIn, LogOut, Menu, Moon, Sun, X } from 'lucide-vue-next'
 import AuthModal from './AuthModal.vue'
+import { resolveApiUrl } from '../services/api'
 import { useAuthStore } from '../services/authStore'
 import { useSiteStore } from '../services/siteStore'
 
@@ -43,6 +44,7 @@ const routeInviteCode = computed(() => {
 const boundInviteCode = computed(() => routeInviteCode.value || storedInviteCode.value)
 const isDark = computed(() => theme.value === 'dark')
 const currentUser = computed(() => auth.user.value)
+const currentUserAvatarUrl = computed(() => resolveApiUrl(currentUser.value?.avatarUrl || ''))
 const isAuthenticated = computed(() => auth.isAuthenticated.value)
 const userInitial = computed(() =>
   (currentUser.value?.name || currentUser.value?.email || 'U').trim().slice(0, 1).toUpperCase(),
@@ -326,7 +328,7 @@ onBeforeUnmount(() => {
             aria-label="打开用户菜单"
             @click="toggleAccountMenu"
           >
-            <img v-if="currentUser.avatarUrl" :src="currentUser.avatarUrl" alt="" />
+            <img v-if="currentUserAvatarUrl" :src="currentUserAvatarUrl" alt="" />
             <span v-else>{{ userInitial }}</span>
           </button>
           <div v-if="accountMenuOpen" class="account-popover" role="menu">
