@@ -10,6 +10,8 @@
     "lint": "eslint .",
     "format:check": "prettier . --check",
     "preview": "vite preview --host 0.0.0.0",
+    "deploy:production": "node scripts/deploy-production.mjs",
+    "deploy:prod": "node scripts/deploy-production.mjs",
     "sync:prompt-library": "node scripts/sync-prompt-library.mjs",
     "test": "pnpm test:unit && pnpm test:e2e",
     "test:a11y": "playwright test e2e/a11y.spec.js",
@@ -40,6 +42,7 @@
     "jsdom": "^29.1.1",
     "prettier": "^3.8.3",
     "rollup-plugin-visualizer": "^7.0.1",
+    "ssh2": "1.17.0",
     "vite-plugin-pwa": "^1.3.0",
     "vite-ssg": "^28.3.0",
     "vitest": "^4.1.6"
