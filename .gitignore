@@ -8,6 +8,7 @@ dist
 .vite-dev.*.log
 nano-banana-loading-check.png
 tmp-*.png
+tmp-mobile-shots/
 playwright-report/
 test-results/
 .gstack/
