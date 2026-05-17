@@ -2457,6 +2457,55 @@
     border-radius: var(--radius-lg);
   }
 
+  .generate-page .tool-panel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mode-switch-card {
+    order: 1;
+    margin: 0 0 18px;
+    padding: 0 0 18px;
+    gap: 10px;
+  }
+
+  .batch-count-card {
+    order: 2;
+    padding: 12px 14px;
+  }
+
+  .tool-panel > .field:has(#prompt) {
+    order: 3;
+  }
+
+  .settings-grid {
+    order: 4;
+  }
+
+  .reference-section {
+    order: 5;
+  }
+
+  .advanced-panel {
+    order: 6;
+  }
+
+  .reverse-box {
+    order: 7;
+  }
+
+  .generation-actions {
+    order: 8;
+  }
+
+  .compliance-notice {
+    order: 9;
+  }
+
+  .generation-inline-notice {
+    order: 10;
+  }
+
   .generate-hero {
     margin: 0 auto 24px;
     padding: 8px 0 12px;
@@ -2470,12 +2519,6 @@
   .generate-hero-copy p {
     font-size: 15px;
     line-height: 1.55;
-  }
-
-  .mode-switch-card {
-    margin: 0 0 18px;
-    padding: 0 0 18px;
-    gap: 10px;
   }
 
   .settings-section-head {
@@ -2496,14 +2539,6 @@
   .mode-tabs button {
     min-height: 56px;
     padding: 10px 12px;
-  }
-
-  .batch-count-card {
-    padding: 12px 14px;
-  }
-
-  .batch-count-card strong {
-    font-size: 18px;
   }
 
   .reference-grid {
@@ -2699,10 +2734,21 @@
   }
 
   .generate-page .mode-tabs {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
   }
 
   .generate-page .mode-tabs button {
     min-height: 48px;
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+
+  .generate-page .mode-tabs button strong {
+    font-size: 13px;
+  }
+
+  .generate-page .mode-tabs button span {
+    font-size: 11px;
   }
 }
