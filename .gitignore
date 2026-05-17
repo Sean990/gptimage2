@@ -3,6 +3,7 @@ dist
 .agents
 .codex-logs/
 .claude/
+.claude-tmp/
 .env
 *.log
 .vite-dev.*.log
