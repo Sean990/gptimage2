@@ -42,19 +42,29 @@ export function useGenerationPolling({
     try {
       const position = await api.getQueuePosition(taskId)
       queuePosition.value = position
-    } catch {
-      // 队列位置查询失败不影响主流程
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn('[队列位置查询失败]', error)
+      }
     }
   }
 
   async function waitForGenerationTask(taskId) {
     clearTaskPollTimer()
+    let pollInterval = 1500
+    let consecutiveFailures = 0
+    const MAX_FAILURES = 5
+    const MAX_INTERVAL = 8000
+
     return new Promise((resolve, reject) => {
       const poll = async () => {
         try {
           const task = await api.getGenerationTask(taskId)
           gallery.value = mergeGalleryRecords([normalizeGenerationRecord(task, task)], gallery.value)
           persistLocalGallery()
+
+          consecutiveFailures = 0
+          pollInterval = 1500
 
           // 如果任务在排队，更新队列位置信息
           if (task.status === 'queued' && queuePosition) {
@@ -87,10 +97,17 @@ export function useGenerationPolling({
             reject(new Error(sanitizeErrorMessage(task.errorMessage, task.status === 'canceled' ? '生成已取消' : '生成失败，请稍后重试')))
             return
           }
-          taskPollTimer = window.setTimeout(poll, 1800)
+          taskPollTimer = window.setTimeout(poll, pollInterval)
         } catch (error) {
-          clearTaskPollTimer()
-          reject(error)
+          consecutiveFailures++
+          console.warn('[生成任务轮询失败]', consecutiveFailures, '/', MAX_FAILURES, error)
+          if (consecutiveFailures >= MAX_FAILURES) {
+            clearTaskPollTimer()
+            reject(new Error('生成任务轮询失败次数过多，请检查网络后重试'))
+            return
+          }
+          pollInterval = Math.min(pollInterval * 1.6, MAX_INTERVAL)
+          taskPollTimer = window.setTimeout(poll, pollInterval)
         }
       }
       poll()
@@ -164,6 +181,7 @@ export function useGenerationPolling({
       persistLocalGallery()
       if (!silent) setGallerySyncMessage('云端图库已同步')
     } catch (error) {
+      console.warn('[云端图库同步失败]', error)
       gallerySyncError.value = error.message || '云端图库同步失败'
       if (!silent && !gallery.value.length) showNotice(gallerySyncError.value)
     } finally {
