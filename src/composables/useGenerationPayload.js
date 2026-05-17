@@ -47,10 +47,22 @@ export function normalizeGenerationRecord(record = {}, defaults = {}) {
     background: record?.background || defaults.background,
     createdAt: record?.createdAt || defaults.createdAt,
   }
-  const status =
+  const rawStatus =
     record?.status ||
     defaults.status ||
     (Array.isArray(record?.images) && record.images.length ? 'completed' : 'queued')
+  const images = Array.isArray(record?.images)
+    ? record.images.map((item, index) => normalizeGeneratedImage(item, index, recordDefaults))
+    : []
+  const failedCount = Number(record?.failedCount ?? defaults.failedCount ?? 0)
+  const requestedCount = Number(record?.requestedCount ?? defaults.requestedCount ?? 0)
+  const status = String(rawStatus).toLowerCase() === 'failed' && images.length ? 'partial_completed' : rawStatus
+  const partialFailureMessage =
+    record?.partialFailureMessage ||
+    defaults.partialFailureMessage ||
+    (failedCount > 0 && images.length
+      ? `已生成 ${images.length}/${requestedCount || images.length + failedCount} 张，失败 ${failedCount} 张未扣积分，可单独重新生成。`
+      : '')
 
   return {
     ...record,
@@ -58,14 +70,12 @@ export function normalizeGenerationRecord(record = {}, defaults = {}) {
     id: recordDefaults.id,
     status,
     errorMessage: record?.errorMessage || defaults.errorMessage || '',
-    requestedCount: Number(record?.requestedCount ?? defaults.requestedCount ?? 0),
-    failedCount: Number(record?.failedCount ?? defaults.failedCount ?? 0),
-    partialFailureMessage: record?.partialFailureMessage || defaults.partialFailureMessage || '',
+    requestedCount,
+    failedCount,
+    partialFailureMessage,
     creditsReserved: Number(record?.creditsReserved ?? defaults.creditsReserved ?? 0),
     creditsCharged: Number(record?.creditsCharged ?? defaults.creditsCharged ?? 0),
-    images: Array.isArray(record?.images)
-      ? record.images.map((item, index) => normalizeGeneratedImage(item, index, recordDefaults))
-      : [],
+    images,
   }
 }
 

@@ -21,6 +21,10 @@ const galleryStatusRank = {
   saving: 3,
   failed: 4,
   canceled: 4,
+  partial_completed: 5,
+  completed_with_errors: 5,
+  succeeded: 5,
+  success: 5,
   completed: 5,
 }
 
@@ -254,6 +258,10 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
       running: '生成中',
       saving: '保存中',
       cancel_requested: '取消中',
+      partial_completed: '部分成功',
+      completed_with_errors: '部分成功',
+      succeeded: '已完成',
+      success: '已完成',
       completed: '已完成',
       failed: '生成失败',
       canceled: '已取消',
@@ -304,9 +312,12 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     const successCount = record.images.length
     const requestedCount = Number(record.requestedCount || successCount || 0)
     const failedCount = Number(record.failedCount || 0)
-    const imageCountText = requestedCount > successCount && failedCount > 0
-      ? `成功 ${successCount}/${requestedCount} 张`
-      : (successCount ? `${successCount} 张` : galleryRecordStatusLabel(record))
+    const imageCountText =
+      requestedCount > successCount && failedCount > 0
+        ? `成功 ${successCount}/${requestedCount} 张`
+        : successCount
+          ? `${successCount} 张`
+          : galleryRecordStatusLabel(record)
     return [galleryRecordMode(record), record.resolution, record.ratio, imageCountText].filter(Boolean).join(' · ')
   }
 

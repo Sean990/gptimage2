@@ -62,6 +62,26 @@ export function formatModelLabel(modelKey, rawValue = '') {
   return rawValue.trim() || '当前模型'
 }
 
+export function normalizeModelListPayload(payload) {
+  if (Array.isArray(payload)) return payload
+
+  const candidates = [
+    payload?.models,
+    payload?.data?.models,
+    payload?.upstreams,
+    payload?.data?.upstreams,
+    payload?.providers,
+    payload?.data?.providers,
+  ]
+
+  for (const candidate of candidates) {
+    if (!Array.isArray(candidate)) continue
+    return candidate.flatMap((item) => (Array.isArray(item?.models) ? item.models : item))
+  }
+
+  return []
+}
+
 export function useModelPicker({ initialModel = 'gpt-image-2', onToggle } = {}) {
   const model = ref(initialModel)
   const modelGroups = ref(fallbackModelGroups)
@@ -108,7 +128,7 @@ export function useModelPicker({ initialModel = 'gpt-image-2', onToggle } = {}) 
 
     try {
       const models = await api.getModels()
-      const availableModels = Array.isArray(models) ? models.map(normalizeModelOption).filter(Boolean) : []
+      const availableModels = normalizeModelListPayload(models).map(normalizeModelOption).filter(Boolean)
 
       if (!availableModels.length) return
 

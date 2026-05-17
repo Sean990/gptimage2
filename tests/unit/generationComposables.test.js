@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useGenerationBilling } from '../../src/composables/useGenerationBilling'
 import { createGptLoadingDots } from '../../src/composables/useGenerationLoading'
-import { useGenerationPolling } from '../../src/composables/useGenerationPolling'
+import { isGenerationTaskSuccessful, useGenerationPolling } from '../../src/composables/useGenerationPolling'
 import { normalizeGenerationRecord } from '../../src/composables/useGenerationPayload'
 import { filterVisibleGalleryRecords, useGallery } from '../../src/composables/useGallery'
+import { normalizeModelListPayload } from '../../src/composables/useModelPicker'
 import {
   hasUnuploadedLocalFiles,
   isSupportedImageUrl,
@@ -88,6 +89,38 @@ describe('生成页拆分 composables', () => {
     expect(billing.creditCost.value).toBe(20)
     expect(billing.promptOptimizeUsesFreeQuota.value).toBe(true)
     expect(billing.footerTipText.value).toContain('批量生成 4 张图片')
+  })
+
+  it('兼容上游健康返回的对象模型列表', () => {
+    expect(
+      normalizeModelListPayload({
+        upstreams: [
+          {
+            name: 'default',
+            models: [{ id: 'gpt-image-2' }, { value: 'nano-banana-2' }],
+          },
+        ],
+      }),
+    ).toEqual([{ id: 'gpt-image-2' }, { value: 'nano-banana-2' }])
+    expect(normalizeModelListPayload({ data: { models: [{ model: 'nano-banana' }] } })).toEqual([
+      { model: 'nano-banana' },
+    ])
+  })
+
+  it('把批量生成的部分成功记录保留为可用结果', () => {
+    const record = normalizeGenerationRecord({
+      id: 'task-partial',
+      prompt: '批量部分成功',
+      status: 'failed',
+      requestedCount: 4,
+      failedCount: 1,
+      images: [{ url: '/uploads/partial-1.png' }, { url: '/uploads/partial-2.png' }, { url: '/uploads/partial-3.png' }],
+    })
+
+    expect(record.status).toBe('partial_completed')
+    expect(record.images).toHaveLength(3)
+    expect(record.partialFailureMessage).toContain('已生成 3/4 张')
+    expect(isGenerationTaskSuccessful(record)).toBe(true)
   })
 
   it('删除图库记录后，云端同步返回同一记录不会重新显示', () => {

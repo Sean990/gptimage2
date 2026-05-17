@@ -1,8 +1,22 @@
 const technicalErrorPattern = /upstream|上游|连接中断|connection|ECONNRE|socket|timeout|5\d{2}\s|内部错误|internal/i
+const successfulTaskStatuses = new Set([
+  'completed',
+  'succeeded',
+  'success',
+  'partial_completed',
+  'completed_with_errors',
+])
+
 function sanitizeErrorMessage(raw, fallback) {
   if (!raw) return fallback
   if (technicalErrorPattern.test(raw)) return fallback
   return raw
+}
+
+export function isGenerationTaskSuccessful(task = {}) {
+  const status = String(task.status || '').toLowerCase()
+  if (successfulTaskStatuses.has(status)) return true
+  return status === 'failed' && Array.isArray(task.images) && task.images.length > 0
 }
 
 export function useGenerationPolling({
@@ -83,7 +97,7 @@ export function useGenerationPolling({
           }[task.status]
           loadingStage.value = statusText || '后台生成中'
 
-          if (task.status === 'completed') {
+          if (isGenerationTaskSuccessful(task)) {
             clearTaskPollTimer()
             if (queuePosition) queuePosition.value = null
             if (galleryOpen.value) syncCloudGallery({ silent: true })
@@ -94,7 +108,14 @@ export function useGenerationPolling({
             clearTaskPollTimer()
             if (queuePosition) queuePosition.value = null
             persistLocalGallery()
-            reject(new Error(sanitizeErrorMessage(task.errorMessage, task.status === 'canceled' ? '生成已取消' : '生成失败，请稍后重试')))
+            reject(
+              new Error(
+                sanitizeErrorMessage(
+                  task.errorMessage,
+                  task.status === 'canceled' ? '生成已取消' : '生成失败，请稍后重试',
+                ),
+              ),
+            )
             return
           }
           taskPollTimer = window.setTimeout(poll, pollInterval)
