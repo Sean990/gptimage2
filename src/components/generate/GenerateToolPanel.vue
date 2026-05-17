@@ -80,6 +80,7 @@ const {
   promptOptimizeCostTip,
   promptPlaceholder,
   promptQualityLabel,
+  promptQualityLevel,
   promptQualityScore,
   qualities,
   quality,
@@ -541,11 +542,12 @@ async function onMaskDrop(event) {
       <div class="quality-meter" aria-live="polite">
         <div class="quality-meter-head">
           <span>{{ promptQualityLabel }}</span>
-          <span>{{ promptQualityScore }}%</span>
+          <span>{{ promptQualityLevel }}</span>
         </div>
         <div class="quality-track" aria-hidden="true">
           <span class="quality-fill" :style="{ width: `${promptQualityScore}%` }"></span>
         </div>
+        <small>仅根据描述长度、参考图和参数估算，不代表最终生成效果。</small>
       </div>
       <small class="prompt-tip-line">{{ promptOptimizeCostTip }} · 不确定怎么写？试试下方的「AI 反推提示词」功能</small>
     </div>

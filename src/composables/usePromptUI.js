@@ -9,9 +9,15 @@ export function usePromptUI({ mode, prompt, quality, referenceCount, requiresRef
   })
 
   const promptQualityLabel = computed(() => {
-    if (promptQualityScore.value >= 76) return '提示词信息较完整'
-    if (promptQualityScore.value >= 45) return '可以生成，补充细节会更稳'
-    return '描述偏短，建议补充主体、光线和构图'
+    if (promptQualityScore.value >= 76) return '提示词完整度：信息充足'
+    if (promptQualityScore.value >= 45) return '提示词完整度：可继续补充'
+    return '提示词完整度：描述偏短'
+  })
+
+  const promptQualityLevel = computed(() => {
+    if (promptQualityScore.value >= 76) return '信息充足'
+    if (promptQualityScore.value >= 45) return '可补充'
+    return '偏短'
   })
 
   const promptLabel = computed(() => {
@@ -50,6 +56,7 @@ export function usePromptUI({ mode, prompt, quality, referenceCount, requiresRef
   return {
     promptQualityScore,
     promptQualityLabel,
+    promptQualityLevel,
     promptLabel,
     promptPlaceholder,
     referenceLabel,
