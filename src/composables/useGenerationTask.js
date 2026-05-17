@@ -121,6 +121,7 @@ export function useGenerationTask() {
     galleryRecordCover,
     galleryRecordMeta,
     galleryRecordMode,
+    galleryRecordNotice,
     galleryRecordProgressText,
     galleryRecordStatusLabel,
     galleryRetainedEmptyStatuses,
@@ -419,7 +420,10 @@ export function useGenerationTask() {
       output.value = mapRecordImages(normalizedResult)
       gallery.value = mergeGalleryRecords([normalizedResult], gallery.value)
       persistLocalGallery()
-      showNotice(formState.batchMode.value ? '批量生成完成' : '图像生成完成')
+      showNotice(
+        normalizedResult.partialFailureMessage
+          || (formState.batchMode.value ? '批量生成完成' : '图像生成完成'),
+      )
     } catch (error) {
       output.value = []
       if (error.isTimeout) showNotice(error.message || '请求超时，请稍后重试')
@@ -555,6 +559,7 @@ export function useGenerationTask() {
     galleryRecordCover,
     galleryRecordMeta,
     galleryRecordMode,
+    galleryRecordNotice,
     galleryRecordProgressText,
     galleryRecordStatusLabel,
     galleryRetainedEmptyStatuses,

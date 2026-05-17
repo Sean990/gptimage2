@@ -23,6 +23,7 @@ const {
   galleryRecordCover,
   galleryRecordMeta,
   galleryRecordMode,
+  galleryRecordNotice,
   galleryRecordProgressText,
   galleryRecordStatusLabel,
   gallerySummary,
@@ -115,6 +116,9 @@ const {
             <span>{{ galleryRecordMeta(record) }}</span>
           </div>
           <p>{{ record.prompt || '无提示词记录' }}</p>
+          <p v-if="galleryRecordNotice(record)" class="gallery-card-notice">
+            {{ galleryRecordNotice(record) }}
+          </p>
           <div class="gallery-actions">
             <button class="btn btn-soft" type="button" @click="useGalleryRecord(record)">
               <Save aria-hidden="true" />

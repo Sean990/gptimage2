@@ -58,6 +58,11 @@ export function normalizeGenerationRecord(record = {}, defaults = {}) {
     id: recordDefaults.id,
     status,
     errorMessage: record?.errorMessage || defaults.errorMessage || '',
+    requestedCount: Number(record?.requestedCount ?? defaults.requestedCount ?? 0),
+    failedCount: Number(record?.failedCount ?? defaults.failedCount ?? 0),
+    partialFailureMessage: record?.partialFailureMessage || defaults.partialFailureMessage || '',
+    creditsReserved: Number(record?.creditsReserved ?? defaults.creditsReserved ?? 0),
+    creditsCharged: Number(record?.creditsCharged ?? defaults.creditsCharged ?? 0),
     images: Array.isArray(record?.images)
       ? record.images.map((item, index) => normalizeGeneratedImage(item, index, recordDefaults))
       : [],

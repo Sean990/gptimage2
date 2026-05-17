@@ -274,6 +274,13 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     return `预计 ${generationWaitText} 完成`
   }
 
+  function galleryRecordNotice(record) {
+    if (record.partialFailureMessage) return record.partialFailureMessage
+    if (record.status === 'failed') return sanitizeErrorMessage(record.errorMessage, '生成失败，请稍后重试')
+    if (record.status === 'canceled') return sanitizeErrorMessage(record.errorMessage, '用户已取消生成')
+    return ''
+  }
+
   function formatGallerySyncTime(value) {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return '刚刚'
@@ -294,7 +301,12 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
   }
 
   function galleryRecordMeta(record) {
-    const imageCountText = record.images.length ? `${record.images.length} 张` : galleryRecordStatusLabel(record)
+    const successCount = record.images.length
+    const requestedCount = Number(record.requestedCount || successCount || 0)
+    const failedCount = Number(record.failedCount || 0)
+    const imageCountText = requestedCount > successCount && failedCount > 0
+      ? `成功 ${successCount}/${requestedCount} 张`
+      : (successCount ? `${successCount} 张` : galleryRecordStatusLabel(record))
     return [galleryRecordMode(record), record.resolution, record.ratio, imageCountText].filter(Boolean).join(' · ')
   }
 
@@ -311,6 +323,7 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     galleryRecordCover,
     galleryRecordMeta,
     galleryRecordMode,
+    galleryRecordNotice,
     galleryRecordProgressText,
     galleryRecordStatusLabel,
     galleryRetainedEmptyStatuses,
