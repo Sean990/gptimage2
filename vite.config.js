@@ -16,8 +16,23 @@ export default defineConfig(({ mode }) => {
         includeAssets: ['favicon.svg'],
         manifest: false,
         workbox: {
-          globPatterns: ['**/*.{js,css,html,svg,png,woff2,jpg,jpeg,webp}'],
+          globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+          globIgnores: ['**/assets/cases-*.js'],
           runtimeCaching: [
+            {
+              urlPattern: /\/assets\/cases-(?:index|part-\d+)-[^/]+\.js$/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'prompt-library-cases',
+                expiration: {
+                  maxEntries: 8,
+                  maxAgeSeconds: 60 * 60 * 24 * 30,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
               handler: 'CacheFirst',
