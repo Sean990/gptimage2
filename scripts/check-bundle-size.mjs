@@ -33,8 +33,8 @@ const monitors = [
   {
     label: 'ShowcaseView.css',
     pattern: /^ShowcaseView-.*\.css$/,
-    maxRaw: 8 * 1024,
-    maxGzip: 3 * 1024,
+    maxRaw: 16 * 1024,
+    maxGzip: 4 * 1024,
   },
   {
     label: 'vendor-icons.js',

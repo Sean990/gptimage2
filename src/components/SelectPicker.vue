@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Check, ChevronDown } from 'lucide-vue-next'
+import '../assets/selectors.css'
 
 const props = defineProps({
   modelValue: {

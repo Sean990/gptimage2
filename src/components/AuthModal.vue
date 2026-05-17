@@ -18,6 +18,7 @@ import {
 import { useAuthForm } from '../composables/useAuthForm'
 import { useAuthStore } from '../services/authStore'
 import ModalDialog from './ModalDialog.vue'
+import '../assets/auth-modal.css'
 
 const props = defineProps({
   open: {
