@@ -2718,7 +2718,7 @@
   }
 
   .mobile-generate-dock {
-    grid-template-columns: minmax(0, 1fr) minmax(86px, 0.32fr);
+    grid-template-columns: minmax(0, 1fr) minmax(96px, 0.42fr);
     min-height: 68px;
   }
 
