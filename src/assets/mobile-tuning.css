@@ -419,7 +419,7 @@ button,
     left: max(12px, var(--safe-left));
     z-index: 80;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(92px, 0.34fr);
+    grid-template-columns: minmax(0, 1fr) minmax(116px, 0.44fr);
     gap: 8px;
     border: 1px solid rgba(203, 213, 225, 0.82);
     border-radius: 16px;
@@ -434,9 +434,10 @@ button,
     min-height: 50px;
     justify-content: center;
     border-radius: 12px;
-    padding: 10px 12px;
+    padding: 10px;
     font-size: 15px;
     font-weight: var(--fw-semibold);
+    white-space: nowrap;
   }
 
   .mobile-generate-dock .btn svg {
@@ -457,6 +458,7 @@ button,
     background: rgba(15, 23, 42, 0.72);
     font-size: 12px;
     line-height: 1;
+    flex: 0 0 auto;
   }
 
   /* 移动端使用固定快捷栏承接高频操作，减少长表单来回滚动 */
@@ -1138,7 +1140,7 @@ button,
   }
 
   .mobile-generate-dock {
-    grid-template-columns: minmax(0, 1fr) minmax(86px, 0.32fr);
+    grid-template-columns: minmax(0, 1fr) minmax(116px, 0.44fr);
     gap: 8px;
     border-radius: 18px;
     padding: 8px;
@@ -1148,7 +1150,7 @@ button,
 
   .mobile-generate-dock .btn {
     min-height: 52px;
-    white-space: normal;
+    white-space: nowrap;
   }
 
   .modal-card,
@@ -1252,7 +1254,7 @@ button,
   }
 
   .mobile-generate-dock {
-    grid-template-columns: minmax(0, 1fr) minmax(86px, 0.32fr);
+    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.46fr);
   }
 
   .mobile-generate-dock .btn {
@@ -1272,6 +1274,16 @@ button,
 
   .hero-actions .btn,
   .mobile-generate-dock .btn {
-    padding-inline: 10px;
+    padding-inline: 8px;
+  }
+
+  .mobile-generate-dock {
+    grid-template-columns: minmax(0, 1fr) minmax(104px, 0.44fr);
+    gap: 6px;
+  }
+
+  .mobile-generate-dock .btn {
+    gap: 6px;
+    font-size: 14px;
   }
 }

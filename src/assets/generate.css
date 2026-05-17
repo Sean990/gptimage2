@@ -2718,13 +2718,15 @@
   }
 
   .mobile-generate-dock {
-    grid-template-columns: minmax(0, 1fr) minmax(96px, 0.42fr);
+    grid-template-columns: minmax(0, 1fr) minmax(116px, 0.44fr);
     min-height: 68px;
   }
 
   .mobile-generate-dock .btn {
     min-height: 50px;
     border-radius: 12px;
+    padding-inline: 10px;
+    white-space: nowrap;
   }
 }
 
@@ -2750,5 +2752,22 @@
 
   .generate-page .mode-tabs button span {
     font-size: 11px;
+  }
+
+  .mobile-generate-dock {
+    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.46fr);
+  }
+}
+
+@media (max-width: 360px) {
+  .mobile-generate-dock {
+    grid-template-columns: minmax(0, 1fr) minmax(104px, 0.44fr);
+    gap: 6px;
+  }
+
+  .mobile-generate-dock .btn {
+    gap: 6px;
+    padding-inline: 8px;
+    font-size: 14px;
   }
 }

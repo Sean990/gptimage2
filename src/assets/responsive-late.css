@@ -1,7 +1,7 @@
 @media (max-width: 430px) {
   html,
   body {
-    overflow-x: clip;
+    overflow-x: hidden;
   }
 
   .interactive-background__mesh {
