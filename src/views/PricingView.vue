@@ -45,7 +45,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="page pricing-hero">
+  <main class="page pricing-hero" :class="{ 'pricing-hero--disabled': !billingEnabled }">
     <section class="section-tight">
       <div class="container">
         <article v-fade-up class="card sale-banner">
@@ -102,7 +102,7 @@ onMounted(() => {
           <p>购买后会收到卡密兑换码，请前往 <router-link to="/my-orders">我的订单</router-link> 页面输入兑换码领取积分。</p>
         </div>
 
-        <div v-if="!billingEnabled" class="section-tight">
+        <div v-if="!billingEnabled" class="pricing-disabled-panel">
           <FeatureCard
             v-fade-up
             title="积分方案暂未开放"

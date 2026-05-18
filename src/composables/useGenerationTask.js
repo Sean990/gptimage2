@@ -65,6 +65,7 @@ export function useGenerationTask() {
   const loading = ref(false)
   const loadingStage = ref('准备提交生成任务')
   const queuePosition = ref(null)
+  const lastGenerationNotice = ref('')
   const generationAbortController = ref(null)
   const activeTaskId = ref('')
   const isAuthenticated = computed(() => auth.isAuthenticated.value)
@@ -156,7 +157,6 @@ export function useGenerationTask() {
     scheduleGalleryRefresh,
     stopGeneration,
     syncCloudGallery,
-    waitForGenerationTask,
   } = pollingApi
 
   const loadingUi = useGenerationLoading({
@@ -264,10 +264,12 @@ export function useGenerationTask() {
     persistLocalGallery,
     referenceCount,
     selectedModelAvailable,
+    setLastGenerationNotice: (message) => {
+      lastGenerationNotice.value = message
+    },
     showNotice,
     showReferenceSection,
     userCredits,
-    waitForGenerationTask,
   })
 
   function openPricingFromGenerate() {
@@ -339,6 +341,7 @@ export function useGenerationTask() {
     generationAbortController,
     loading,
     loadingStage,
+    lastGenerationNotice,
     queuePosition,
     notice,
     output,

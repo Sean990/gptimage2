@@ -325,7 +325,7 @@ onBeforeUnmount(() => {
 
       <div class="header-actions">
         <button
-          class="icon-button"
+          class="icon-button theme-toggle"
           type="button"
           :aria-label="isDark ? '切换到浅色模式' : '切换到深色模式'"
           :aria-pressed="isDark"
@@ -389,6 +389,11 @@ onBeforeUnmount(() => {
           {{ item.label }}
         </RouterLink>
       </template>
+      <button class="mobile-theme-toggle" type="button" :aria-pressed="isDark" @click="toggleTheme">
+        <Sun v-if="isDark" aria-hidden="true" />
+        <Moon v-else aria-hidden="true" />
+        {{ isDark ? '切换浅色模式' : '切换深色模式' }}
+      </button>
       <RouterLink v-if="isAuthenticated" to="/my-orders">个人中心 · {{ currentUser.credits }} 积分</RouterLink>
       <button v-if="isAuthenticated" type="button" @click="logout">退出登录</button>
       <button v-else type="button" @click="openLogin">登录</button>

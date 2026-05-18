@@ -306,9 +306,86 @@
 }
 
 @media (max-width: 520px) {
+  .prompt-optimizer-page .section-tight {
+    padding-top: 24px;
+  }
+
+  .optimizer-heading {
+    margin-bottom: 18px;
+  }
+
+  .optimizer-heading h1 {
+    margin: 10px 0 8px;
+    font-size: clamp(34px, 10vw, 42px);
+    line-height: 1.12;
+  }
+
+  .optimizer-heading p {
+    font-size: 15px;
+    line-height: 1.58;
+  }
+
+  .optimizer-workbench,
+  .optimizer-result,
+  .optimizer-history,
+  .optimizer-tip-card,
+  .optimizer-credits {
+    padding: 18px;
+  }
+
+  .optimizer-workbench {
+    display: grid;
+  }
+
   .optimizer-panel-head,
   .optimizer-actions {
     display: grid;
+  }
+
+  .optimizer-panel-head {
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .optimizer-panel-head h2 {
+    font-size: 20px;
+  }
+
+  .optimizer-modes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .optimizer-modes button {
+    padding: 9px 6px;
+    white-space: nowrap;
+  }
+
+  .optimizer-input-field textarea {
+    min-height: 168px;
+  }
+
+  .optimizer-quality {
+    margin: 10px 0 12px;
+  }
+
+  .optimizer-actions {
+    order: 2;
+    margin-top: 16px;
+  }
+
+  .optimizer-examples {
+    order: 3;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 10px;
+  }
+
+  .optimizer-examples button {
+    justify-content: center;
+    padding-inline: 8px;
   }
 
   .optimizer-side {

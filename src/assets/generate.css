@@ -2693,6 +2693,10 @@
     box-shadow: 0 14px 34px rgba(15, 23, 42, 0.09);
   }
 
+  .generate-page .output-panel {
+    scroll-margin-top: 78px;
+  }
+
   .generate-page .field textarea {
     min-height: 152px;
     max-height: 42dvh;
@@ -2720,7 +2724,24 @@
   }
 
   .generate-page .output-actions {
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    justify-content: flex-end;
+    border: 1px solid rgba(255, 255, 255, 0.44);
+    border-radius: 12px;
+    padding: 6px;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.08), rgba(15, 23, 42, 0.64));
     opacity: 1;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .generate-page .output-actions .icon-button {
+    width: 42px;
+    height: 42px;
+    min-height: 42px;
+    flex: 0 0 42px;
   }
 
   .mobile-generate-dock {
@@ -2760,12 +2781,21 @@
     font-size: 11px;
   }
 
+  .generate-page .prompt-field-head .btn {
+    min-height: 44px;
+    padding: 9px 12px;
+  }
+
   .mobile-generate-dock {
     grid-template-columns: minmax(0, 1fr) minmax(112px, 0.46fr);
   }
 }
 
 @media (max-width: 360px) {
+  .generate-page .field textarea {
+    min-height: 124px;
+  }
+
   .mobile-generate-dock {
     grid-template-columns: minmax(0, 1fr) minmax(104px, 0.44fr);
     gap: 6px;
@@ -2775,5 +2805,142 @@
     gap: 6px;
     padding-inline: 8px;
     font-size: 14px;
+  }
+}
+
+@media (max-width: 820px) {
+  .generate-page .generate-hero {
+    margin-bottom: 18px;
+    padding: 4px 0 8px;
+  }
+
+  .generate-page .generate-hero-copy h1 {
+    font-size: clamp(30px, 8vw, 42px);
+    line-height: 1.1;
+  }
+
+  .generate-page .generate-hero-copy p {
+    display: -webkit-box;
+    margin-top: 8px;
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 1.48;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .generate-page .tool-toolbar {
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .generate-page .tool-toolbar-row,
+  .generate-page .tool-toolbar-row-primary,
+  .generate-page .tool-toolbar-row-secondary {
+    display: grid;
+    max-width: 520px;
+    gap: 8px;
+  }
+
+  .generate-page .tool-toolbar-row-primary {
+    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.42fr);
+  }
+
+  .generate-page .tool-toolbar-row-secondary {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .generate-page .tool-toolbar .btn,
+  .generate-page .tool-toolbar .toolbar-credit {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 12px;
+    border-radius: 13px;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .generate-page .tool-toolbar .hero-utility-button:first-child span {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .generate-page .tool-toolbar-row-secondary > .toolbar-credit {
+    justify-content: flex-start;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .generate-page .tool-toolbar .hero-login-button,
+  .generate-page .tool-toolbar .hero-recharge-button,
+  .generate-page .tool-toolbar .hero-save-button {
+    width: auto;
+    min-width: 96px;
+    white-space: nowrap;
+  }
+
+  .mobile-generate-dock {
+    transition:
+      transform 180ms var(--ease-standard),
+      opacity 180ms var(--ease-standard);
+    will-change: transform, opacity;
+  }
+
+  .generate-page:has(.tool-panel textarea:focus) .mobile-generate-dock,
+  .generate-page:has(.tool-panel input:focus) .mobile-generate-dock {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(calc(100% + 28px + env(safe-area-inset-bottom, 0px)));
+  }
+}
+
+@media (max-width: 520px) {
+  .generate-page .section-tight {
+    padding-top: 22px;
+  }
+
+  .generate-page .generate-hero {
+    margin-bottom: 14px;
+  }
+
+  .generate-page .tool-toolbar-row-primary {
+    grid-template-columns: minmax(0, 1fr) minmax(102px, 0.4fr);
+  }
+
+  .generate-page .tool-toolbar .btn,
+  .generate-page .tool-toolbar .toolbar-credit {
+    min-height: 40px;
+    padding: 8px 10px;
+  }
+
+  .generate-page .tool-toolbar-row-secondary {
+    grid-template-columns: minmax(0, 1fr) minmax(104px, 0.4fr);
+  }
+
+  .generate-page .tool-toolbar .hero-login-button,
+  .generate-page .tool-toolbar .hero-recharge-button,
+  .generate-page .tool-toolbar .hero-save-button {
+    width: 100%;
+  }
+
+  .generate-page .output-panel {
+    scroll-margin-top: 66px;
+  }
+
+  .generate-page .output-actions {
+    gap: 6px;
+    padding: 5px;
+  }
+
+  .generate-page .output-actions .icon-button {
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+    flex-basis: 40px;
   }
 }

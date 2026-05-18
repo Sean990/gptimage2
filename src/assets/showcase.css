@@ -109,6 +109,29 @@
   gap: 18px;
 }
 
+.showcase-load-more {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  background: var(--surface-soft);
+}
+
+.showcase-load-more p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+  text-align: center;
+}
+
+.showcase-load-more .btn {
+  min-width: 180px;
+}
+
 .showcase-card {
   overflow: hidden;
 }
@@ -480,8 +503,25 @@
 }
 
 @media (max-width: 640px) {
+  .showcase-page .section-tight {
+    padding-top: 24px;
+  }
+
+  .showcase-head {
+    gap: 16px;
+  }
+
+  .showcase-head .section-title {
+    margin-bottom: 4px;
+  }
+
   .prompt-library-filters {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .prompt-library-filters .compact-field {
+    grid-column: 1 / -1;
   }
 
   .prompt-library-filters .app-select-menu {
@@ -504,7 +544,7 @@
 
 @media (max-width: 520px) {
   .library-tabs {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .prompt-detail-modal {
@@ -515,7 +555,16 @@
     grid-template-columns: 1fr;
   }
 
-  .showcase-card .card-actions .btn {
-    width: 100%;
+  .showcase-card .card-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .showcase-card .card-actions .btn:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .showcase-load-more {
+    margin-top: 16px;
+    padding: 14px;
   }
 }

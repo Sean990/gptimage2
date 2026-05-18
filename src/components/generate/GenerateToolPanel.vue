@@ -49,6 +49,7 @@ const {
   getMaskPreviewImages,
   getReferencePreviewImages,
   imageUrl,
+  lastGenerationNotice,
   loading,
   maskCount,
   maskImageUrl,
@@ -909,12 +910,12 @@ async function onMaskDrop(event) {
       <strong>提交前请确认素材来源合法，并同意平台进行内容安全审核和 AI 生成标识处理。</strong>
       <span>不得生成违法违规、侵权、虚假新闻、冒用身份、侵犯肖像隐私或危害公共利益的内容。</span>
     </div>
-    <div class="generation-inline-notice" :class="{ active: loading }" role="note">
+    <div class="generation-inline-notice" :class="{ active: loading || lastGenerationNotice }" role="note">
       <div>
-        <strong>{{ loading ? generationSubmittedTip : generationIdleTip }}</strong>
+        <strong>{{ loading ? generationSubmittedTip : lastGenerationNotice || generationIdleTip }}</strong>
         <span>{{ generationCostText }}</span>
       </div>
-      <button v-if="loading" class="btn btn-ghost" type="button" @click="openGallery">
+      <button v-if="loading || lastGenerationNotice" class="btn btn-ghost" type="button" @click="openGallery">
         <GalleryHorizontal aria-hidden="true" />
         查看图库进度
       </button>

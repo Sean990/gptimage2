@@ -48,6 +48,7 @@ const {
 const outputPanelRef = ref(null)
 const dockHidden = ref(false)
 const showBackToTop = ref(false)
+const heroCompact = ref(false)
 
 function scrollOutputIntoView() {
   if (!window.matchMedia('(max-width: 820px)').matches) return
@@ -73,6 +74,7 @@ function updateDockVisibility() {
   const y = window.scrollY
   const dy = y - lastScrollY
   showBackToTop.value = y > window.innerHeight
+  heroCompact.value = y > 80
   if (Math.abs(dy) < 8) return
   if (y < 60) {
     dockHidden.value = false
@@ -111,7 +113,7 @@ onUnmounted(() => {
   <main class="page generate-page" :class="{ 'batch-mode-page': batchMode }">
     <section class="section-tight">
       <div class="container">
-        <div class="generate-hero" v-fade-up>
+        <div class="generate-hero" :class="{ 'is-compact': heroCompact }" v-fade-up>
           <div class="generate-hero-copy">
             <span v-if="batchMode" class="batch-hero-badge">
               <Images aria-hidden="true" />

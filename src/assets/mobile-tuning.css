@@ -874,7 +874,103 @@ button,
     bottom: calc(20px + var(--safe-bottom));
   }
 
+  /* Hero 区滚动压缩：向下滚动超过 80px 后，标题 / 描述 / 工具栏收缩 */
+  .generate-page .generate-hero {
+    transition:
+      margin-bottom 240ms var(--ease-standard),
+      padding 240ms var(--ease-standard);
+  }
 
+  .generate-page .generate-hero.is-compact {
+    margin-bottom: 8px;
+    padding: 0;
+  }
+
+  .generate-page .generate-hero-copy h1 {
+    transition:
+      font-size 240ms var(--ease-standard),
+      margin 240ms var(--ease-standard);
+  }
+
+  .generate-page .generate-hero.is-compact .generate-hero-copy h1 {
+    font-size: clamp(24px, 6.5vw, 32px);
+    margin-bottom: 0;
+  }
+
+  .generate-page .generate-hero-copy p {
+    transition:
+      max-height 240ms var(--ease-standard),
+      margin 240ms var(--ease-standard),
+      opacity 240ms var(--ease-standard);
+    max-height: 200px;
+    overflow: hidden;
+  }
+
+  .generate-page .generate-hero.is-compact .generate-hero-copy p {
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
+  }
+
+  .generate-page .tool-toolbar {
+    transition:
+      gap 240ms var(--ease-standard),
+      margin 240ms var(--ease-standard);
+  }
+
+  .generate-page .generate-hero.is-compact .tool-toolbar {
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  .generate-page .tool-toolbar-row {
+    transition: gap 240ms var(--ease-standard);
+  }
+
+  .generate-page .generate-hero.is-compact .tool-toolbar-row {
+    gap: 6px;
+  }
+
+  .generate-page .tool-toolbar .btn,
+  .generate-page .tool-toolbar .toolbar-credit {
+    transition:
+      min-height 240ms var(--ease-standard),
+      padding 240ms var(--ease-standard),
+      font-size 240ms var(--ease-standard);
+  }
+
+  .generate-page .generate-hero.is-compact .tool-toolbar .btn,
+  .generate-page .generate-hero.is-compact .tool-toolbar .toolbar-credit {
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .generate-page .tool-toolbar .btn svg,
+  .generate-page .tool-toolbar .toolbar-credit svg {
+    transition:
+      width 240ms var(--ease-standard),
+      height 240ms var(--ease-standard);
+  }
+
+  .generate-page .generate-hero.is-compact .tool-toolbar .btn svg,
+  .generate-page .generate-hero.is-compact .tool-toolbar .toolbar-credit svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .generate-page .batch-hero-badge {
+    transition:
+      padding 240ms var(--ease-standard),
+      font-size 240ms var(--ease-standard),
+      margin 240ms var(--ease-standard);
+  }
+
+  .generate-page .generate-hero.is-compact .batch-hero-badge {
+    padding: 4px 10px;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
 
   /* ---------- 输出区 ---------- */
   .empty-output,

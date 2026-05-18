@@ -1,5 +1,6 @@
 <script setup>
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { AlertCircle, CheckCircle2, Info, TriangleAlert } from 'lucide-vue-next'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps({
   message: {
@@ -27,6 +28,15 @@ const props = defineProps({
 
 const visible = ref(false)
 let hideTimer = null
+
+const iconByType = {
+  info: Info,
+  success: CheckCircle2,
+  error: AlertCircle,
+  warning: TriangleAlert,
+}
+
+const toastIcon = computed(() => iconByType[props.type] || Info)
 
 function clearHideTimer() {
   if (!hideTimer || typeof window === 'undefined') return
@@ -58,7 +68,12 @@ onBeforeUnmount(clearHideTimer)
 <template>
   <Transition name="toast-fade">
     <div v-if="message && visible" class="toast" :class="`toast--${type}`" :role="role" :aria-live="ariaLive">
-      <slot>{{ message }}</slot>
+      <span class="toast-icon" aria-hidden="true">
+        <component :is="toastIcon" />
+      </span>
+      <span class="toast-message">
+        <slot>{{ message }}</slot>
+      </span>
     </div>
   </Transition>
 </template>

@@ -385,7 +385,28 @@
 
 @media (max-width: 820px) {
   .pricing-hero {
-    padding-top: 102px;
+    padding-top: 84px;
+  }
+
+  .pricing-hero > .section-tight {
+    padding-top: 18px;
+  }
+
+  .pricing-hero--disabled > .section-tight {
+    padding-bottom: 24px;
+  }
+
+  .pricing-hero--disabled .sale-banner {
+    margin-bottom: 18px;
+    padding: 22px 18px;
+  }
+
+  .pricing-hero--disabled .section-title {
+    margin-bottom: 18px;
+  }
+
+  .pricing-disabled-panel {
+    margin-top: 16px;
   }
 }
 

@@ -7,6 +7,7 @@ const token = ref(hasStorage ? localStorage.getItem('token') || '' : '')
 const user = ref(null)
 const loading = ref(false)
 const initialized = ref(false)
+let refreshPromise = null
 
 function persistToken(nextToken) {
   token.value = nextToken || ''
@@ -18,7 +19,7 @@ function persistToken(nextToken) {
 function handleAuthExpired() {
   persistToken('')
   user.value = null
-  initialized.value = false
+  initialized.value = true
 }
 
 if (typeof window !== 'undefined') {
@@ -26,15 +27,33 @@ if (typeof window !== 'undefined') {
 }
 
 async function refreshMe() {
-  loading.value = true
-  try {
-    user.value = await api.getMe()
+  const storedToken = hasStorage ? localStorage.getItem('token') || '' : ''
+  const currentToken = token.value || storedToken
+
+  if (!currentToken) {
+    user.value = null
     initialized.value = true
-    if (user.value?.id === 'guest') persistToken('')
-    return user.value
-  } finally {
-    loading.value = false
+    return null
   }
+
+  if (!token.value) token.value = currentToken
+  if (refreshPromise) return refreshPromise
+
+  loading.value = true
+  refreshPromise = api
+    .getMe()
+    .then((currentUser) => {
+      user.value = currentUser
+      initialized.value = true
+      if (user.value?.id === 'guest') persistToken('')
+      return user.value
+    })
+    .finally(() => {
+      loading.value = false
+      refreshPromise = null
+    })
+
+  return refreshPromise
 }
 
 async function login(payload) {

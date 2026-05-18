@@ -1,4 +1,5 @@
 import { compactPayload, mapRecordImages, normalizeGenerationRecord } from './useGenerationPayload'
+import { isGenerationTaskSuccessful } from './useGenerationPolling'
 
 export function useGenerateAction({
   api,
@@ -24,10 +25,10 @@ export function useGenerateAction({
   persistLocalGallery,
   referenceCount,
   selectedModelAvailable,
+  setLastGenerationNotice,
   showNotice,
   showReferenceSection,
   userCredits,
-  waitForGenerationTask,
 }) {
   async function ensureAuthenticated() {
     if (isAuthenticated.value) return true
@@ -85,6 +86,7 @@ export function useGenerateAction({
       return
     }
     loading.value = true
+    setLastGenerationNotice?.('')
     output.value = []
     loadingStage.value = '准备提交生成任务'
     generationAbortController.value = new AbortController()
@@ -108,26 +110,22 @@ export function useGenerateAction({
         references: showReferenceSection.value ? getReferences() : [],
         mask: formState.mode.value === 'edit' ? getMaskReference() : '',
       })
-      loadingStage.value = '任务已提交，后台生成中'
-      showNotice('任务已提交，可在我的图库查看进度')
       const task = await api.generateImages(requestPayload, {
         signal: generationAbortController.value.signal,
       })
       activeTaskId.value = task.id
-      gallery.value = mergeGalleryRecords([normalizeGenerationRecord(task, requestPayload)], gallery.value)
-      await auth.refreshMe().catch(() => {})
-      const result = await waitForGenerationTask(task.id)
-      const normalizedResult = normalizeGenerationRecord(result, {
-        ...requestPayload,
-        createdAt: new Date().toISOString(),
-      })
-      output.value = mapRecordImages(normalizedResult)
-      gallery.value = mergeGalleryRecords([normalizedResult], gallery.value)
+      loadingStage.value = '任务已提交，后台生成中'
+      const normalizedTask = normalizeGenerationRecord(task, requestPayload)
+      gallery.value = mergeGalleryRecords([normalizedTask], gallery.value)
       persistLocalGallery()
-      showNotice(
-        normalizedResult.partialFailureMessage ||
-          (formState.batchMode.value ? '批量生成完成' : '图像生成完成'),
-      )
+      void auth.refreshMe().catch(() => {})
+      setLastGenerationNotice?.('任务已提交，无需等待，可以立即开始生成下一张图；稍后可在我的图库查看进度。')
+      if (isGenerationTaskSuccessful(task)) {
+        output.value = mapRecordImages(normalizedTask)
+        showNotice(normalizedTask.partialFailureMessage || (formState.batchMode.value ? '批量生成完成' : '图像生成完成'))
+      } else {
+        showNotice('任务已提交，无需等待，可以继续生成下一张图')
+      }
     } catch (error) {
       output.value = []
       if (error.isTimeout) showNotice(error.message || '请求超时，请稍后重试')
@@ -139,7 +137,7 @@ export function useGenerateAction({
       generationAbortController.value = null
       loading.value = false
       loadingStage.value = '准备提交生成任务'
-      await auth.refreshMe().catch(() => {})
+      void auth.refreshMe().catch(() => {})
     }
   }
 

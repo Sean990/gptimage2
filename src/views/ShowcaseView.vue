@@ -39,6 +39,8 @@ const activeTab = ref('cases')
 const selectedCase = ref(null)
 const selectedTemplate = ref(null)
 const loadedImages = ref(new Set())
+const CASE_PAGE_SIZE = 24
+const visibleCaseCount = ref(CASE_PAGE_SIZE)
 
 const categories = computed(() => ['全部分类', ...promptTaxonomy.value.categories.map((item) => item.value)])
 const styles = computed(() => ['全部风格', ...promptTaxonomy.value.styles.map((item) => item.value)])
@@ -106,6 +108,10 @@ const filteredTemplates = computed(() => {
         .includes(keyword)
     })
 })
+
+const visibleCaseItems = computed(() => filteredItems.value.slice(0, visibleCaseCount.value))
+const shownCaseCount = computed(() => Math.min(visibleCaseCount.value, filteredItems.value.length))
+const hasMoreCases = computed(() => shownCaseCount.value < filteredItems.value.length)
 
 function showNotice(text) {
   notice.value = text
@@ -210,6 +216,11 @@ function resetFilters() {
   style.value = '全部风格'
   scene.value = '全部场景'
   sort.value = '最新发布'
+  visibleCaseCount.value = CASE_PAGE_SIZE
+}
+
+function loadMoreCases() {
+  visibleCaseCount.value = Math.min(visibleCaseCount.value + CASE_PAGE_SIZE, filteredItems.value.length)
 }
 
 async function loadLocalLibrary() {
@@ -239,6 +250,10 @@ watch(activeModalOpen, (isOpen) => {
   else window.removeEventListener('keydown', onKeydown)
 })
 
+watch([query, category, style, scene, sort], () => {
+  visibleCaseCount.value = CASE_PAGE_SIZE
+})
+
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
   document.documentElement.classList.remove('gallery-scroll-locked')
@@ -249,7 +264,7 @@ onMounted(loadLocalLibrary)
 </script>
 
 <template>
-  <main class="page">
+  <main class="page showcase-page">
     <section class="section-tight">
       <div class="container showcase-head">
         <SectionTitle
@@ -312,7 +327,9 @@ onMounted(loadLocalLibrary)
         >
           <div class="section-title align-left" style="margin-bottom: 18px">
             <h2>案例</h2>
-            <p>当前显示 {{ filteredItems.length }} 个案例。每条保留 Prompt、来源链接和快照信息，适合学习提示词结构。</p>
+            <p>
+              匹配 {{ filteredItems.length }} 个案例，已加载 {{ shownCaseCount }} 个。先看高相关内容，继续浏览时再按需展开。
+            </p>
           </div>
           <EmptyState v-if="loading" title="正在加载本地 Prompt 内容库" description="案例和模板来自项目内置快照。">
             <template #icon>
@@ -324,52 +341,61 @@ onMounted(loadLocalLibrary)
               <Search aria-hidden="true" />
             </template>
           </EmptyState>
-          <div v-else-if="filteredItems.length" class="showcase-grid">
-            <article
-              v-for="(item, index) in filteredItems"
-              :key="item.id"
-              v-fade-up="{ delay: (index % 12) * 50 }"
-              class="card showcase-card"
-            >
-              <div class="image-wrap">
-                <button class="showcase-image-button" type="button" @click="openCase(item)">
-                  <img
-                    :src="item.image"
-                    :alt="item.title"
-                    loading="lazy"
-                    :class="{ loaded: isImageLoaded(`case-${item.id}`) }"
-                    @load="markImageLoaded(`case-${item.id}`)"
-                  />
-                </button>
-                <button class="btn btn-accent image-action" type="button" @click="generateSimilar(item)">
-                  <Sparkles aria-hidden="true" />
-                  参考生成
-                </button>
-              </div>
-              <div class="showcase-body">
-                <span class="tag">{{ categoryLabel(item.category) }}</span>
-                <h3>{{ item.title }}</h3>
-                <p>{{ item.promptPreview }}</p>
-                <div class="prompt-tag-row">
-                  <span v-for="tag in itemTags(item)" :key="`${item.id}-${tag}`">{{ localizeTagLabel(tag) }}</span>
-                </div>
-                <div class="card-actions">
-                  <button class="btn btn-ghost" type="button" @click="openCase(item)">
-                    <Eye aria-hidden="true" />
-                    查看详情
+          <template v-else-if="filteredItems.length">
+            <div class="showcase-grid">
+              <article
+                v-for="(item, index) in visibleCaseItems"
+                :key="item.id"
+                v-fade-up="{ delay: (index % 12) * 50 }"
+                class="card showcase-card"
+              >
+                <div class="image-wrap">
+                  <button class="showcase-image-button" type="button" @click="openCase(item)">
+                    <img
+                      :src="item.image"
+                      :alt="item.title"
+                      loading="lazy"
+                      :class="{ loaded: isImageLoaded(`case-${item.id}`) }"
+                      @load="markImageLoaded(`case-${item.id}`)"
+                    />
                   </button>
-                  <button class="btn btn-soft" type="button" @click="generateSimilar(item)">
-                    <Search aria-hidden="true" />
+                  <button class="btn btn-accent image-action" type="button" @click="generateSimilar(item)">
+                    <Sparkles aria-hidden="true" />
                     参考生成
                   </button>
-                  <button class="btn btn-ghost" type="button" @click="copyPrompt(item)">
-                    <Copy aria-hidden="true" />
-                    {{ copiedId === item.id ? '已复制' : '复制提示词' }}
-                  </button>
                 </div>
-              </div>
-            </article>
-          </div>
+                <div class="showcase-body">
+                  <span class="tag">{{ categoryLabel(item.category) }}</span>
+                  <h3>{{ item.title }}</h3>
+                  <p>{{ item.promptPreview }}</p>
+                  <div class="prompt-tag-row">
+                    <span v-for="tag in itemTags(item)" :key="`${item.id}-${tag}`">{{ localizeTagLabel(tag) }}</span>
+                  </div>
+                  <div class="card-actions">
+                    <button class="btn btn-ghost" type="button" @click="openCase(item)">
+                      <Eye aria-hidden="true" />
+                      查看详情
+                    </button>
+                    <button class="btn btn-soft" type="button" @click="generateSimilar(item)">
+                      <Search aria-hidden="true" />
+                      参考生成
+                    </button>
+                    <button class="btn btn-ghost" type="button" @click="copyPrompt(item)">
+                      <Copy aria-hidden="true" />
+                      {{ copiedId === item.id ? '已复制' : '复制提示词' }}
+                    </button>
+                  </div>
+                </div>
+              </article>
+            </div>
+            <div v-if="hasMoreCases" class="showcase-load-more" aria-live="polite">
+              <p>已显示 {{ shownCaseCount }} / {{ filteredItems.length }} 个案例，筛选条件会保留。</p>
+              <button class="btn btn-soft" type="button" @click="loadMoreCases">
+                <Images aria-hidden="true" />
+                加载更多案例
+              </button>
+            </div>
+          </template>
           <EmptyState v-else title="没有匹配的案例" description="换一个关键词或重置筛选后再试。">
             <template #icon>
               <Search aria-hidden="true" />

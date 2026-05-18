@@ -352,7 +352,6 @@
     gap: 0;
   }
 
-  .header-actions > .icon-button:not(.mobile-toggle),
   .header-actions > .btn {
     display: none;
   }

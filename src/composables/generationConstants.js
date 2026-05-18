@@ -76,5 +76,5 @@ export const moderationOptions = [
 ]
 
 export const generationWaitText = '1~3 分钟'
-export const generationIdleTip = `生成通常需要 ${generationWaitText}。提交后可以离开当前页面，稍后在我的图库查看进度。`
-export const generationSubmittedTip = `任务已提交，预计 ${generationWaitText} 完成。你可以继续浏览，稍后在我的图库查看结果。`
+export const generationIdleTip = `生成通常需要 ${generationWaitText}。提交后无需停留等待，可以立即开始生成下一张图。`
+export const generationSubmittedTip = `任务已提交，预计 ${generationWaitText} 完成。无需等待当前任务，可以立即开始生成下一张图，稍后在我的图库查看进度。`

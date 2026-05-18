@@ -26,7 +26,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="page">
+  <main class="page docs-page">
     <section class="section-tight">
       <div class="container">
         <SectionTitle

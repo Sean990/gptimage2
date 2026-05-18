@@ -31,6 +31,14 @@
   background: rgba(37, 99, 235, 0.08);
 }
 
+.side-nav {
+  scrollbar-width: none;
+}
+
+.side-nav::-webkit-scrollbar {
+  display: none;
+}
+
 .docs-content {
   display: grid;
   gap: 22px;
@@ -91,20 +99,27 @@
 }
 
 @media (max-width: 520px) {
+  .docs-page .section-tight {
+    padding-top: 24px;
+  }
+
   .side-nav {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
     gap: 8px;
-    overflow: visible;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
   }
 
   .side-nav a,
   .side-nav button {
-    width: 100%;
+    flex: 0 0 auto;
+    width: auto;
     min-height: 42px;
     justify-content: center;
     text-align: center;
-    white-space: normal;
+    scroll-snap-align: start;
+    white-space: nowrap;
   }
 
   .doc-section {
