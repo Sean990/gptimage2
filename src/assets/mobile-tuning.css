@@ -758,6 +758,11 @@ button,
     display: none !important;
   }
 
+  /* dock 已承担生成与图库入口，inline-notice 不再重复占位 */
+  .generate-page .generation-inline-notice {
+    display: none !important;
+  }
+
   .generation-actions .btn {
     width: 100%;
     min-height: 50px;
