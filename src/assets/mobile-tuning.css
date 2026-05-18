@@ -827,6 +827,13 @@ button,
     transform: translateY(calc(100% + 28px + var(--safe-bottom)));
   }
 
+  /* 向下滚动时滑出，向上滚动 / 滚到顶部立即回来 */
+  .mobile-generate-dock.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(calc(100% + 28px + var(--safe-bottom)));
+  }
+
   /* ---------- 输出区 ---------- */
   .empty-output,
   .generated-output,

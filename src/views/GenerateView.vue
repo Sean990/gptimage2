@@ -1,4 +1,5 @@
 <script setup>
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import {
   GalleryHorizontal,
   Coins,
@@ -42,6 +43,65 @@ const {
   stopGeneration,
   userCredits,
 } = task
+
+const outputPanelRef = ref(null)
+const dockHidden = ref(false)
+
+function scrollOutputIntoView() {
+  if (!window.matchMedia('(max-width: 820px)').matches) return
+  nextTick(() => {
+    const target = outputPanelRef.value?.$el
+    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+}
+
+watch(loading, (isLoading) => {
+  if (isLoading) scrollOutputIntoView()
+})
+
+watch(
+  () => output.value.length,
+  (nextCount, previousCount) => {
+    if (nextCount > previousCount) scrollOutputIntoView()
+  },
+)
+
+let lastScrollY = 0
+let rafId = 0
+let scrollHandlerActive = false
+
+function updateDockVisibility() {
+  rafId = 0
+  const y = window.scrollY
+  const dy = y - lastScrollY
+  if (Math.abs(dy) < 8) return
+  if (y < 60) {
+    dockHidden.value = false
+  } else if (dy > 0 && y > 120) {
+    dockHidden.value = true
+  } else if (dy < 0) {
+    dockHidden.value = false
+  }
+  lastScrollY = y
+}
+
+function onScroll() {
+  if (rafId) return
+  rafId = window.requestAnimationFrame(updateDockVisibility)
+}
+
+onMounted(() => {
+  if (typeof window === 'undefined') return
+  if (!window.matchMedia('(max-width: 820px)').matches) return
+  lastScrollY = window.scrollY
+  window.addEventListener('scroll', onScroll, { passive: true })
+  scrollHandlerActive = true
+})
+
+onUnmounted(() => {
+  if (scrollHandlerActive) window.removeEventListener('scroll', onScroll)
+  if (rafId) window.cancelAnimationFrame(rafId)
+})
 </script>
 
 <template>
@@ -110,7 +170,7 @@ const {
         <div class="generator-layout" v-fade-up="{ delay: 100 }">
           <GenerateToolPanel :task="task" />
 
-          <GenerateOutputGrid :task="task" />
+          <GenerateOutputGrid ref="outputPanelRef" :task="task" />
         </div>
 
         <p class="tip generate-footer-tip">
@@ -118,7 +178,7 @@ const {
           <span>{{ footerTipText }}</span>
         </p>
 
-        <div class="mobile-generate-dock" aria-label="移动端快捷生图操作">
+        <div class="mobile-generate-dock" :class="{ 'is-hidden': dockHidden }" aria-label="移动端快捷生图操作">
           <button v-if="!loading" class="btn btn-primary" type="button" @click="generate">
             <Sparkles aria-hidden="true" />
             <span>{{ batchMode ? `生成 ${normalizedImageCount} 张` : '开始生图' }}</span>
