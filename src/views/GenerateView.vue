@@ -11,6 +11,7 @@ import {
   Square,
   Wand,
   Sparkles,
+  ArrowUp,
 } from 'lucide-vue-next'
 import Toast from '../components/Toast.vue'
 import GalleryDrawer from '../components/generate/GalleryDrawer.vue'
@@ -46,6 +47,7 @@ const {
 
 const outputPanelRef = ref(null)
 const dockHidden = ref(false)
+const showBackToTop = ref(false)
 
 function scrollOutputIntoView() {
   if (!window.matchMedia('(max-width: 820px)').matches) return
@@ -70,6 +72,7 @@ function updateDockVisibility() {
   rafId = 0
   const y = window.scrollY
   const dy = y - lastScrollY
+  showBackToTop.value = y > window.innerHeight
   if (Math.abs(dy) < 8) return
   if (y < 60) {
     dockHidden.value = false
@@ -79,6 +82,10 @@ function updateDockVisibility() {
     dockHidden.value = false
   }
   lastScrollY = y
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function onScroll() {
@@ -187,6 +194,16 @@ onUnmounted(() => {
             <GalleryHorizontal aria-hidden="true" />
             <span>图库</span>
             <span v-if="gallery.length" class="mobile-generate-dock-count">{{ gallery.length }}</span>
+          </button>
+          <button
+            v-show="showBackToTop"
+            class="mobile-back-to-top"
+            :class="{ 'is-elevated': dockHidden }"
+            type="button"
+            aria-label="回到顶部"
+            @click="scrollToTop"
+          >
+            <ArrowUp aria-hidden="true" />
           </button>
         </div>
       </div>

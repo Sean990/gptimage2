@@ -839,6 +839,43 @@ button,
     transform: translateY(calc(100% + 28px + var(--safe-bottom)));
   }
 
+  /* 移动端回顶按钮：dock 显示时贴右下角小尺寸；dock 隐藏时上移补位 */
+  .mobile-back-to-top {
+    position: fixed;
+    right: max(16px, var(--safe-right));
+    bottom: calc(86px + var(--safe-bottom));
+    z-index: 81;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid rgba(203, 213, 225, 0.82);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--text);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+    transition:
+      transform 180ms var(--ease-standard),
+      opacity 180ms var(--ease-standard),
+      bottom 180ms var(--ease-standard);
+    cursor: pointer;
+  }
+
+  .mobile-back-to-top svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobile-back-to-top.is-elevated {
+    bottom: calc(20px + var(--safe-bottom));
+  }
+
+
+
   /* ---------- 输出区 ---------- */
   .empty-output,
   .generated-output,
@@ -1100,6 +1137,13 @@ button,
   :root[data-theme='dark'] .mobile-generate-dock-count {
     color: #0f172a;
     background: rgba(226, 232, 240, 0.88);
+  }
+
+  :root[data-theme='dark'] .mobile-back-to-top {
+    border-color: rgba(51, 65, 85, 0.92);
+    background: rgba(15, 23, 42, 0.94);
+    color: var(--text);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.38);
   }
 
   :root[data-theme='dark'] .banana-thinking-canvas {
