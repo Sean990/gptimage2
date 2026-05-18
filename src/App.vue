@@ -5,6 +5,7 @@ import { useHead } from '@unhead/vue'
 import { ShieldAlert } from 'lucide-vue-next'
 import AppFooter from './components/AppFooter.vue'
 import AppHeader from './components/AppHeader.vue'
+import BackToTop from './components/BackToTop.vue'
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE } from './seo/constants.js'
 
 const SITE_URL = (import.meta.env.VITE_SITE_URL || '').replace(/\/+$/, '')
@@ -258,6 +259,7 @@ onBeforeUnmount(() => {
     <RouterView />
   </div>
   <AppFooter />
+  <BackToTop />
 
   <Teleport to="body">
     <div
