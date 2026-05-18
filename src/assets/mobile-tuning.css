@@ -361,6 +361,22 @@ button,
   .image-preview-stage {
     min-height: 0;
     border-radius: 12px;
+    touch-action: pan-y;
+  }
+
+  .image-preview-stage img {
+    will-change: transform;
+    transition: transform 220ms var(--ease-standard);
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+
+  .image-preview-stage.is-dragging img {
+    transition: none;
+  }
+
+  .image-preview-stage.is-releasing img {
+    transition: transform 220ms var(--ease-standard);
   }
 
   .image-preview-nav {
