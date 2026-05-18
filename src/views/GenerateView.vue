@@ -51,18 +51,14 @@ function scrollOutputIntoView() {
   if (!window.matchMedia('(max-width: 820px)').matches) return
   nextTick(() => {
     const target = outputPanelRef.value?.$el
-    target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    target?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   })
 }
-
-watch(loading, (isLoading) => {
-  if (isLoading) scrollOutputIntoView()
-})
 
 watch(
   () => output.value.length,
   (nextCount, previousCount) => {
-    if (nextCount > previousCount) scrollOutputIntoView()
+    if (previousCount === 0 && nextCount > 0) scrollOutputIntoView()
   },
 )
 
