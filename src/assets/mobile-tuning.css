@@ -753,12 +753,12 @@ button,
   }
 
   /* ---------- Mobile generate dock ---------- */
-  /* 移动端使用固定快捷栏承接高频操作，减少长表单来回滚动 */
+  /* 生成按钮使用原位置 sticky，滚出可视区时贴底跟随 */
   .generate-page .generation-actions {
-    display: none !important;
+    display: grid !important;
   }
 
-  /* dock 已承担生成与图库入口，inline-notice 不再重复占位 */
+  /* dock 只保留生成入口，图库改为全站悬浮入口 */
   .generate-page .generation-inline-notice {
     display: none !important;
   }
@@ -776,7 +776,7 @@ button,
     left: max(12px, var(--safe-left));
     z-index: 80;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(116px, 0.44fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 8px;
     border: 1px solid rgba(203, 213, 225, 0.82);
     border-radius: 18px;
@@ -868,6 +868,49 @@ button,
   .back-to-top-button svg {
     width: 20px;
     height: 20px;
+  }
+
+  .floating-gallery-wrap {
+    right: auto;
+    left: max(12px, var(--safe-left));
+    inline-size: max-content;
+    max-inline-size: calc(100vw - 24px - var(--safe-right));
+    bottom: calc(16px + var(--safe-bottom));
+    justify-items: start;
+    z-index: 82;
+  }
+
+  .floating-gallery-wrap.is-generate-route {
+    bottom: calc(152px + var(--safe-bottom));
+  }
+
+  .floating-gallery-button {
+    grid-template-columns: auto;
+    min-width: 52px;
+    width: 52px;
+    min-height: 52px;
+    border-radius: 15px;
+    padding: 8px;
+  }
+
+  .floating-gallery-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+  }
+
+  .floating-gallery-copy {
+    display: none;
+  }
+
+  .floating-gallery-button em {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 22px;
+    height: 22px;
+    border: 2px solid var(--surface);
+    padding: 0 6px;
   }
 
   /* Generate 页面专用：dock 显示时贴右下角小尺寸；dock 隐藏时上移补位 */
@@ -1231,7 +1274,7 @@ button,
   .toast {
     left: 12px;
     right: 12px;
-    top: calc(12px + var(--safe-top));
+    top: calc(76px + var(--safe-top));
     grid-template-columns: 32px minmax(0, 1fr);
     width: auto;
     max-width: none;
@@ -1443,7 +1486,7 @@ button,
 
   /* Mobile dock 窄屏 */
   .mobile-generate-dock {
-    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.46fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .mobile-generate-dock .btn {
@@ -1543,7 +1586,7 @@ button,
   }
 
   .mobile-generate-dock {
-    grid-template-columns: minmax(0, 1fr) minmax(104px, 0.44fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
 

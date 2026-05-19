@@ -158,10 +158,11 @@ test('已登录用户删除云端图库后，刷新和重新同步不会复现�
   await expect(page.getByText('friend@example.com')).toBeVisible()
 
   await page.goto('/generate')
-  await page.getByRole('button', { name: /我的图库/ }).click()
-  await expect(page.getByRole('heading', { name: '我的图库' })).toBeVisible()
-  await expect(page.getByText('第一张云端测试图')).toBeVisible()
-  await expect(page.getByText('第二张云端测试图')).toBeVisible()
+  await page.getByRole('button', { name: /打开图库/ }).click()
+  const galleryDialog = page.getByRole('dialog', { name: '我的图库' })
+  await expect(galleryDialog).toBeVisible()
+  await expect(galleryDialog.getByText('第一张云端测试图')).toBeVisible()
+  await expect(galleryDialog.getByText('第二张云端测试图')).toBeVisible()
 
   const firstGalleryCard = page.locator('.gallery-card').filter({ hasText: '第一张云端测试图' })
   const deleteRequest = page.waitForRequest(
@@ -171,23 +172,25 @@ test('已登录用户删除云端图库后，刷新和重新同步不会复现�
   await deleteRequest
 
   await expect(firstGalleryCard).toHaveCount(0)
-  await expect(page.getByText('已从图库移除，刷新后不会再显示')).toBeVisible()
+  await expect(page.getByText('已从图库移除')).toBeVisible()
   await expect.poll(() => galleryMock.deletedGalleryIds).toEqual(['cloud-gallery-1'])
   expect(galleryMock.getGalleryRecords()).toHaveLength(1)
 
   await page.reload()
-  await page.getByRole('button', { name: /我的图库/ }).click()
-  await expect(page.getByText('第一张云端测试图')).toHaveCount(0)
-  await expect(page.getByText('第二张云端测试图')).toBeVisible()
+  await page.getByRole('button', { name: /打开图库/ }).click()
+  const reloadedGalleryDialog = page.getByRole('dialog', { name: '我的图库' })
+  await expect(reloadedGalleryDialog.getByText('第一张云端测试图')).toHaveCount(0)
+  await expect(reloadedGalleryDialog.getByText('第二张云端测试图')).toBeVisible()
 
   await page.evaluate(() => {
     localStorage.removeItem('gptImage2DeletedGalleryIds')
     localStorage.removeItem('gptImage2Gallery')
   })
   await page.reload()
-  await page.getByRole('button', { name: /我的图库/ }).click()
-  await expect(page.getByText('第一张云端测试图')).toHaveCount(0)
-  await expect(page.getByText('第二张云端测试图')).toBeVisible()
+  await page.getByRole('button', { name: /打开图库/ }).click()
+  const resyncedGalleryDialog = page.getByRole('dialog', { name: '我的图库' })
+  await expect(resyncedGalleryDialog.getByText('第一张云端测试图')).toHaveCount(0)
+  await expect(resyncedGalleryDialog.getByText('第二张云端测试图')).toBeVisible()
 
   await page.goto('/profile')
   await expect(page.locator('.profile-stats article').filter({ hasText: '图库作品' }).locator('strong')).toHaveText('1')

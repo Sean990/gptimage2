@@ -12,4 +12,5 @@ tmp-*.png
 tmp-mobile-shots/
 playwright-report/
 test-results/
+artifacts/
 .gstack/

@@ -178,6 +178,41 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
+}
+
+.header-credit-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 1px solid rgba(217, 119, 6, 0.24);
+  border-radius: var(--radius-pill);
+  padding: 6px 10px;
+  color: #92400e;
+  background: linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(254, 243, 199, 0.78));
+  box-shadow: 0 8px 18px rgba(217, 119, 6, 0.1);
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.header-credit-pill svg {
+  width: 15px;
+  height: 15px;
+  color: #d97706;
+}
+
+:root[data-theme='dark'] .header-credit-pill {
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.24);
+  background: rgba(120, 53, 15, 0.28);
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .header-credit-pill svg {
+  color: #fbbf24;
 }
 
 .account-avatar-button {

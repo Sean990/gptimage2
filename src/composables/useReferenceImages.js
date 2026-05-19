@@ -270,6 +270,22 @@ export function useReferenceImages({
     showNotice('已移除 URL 蒙版')
   }
 
+  function clearReferences({ includeMask = true, silent = false } = {}) {
+    uploads.value.forEach(revokeUpload)
+    uploads.value = []
+    imageUrl.value = ''
+    urlInput.value = ''
+
+    if (includeMask) {
+      maskUploads.value.forEach(revokeUpload)
+      maskUploads.value = []
+      maskImageUrl.value = ''
+      maskUrlInput.value = ''
+    }
+
+    if (!silent) showNotice(includeMask ? '已清空素材' : '已清空参考图')
+  }
+
   function addUrlReference() {
     const nextUrl = urlInput.value.trim()
     if (!nextUrl) {
@@ -345,6 +361,7 @@ export function useReferenceImages({
     canAddMask,
     canAddReference,
     canReverse,
+    clearReferences,
     cleanupReferenceObjectUrls,
     getMaskPreviewImages,
     getMaskReference,

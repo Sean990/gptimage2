@@ -1,6 +1,11 @@
 import { compactPayload, mapRecordImages, normalizeGenerationRecord } from './useGenerationPayload'
 import { isGenerationTaskSuccessful } from './useGenerationPolling'
 
+function emitGenerationEvent(name, detail = {}) {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(name, { detail }))
+}
+
 export function useGenerateAction({
   api,
   auth,
@@ -86,6 +91,7 @@ export function useGenerateAction({
       return
     }
     loading.value = true
+    emitGenerationEvent('imgsgen:generation-started', { cost: creditCost.value })
     setLastGenerationNotice?.('')
     output.value = []
     loadingStage.value = '准备提交生成任务'
@@ -118,11 +124,15 @@ export function useGenerateAction({
       const normalizedTask = normalizeGenerationRecord(task, requestPayload)
       gallery.value = mergeGalleryRecords([normalizedTask], gallery.value)
       persistLocalGallery()
+      emitGenerationEvent('imgsgen:gallery-updated', { record: normalizedTask })
       void auth.refreshMe().catch(() => {})
       setLastGenerationNotice?.('任务已提交，无需等待，可以立即开始生成下一张图；稍后可在我的图库查看进度。')
       if (isGenerationTaskSuccessful(task)) {
         output.value = mapRecordImages(normalizedTask)
-        showNotice(normalizedTask.partialFailureMessage || (formState.batchMode.value ? '批量生成完成' : '图像生成完成'))
+        const completionMessage =
+          normalizedTask.partialFailureMessage || (formState.batchMode.value ? '批量生成完成' : '图像生成完成')
+        showNotice(completionMessage)
+        emitGenerationEvent('imgsgen:generation-completed', { message: completionMessage, record: normalizedTask })
       } else {
         showNotice('任务已提交，无需等待，可以继续生成下一张图')
       }
@@ -137,6 +147,7 @@ export function useGenerateAction({
       generationAbortController.value = null
       loading.value = false
       loadingStage.value = '准备提交生成任务'
+      emitGenerationEvent('imgsgen:generation-finished')
       void auth.refreshMe().catch(() => {})
     }
   }

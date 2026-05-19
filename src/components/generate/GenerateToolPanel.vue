@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import {
   Check,
   ChevronDown,
@@ -104,7 +104,6 @@ const {
   reversing,
   selectedAspectRatioLabel,
   selectedBackgroundLabel,
-  selectedBatchCountLabel,
   selectedModel,
   selectedModerationLabel,
   selectedOutputFormatLabel,
@@ -124,6 +123,110 @@ const {
 
 const referenceDragActive = ref(false)
 const maskDragActive = ref(false)
+const generationActionsSlotRef = ref(null)
+const generationActionsRef = ref(null)
+const generationActionsStuck = ref(false)
+const generationActionsRect = ref({ left: 0, width: 0 })
+const generationActionsViewportMargin = 16
+let generationActionsRaf = 0
+let generationActionsObserver = null
+let generationActionsUsesScrollFallback = false
+
+const imageCountOptions = computed(() => [
+  { label: '1 张', value: 1 },
+  ...batchCountOptions
+    .map((item) => ({ label: `${item.value} 张`, value: item.value }))
+    .sort((a, b) => a.value - b.value),
+])
+
+function selectImageCount(count) {
+  if (count === 1) {
+    batchMode.value = false
+    closeSelectMenu()
+    return
+  }
+  batchMode.value = true
+  selectSimpleOption('batchCount', count)
+}
+
+const generationActionsStyle = computed(() =>
+  generationActionsStuck.value
+    ? {
+        left: `${generationActionsRect.value.left}px`,
+        width: `${generationActionsRect.value.width}px`,
+      }
+    : null,
+)
+
+function updateGenerationActionsRect() {
+  const slot = generationActionsSlotRef.value
+  if (!slot) return null
+
+  const slotRect = slot.getBoundingClientRect()
+  generationActionsRect.value = {
+    left: Math.max(12, Math.round(slotRect.left)),
+    width: Math.round(slotRect.width),
+  }
+  return slotRect
+}
+
+function updateGenerationActionsStickiness() {
+  generationActionsRaf = 0
+  if (typeof window === 'undefined') return
+  const slotRect = updateGenerationActionsRect()
+  if (!slotRect || !generationActionsRef.value) return
+
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight
+  const viewportBottom = viewportHeight - generationActionsViewportMargin
+  const isSlotUsable = slotRect.top >= 0 && slotRect.bottom <= viewportBottom
+  generationActionsStuck.value = !isSlotUsable
+}
+
+function queueGenerationActionsUpdate() {
+  if (generationActionsRaf || typeof window === 'undefined') return
+  generationActionsRaf = window.requestAnimationFrame(updateGenerationActionsStickiness)
+}
+
+function observeGenerationActionsSlot() {
+  if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return false
+  const slot = generationActionsSlotRef.value
+  if (!slot) return false
+
+  generationActionsObserver = new IntersectionObserver(
+    ([entry]) => {
+      updateGenerationActionsRect()
+      const isSlotUsable = entry.isIntersecting && entry.intersectionRatio >= 0.999
+      generationActionsStuck.value = !isSlotUsable
+    },
+    {
+      root: null,
+      rootMargin: `0px 0px -${generationActionsViewportMargin}px 0px`,
+      threshold: [0, 0.999, 1],
+    },
+  )
+  generationActionsObserver.observe(slot)
+  return true
+}
+
+onMounted(() => {
+  if (typeof window === 'undefined') return
+  nextTick(() => {
+    updateGenerationActionsStickiness()
+    generationActionsUsesScrollFallback = !observeGenerationActionsSlot()
+    if (generationActionsUsesScrollFallback) {
+      window.addEventListener('scroll', queueGenerationActionsUpdate, { passive: true })
+    }
+    window.addEventListener('resize', queueGenerationActionsUpdate)
+  })
+})
+
+onUnmounted(() => {
+  if (typeof window === 'undefined') return
+  if (generationActionsUsesScrollFallback) window.removeEventListener('scroll', queueGenerationActionsUpdate)
+  window.removeEventListener('resize', queueGenerationActionsUpdate)
+  generationActionsObserver?.disconnect()
+  if (generationActionsRaf) window.cancelAnimationFrame(generationActionsRaf)
+})
 
 function hasFiles(event) {
   const types = event.dataTransfer?.types
@@ -190,8 +293,22 @@ async function onMaskDrop(event) {
   <section class="card tool-panel">
     <div class="mode-switch-card">
       <div class="settings-section-head">
-        <h2>选择模式</h2>
-        <span>{{ batchMode ? `${normalizedImageCount} 张图片` : activeMode.badge }}</span>
+        <div>
+          <h2>生图参数</h2>
+          <span>{{ activeMode.badge }}</span>
+        </div>
+        <div class="image-count-segment" role="group" aria-label="生成图片数量">
+          <button
+            v-for="item in imageCountOptions"
+            :key="item.value"
+            type="button"
+            :class="{ active: normalizedImageCount === item.value }"
+            :aria-pressed="normalizedImageCount === item.value"
+            @click="selectImageCount(item.value)"
+          >
+            {{ item.label }}
+          </button>
+        </div>
       </div>
       <div class="mode-tabs" role="tablist" aria-label="图片生成模式">
         <button
@@ -207,69 +324,6 @@ async function onMaskDrop(event) {
           <span>{{ item.badge }}</span>
         </button>
       </div>
-    </div>
-    <div
-      v-if="batchMode"
-      class="batch-count-card"
-      :class="{ 'menu-open': selectMenuOpen === 'batchCount' }"
-      aria-label="批量生成数量"
-    >
-      <div>
-        <span>生成数量</span>
-        <strong>{{ normalizedImageCount }} 张图片</strong>
-      </div>
-      <div class="model-picker select-picker batch-count-picker">
-        <button
-          id="batch-count"
-          class="model-picker-button select-picker-button"
-          type="button"
-          :aria-label="`生成数量，当前为 ${selectedBatchCountLabel}`"
-          :aria-expanded="selectMenuOpen === 'batchCount'"
-          aria-haspopup="listbox"
-          aria-controls="batch-count-menu"
-          @click.stop="toggleSelectMenu('batchCount')"
-          @keydown.escape="closeSelectMenu"
-        >
-          <span class="model-picker-copy">
-            <span class="model-preview-head">
-              <strong>{{ selectedBatchCountLabel }}</strong>
-            </span>
-          </span>
-          <ChevronDown
-            class="model-picker-arrow"
-            :class="{ open: selectMenuOpen === 'batchCount' }"
-            aria-hidden="true"
-          />
-        </button>
-        <div
-          v-if="selectMenuOpen === 'batchCount'"
-          id="batch-count-menu"
-          class="model-menu select-menu"
-          role="listbox"
-          aria-labelledby="batch-count"
-        >
-          <button
-            v-for="item in batchCountOptions"
-            :key="item.value"
-            class="model-option select-option batch-count-option"
-            :class="{ active: item.value === normalizedImageCount }"
-            type="button"
-            role="option"
-            :aria-selected="item.value === normalizedImageCount"
-            @click.stop="selectSimpleOption('batchCount', item.value)"
-            @keydown.escape="closeSelectMenu"
-          >
-            <span>
-              <span class="model-option-head">
-                <strong>{{ item.label }}</strong>
-                <em v-if="item.recommended">推荐</em>
-              </span>
-            </span>
-            <Check v-if="item.value === normalizedImageCount" aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-      <small>预计消耗 {{ creditCost }} 积分</small>
     </div>
     <div class="settings-grid">
       <div class="field model-field">
@@ -515,6 +569,49 @@ async function onMaskDrop(event) {
           </button>
         </div>
       </div>
+      <div v-if="requiresReference" class="reverse-box reverse-box-inline reverse-feature-card">
+        <div class="reverse-head">
+          <span class="reverse-icon" aria-hidden="true">
+            <Wand2 />
+          </span>
+          <div class="reverse-copy">
+            <h3>
+              <Sparkles aria-hidden="true" />
+              AI 反推提示词
+            </h3>
+            <span>把参考图解析成可继续编辑的结构化 Prompt 草稿</span>
+          </div>
+          <div class="reverse-badges" aria-label="反推能力摘要">
+            <span><Gem aria-hidden="true" />{{ reversePromptCost }} 积分</span>
+            <span><Zap aria-hidden="true" />约 10 秒</span>
+          </div>
+        </div>
+        <div class="reverse-feature-body">
+          <p>上传已授权图片后，系统会整理主体、服装、光线、镜头和氛围描述，并自动写入提示词输入框。</p>
+          <div class="reverse-feature-tags" aria-label="反推内容范围">
+            <span>主体识别</span>
+            <span>服装细节</span>
+            <span>光线镜头</span>
+            <span>氛围风格</span>
+          </div>
+        </div>
+        <div class="reverse-inline-actions">
+          <button
+            class="btn reverse-action"
+            type="button"
+            :disabled="!canReverse || reversing"
+            @click="reversePrompt"
+          >
+            <Loader2 v-if="reversing" class="spinner" aria-hidden="true" />
+            <Wand2 v-else aria-hidden="true" />
+            {{ reversing ? '反推中...' : canReverse ? '生成反推提示词' : '请先上传图片' }}
+          </button>
+          <div class="reverse-meta">
+            <span>输出到提示词框</span>
+            <span>支持继续修改</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="field">
@@ -550,7 +647,9 @@ async function onMaskDrop(event) {
         </div>
         <small>仅根据描述长度、参考图和参数估算，不代表最终生成效果。</small>
       </div>
-      <small class="prompt-tip-line">{{ promptOptimizeCostTip }} · 不确定怎么写？试试下方的「AI 反推提示词」功能</small>
+      <small class="prompt-tip-line"
+        >{{ promptOptimizeCostTip }} · 不确定怎么写？参考图模式可直接使用「AI 反推提示词」。</small
+      >
     </div>
 
     <details class="advanced-panel" :open="advancedOpen" @toggle="advancedOpen = $event.target.open">
@@ -854,58 +953,66 @@ async function onMaskDrop(event) {
       </div>
     </details>
 
-    <div v-if="requiresReference" class="reverse-box">
-      <div class="reverse-head">
-        <span class="reverse-icon" aria-hidden="true">
-          <Wand2 />
-        </span>
-        <div class="reverse-copy">
-          <h3>
-            <Sparkles aria-hidden="true" />
-            AI 反推提示词 <span class="tag">核心功能</span>
-          </h3>
-          <span>上传已授权图片，生成可修改的摄影提示词草稿</span>
-        </div>
-      </div>
-      <p>
-        AI
-        辅助分析参考图，生成包含主体特征、服装细节、光线描述和镜头参数的提示词草稿。上传真人照片前请确认已取得合法授权。
-      </p>
-      <button
-        class="btn btn-soft reverse-action"
-        type="button"
-        :disabled="!canReverse || reversing"
-        @click="reversePrompt"
+    <div ref="generationActionsSlotRef" class="generation-actions-slot">
+      <div
+        ref="generationActionsRef"
+        class="generation-actions"
+        :class="{ 'is-placeholder-hidden': generationActionsStuck }"
+        :aria-hidden="generationActionsStuck"
       >
-        <Loader2 v-if="reversing" class="spinner" aria-hidden="true" />
-        <Wand2 v-else aria-hidden="true" />
-        {{ reversing ? '反推中...' : canReverse ? '生成反推提示词' : '请先上传图片' }}
-      </button>
-      <div class="reverse-meta">
-        <span><Gem aria-hidden="true" />消耗 {{ reversePromptCost }} 积分</span>
-        <span><Zap aria-hidden="true" />约 10 秒</span>
+        <button class="btn btn-primary" type="button" :aria-busy="loading" :disabled="loading" @click="generate">
+          <Sparkles v-if="!loading" aria-hidden="true" />
+          <Loader2 v-else class="spinner" aria-hidden="true" />
+          {{
+            loading
+              ? batchMode
+                ? '批量生成中...'
+                : '正在创建图像...'
+              : batchMode
+                ? `批量生成 ${normalizedImageCount} 张图片`
+                : '开始生成'
+          }}
+        </button>
+        <button v-if="loading" class="btn btn-soft" type="button" @click="stopGeneration">
+          <Square aria-hidden="true" />
+          停止生成
+        </button>
+        <span class="generation-cost-pill">
+          <Gem aria-hidden="true" />
+          本次消耗 {{ creditCost }} 积分
+        </span>
       </div>
     </div>
-
-    <div class="generation-actions">
-      <button class="btn btn-primary" type="button" :aria-busy="loading" :disabled="loading" @click="generate">
-        <Sparkles v-if="!loading" aria-hidden="true" />
-        <Loader2 v-else class="spinner" aria-hidden="true" />
-        {{
-          loading
-            ? batchMode
-              ? '批量生成中...'
-              : '正在创建图像...'
-            : batchMode
-              ? `批量生成 ${normalizedImageCount} 张图片`
-              : '开始生成'
-        }}
-      </button>
-      <button v-if="loading" class="btn btn-soft" type="button" @click="stopGeneration">
-        <Square aria-hidden="true" />
-        停止生成
-      </button>
-    </div>
+    <Teleport to="body">
+      <div
+        v-if="generationActionsStuck"
+        class="generation-actions generation-actions-floating"
+        :style="generationActionsStyle"
+        aria-label="快捷生成操作"
+      >
+        <button class="btn btn-primary" type="button" :aria-busy="loading" :disabled="loading" @click="generate">
+          <Sparkles v-if="!loading" aria-hidden="true" />
+          <Loader2 v-else class="spinner" aria-hidden="true" />
+          {{
+            loading
+              ? batchMode
+                ? '批量生成中...'
+                : '正在创建图像...'
+              : batchMode
+                ? `批量生成 ${normalizedImageCount} 张图片`
+                : '开始生成'
+          }}
+        </button>
+        <button v-if="loading" class="btn btn-soft" type="button" @click="stopGeneration">
+          <Square aria-hidden="true" />
+          停止生成
+        </button>
+        <span class="generation-cost-pill">
+          <Gem aria-hidden="true" />
+          本次消耗 {{ creditCost }} 积分
+        </span>
+      </div>
+    </Teleport>
     <div class="compliance-notice" role="note">
       <strong>提交前请确认素材来源合法，并同意平台进行内容安全审核和 AI 生成标识处理。</strong>
       <span>不得生成违法违规、侵权、虚假新闻、冒用身份、侵犯肖像隐私或危害公共利益的内容。</span>

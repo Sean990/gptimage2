@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import { Images, LogIn, LogOut, Menu, Moon, Sun, X } from 'lucide-vue-next'
+import { Coins, Images, LogIn, LogOut, Menu, Moon, Sun, X } from 'lucide-vue-next'
 import AuthModal from './AuthModal.vue'
 import { resolveApiUrl } from '../services/api'
 import { useAuthStore } from '../services/authStore'
@@ -46,6 +46,7 @@ const isDark = computed(() => theme.value === 'dark')
 const currentUser = computed(() => auth.user.value)
 const currentUserAvatarUrl = computed(() => resolveApiUrl(currentUser.value?.avatarUrl || ''))
 const isAuthenticated = computed(() => auth.isAuthenticated.value)
+const userCredits = computed(() => Number(currentUser.value?.credits || 0))
 const userInitial = computed(() =>
   (currentUser.value?.name || currentUser.value?.email || 'U').trim().slice(0, 1).toUpperCase(),
 )
@@ -335,6 +336,10 @@ onBeforeUnmount(() => {
           <Moon v-else aria-hidden="true" />
         </button>
         <div v-if="isAuthenticated" ref="accountMenuRef" class="account-menu-wrap">
+          <span class="header-credit-pill" aria-label="剩余积分">
+            <Coins aria-hidden="true" />
+            {{ userCredits }} 积分
+          </span>
           <button
             class="account-avatar-button"
             type="button"

@@ -1,6 +1,6 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { Copy, Download, Eye, ImagePlus, Layers3 } from 'lucide-vue-next'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ChevronLeft, ChevronRight, Copy, Download, Eye, ImagePlus, Layers3, Loader2 } from 'lucide-vue-next'
 
 const props = defineProps({
   task: {
@@ -13,10 +13,17 @@ const {
   activeMode,
   activeModelLabel,
   batchMode,
+  canPreviewGalleryRecord,
   copyCurrentPrompt,
   downloadImage,
+  formatGalleryDate,
+  gallery,
+  galleryRecordCover,
+  galleryRecordMeta,
+  galleryRecordStatusLabel,
   generationSubmittedTip,
   gptLoadingDots,
+  isGalleryRecordPending,
   loading,
   loadingHint,
   loadingStatusText,
@@ -24,6 +31,7 @@ const {
   loadingTitle,
   loadingVariant,
   normalizedImageCount,
+  openGalleryImage,
   openImagePreview,
   output,
   outputAspectStyle,
@@ -35,11 +43,34 @@ const {
 } = props.task
 
 const prefersLightweightLoading = ref(false)
+const recentStartIndex = ref(0)
+const recentTaskLimit = 5
 let lightweightLoadingMedia = null
+
+const recentTasks = computed(() => gallery.value.slice(0, 20))
+const maxRecentStartIndex = computed(() => Math.max(0, recentTasks.value.length - recentTaskLimit))
+const visibleRecentTasks = computed(() =>
+  recentTasks.value.slice(recentStartIndex.value, recentStartIndex.value + recentTaskLimit),
+)
+const canSlideRecentPrev = computed(() => recentStartIndex.value > 0)
+const canSlideRecentNext = computed(() => recentStartIndex.value < maxRecentStartIndex.value)
 
 function syncLightweightLoadingPreference(event) {
   prefersLightweightLoading.value = Boolean(event.matches)
 }
+
+function slideRecentTasks(direction) {
+  recentStartIndex.value = Math.min(
+    maxRecentStartIndex.value,
+    Math.max(0, recentStartIndex.value + direction * recentTaskLimit),
+  )
+}
+
+watch(recentTasks, () => {
+  if (recentStartIndex.value > maxRecentStartIndex.value) {
+    recentStartIndex.value = maxRecentStartIndex.value
+  }
+})
 
 onMounted(() => {
   lightweightLoadingMedia = window.matchMedia('(max-width: 820px), (prefers-reduced-motion: reduce)')
@@ -197,6 +228,65 @@ onBeforeUnmount(() => {
           <strong>{{ batchMode ? '批量生成的图片会显示在这里' : '生成的图片会显示在这里' }}</strong>
           <span>{{ batchMode ? '选择数量并点击“批量生成”' : '输入提示词并点击“开始生成”' }}</span>
         </div>
+      </div>
+    </div>
+
+    <div v-if="recentTasks.length" class="recent-task-strip" aria-label="最近生图任务">
+      <div class="recent-task-head">
+        <div>
+          <strong>最近任务</strong>
+          <span>固定显示 5 个，可左右切换</span>
+        </div>
+        <div class="recent-task-controls">
+          <button
+            class="icon-button"
+            type="button"
+            aria-label="查看上一组最近任务"
+            :disabled="!canSlideRecentPrev"
+            @click="slideRecentTasks(-1)"
+          >
+            <ChevronLeft aria-hidden="true" />
+          </button>
+          <button
+            class="icon-button"
+            type="button"
+            aria-label="查看更多最近任务"
+            :disabled="!canSlideRecentNext"
+            @click="slideRecentTasks(1)"
+          >
+            <ChevronRight aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <div class="recent-task-list">
+        <article v-for="record in visibleRecentTasks" :key="record.id" class="recent-task-card">
+          <button
+            class="recent-task-cover"
+            type="button"
+            :disabled="!canPreviewGalleryRecord(record)"
+            :aria-label="
+              canPreviewGalleryRecord(record) ? `预览最近任务 ${record.prompt || ''}` : galleryRecordStatusLabel(record)
+            "
+            @click="openGalleryImage(record)"
+          >
+            <img
+              v-if="canPreviewGalleryRecord(record)"
+              :src="galleryRecordCover(record)"
+              :alt="record.prompt || '最近任务图片'"
+            />
+            <span v-else>
+              <Loader2 v-if="isGalleryRecordPending(record)" class="spinner" aria-hidden="true" />
+              <ImagePlus v-else aria-hidden="true" />
+            </span>
+            <em :class="{ pending: isGalleryRecordPending(record) }">{{
+              galleryRecordStatusLabel(record) || '已记录'
+            }}</em>
+          </button>
+          <div class="recent-task-copy">
+            <strong>{{ record.prompt || '无提示词记录' }}</strong>
+            <span>{{ formatGalleryDate(record.createdAt) }} · {{ galleryRecordMeta(record) }}</span>
+          </div>
+        </article>
       </div>
     </div>
   </aside>

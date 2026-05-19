@@ -37,7 +37,7 @@ async function gotoAndScan(page, path, headingPattern) {
 
 const pageScenarios = [
   ['/', /AI 图片生成与编辑工作台/],
-  ['/generate', /ImgsGen 图片生成/],
+  ['/generate', /生图参数/],
   ['/showcase', /ImgsGen 案例库/],
   ['/prompt-optimizer', /AI 提示词优化器/],
   ['/pricing', /ImgsGen 积分方案/],
@@ -58,14 +58,14 @@ for (const [path, headingPattern] of pageScenarios) {
 
 test('登录弹窗没有严重可访问性问题', async ({ page }) => {
   await page.goto('/generate')
-  await page.getByRole('button', { name: /登录 \/ 注册/ }).click()
+  await page.getByRole('button', { name: '登录' }).click()
   await expect(page.getByRole('dialog', { name: /登录/ })).toBeVisible()
   await expectNoBlockingA11yViolations(page, '登录弹窗')
 })
 
 test('图库弹窗没有严重可访问性问题', async ({ page }) => {
   await page.goto('/generate')
-  await page.getByRole('button', { name: /我的图库/ }).click()
+  await page.getByRole('button', { name: /打开图库/ }).click()
   await expect(page.getByRole('dialog', { name: '我的图库' })).toBeVisible()
   await expectNoBlockingA11yViolations(page, '图库弹窗')
 })

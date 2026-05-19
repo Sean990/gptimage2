@@ -12,17 +12,20 @@ test('首页预取后可以进入生成页并使用基础控件', async ({ page 
 
   await page.getByRole('link', { name: /开始生成图片/ }).click()
   await expect(page).toHaveURL(/\/generate/)
-  await expect(page.getByRole('heading', { name: /ImgsGen 图片生成/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: '生图参数' })).toBeVisible()
 
-  await page.getByRole('button', { name: /需要多版方案/ }).click()
-  await expect(page.getByRole('button', { name: /返回单张生成/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: '1 张', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  const fourImagesButton = page.getByRole('button', { name: '4 张', exact: true })
+  await fourImagesButton.click()
+  await expect(fourImagesButton).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: /批量生成 4 张图片/ })).toBeVisible()
 
   await page.getByRole('tab', { name: /图生图/ }).click()
   await page.getByPlaceholder('输入图片 URL').fill('https://example.com/reference.png')
   await page.getByRole('button', { name: '加入图片 URL' }).click()
   await expect(page.getByAltText('URL 参考图')).toBeVisible()
 
-  await page.getByRole('button', { name: /我的图库/ }).click()
+  await page.getByRole('button', { name: /打开图库/ }).click()
   await expect(page.getByRole('heading', { name: '我的图库' })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('heading', { name: '我的图库' })).toBeHidden()
@@ -30,7 +33,7 @@ test('首页预取后可以进入生成页并使用基础控件', async ({ page 
 
 test('登录弹窗可以通过全局触发打开并把焦点归还给触发按钮', async ({ page }) => {
   await page.goto('/generate')
-  const loginButton = page.getByRole('button', { name: /登录 \/ 注册/ })
+  const loginButton = page.getByRole('button', { name: '登录' })
 
   await loginButton.click()
   await expect(page.getByRole('heading', { name: /登录/ })).toBeVisible()
@@ -52,7 +55,7 @@ test('邀请链接会绑定邀请码并在注册弹窗中锁定展示', async ({
 
   await page.keyboard.press('Escape')
   await page.goto('/generate')
-  await page.getByRole('button', { name: /登录 \/ 注册/ }).click()
+  await page.getByRole('button', { name: '登录' }).click()
   await page.getByRole('tab', { name: '注册' }).click()
 
   await expect(page.getByLabel('推荐邀请码')).toHaveValue('INVITE-2026')

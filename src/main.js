@@ -196,23 +196,26 @@ export const createApp = ViteSSG(
     if (isClient) {
       initWebVitals()
 
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('in-view')
-              observer.unobserve(entry.target)
-              // 动画完成后释放 will-change，减少不必要的图层占用
-              const delay = parseFloat(entry.target.style.transitionDelay) || 0
-              const duration = 800 + delay
-              setTimeout(() => {
-                entry.target.style.willChange = 'auto'
-              }, duration + 100)
-            }
-          })
-        },
-        { threshold: 0.08 },
-      )
+      const observer =
+        typeof IntersectionObserver === 'undefined'
+          ? null
+          : new IntersectionObserver(
+              (entries) => {
+                entries.forEach((entry) => {
+                  if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view')
+                    observer.unobserve(entry.target)
+                    // 动画完成后释放 will-change，减少不必要的图层占用
+                    const delay = parseFloat(entry.target.style.transitionDelay) || 0
+                    const duration = 800 + delay
+                    setTimeout(() => {
+                      entry.target.style.willChange = 'auto'
+                    }, duration + 100)
+                  }
+                })
+              },
+              { threshold: 0.08 },
+            )
 
       Object.assign(fadeUpDirective, {
         mounted(el, binding) {
@@ -221,12 +224,17 @@ export const createApp = ViteSSG(
           if (Number.isFinite(delay)) {
             el.style.transitionDelay = `${delay}ms`
           }
+          if (!observer) {
+            el.classList.add('in-view')
+            el.style.willChange = 'auto'
+            return
+          }
           setTimeout(() => {
             observer.observe(el)
           }, 50)
         },
         unmounted(el) {
-          observer.unobserve(el)
+          observer?.unobserve(el)
           el.style.transitionDelay = ''
           el.style.willChange = ''
         },
