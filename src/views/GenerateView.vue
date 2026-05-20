@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Lightbulb } from 'lucide-vue-next'
 import Toast from '../components/Toast.vue'
 import GalleryDrawer from '../components/generate/GalleryDrawer.vue'
@@ -13,16 +13,23 @@ import '../assets/generate.css'
 
 const task = useGenerationTask()
 
-const {
-  batchMode,
-  footerTipText,
-  notice,
-  output,
-} = task
+const { batchMode, footerTipText, notice, output } = task
 
 const outputPanelRef = ref(null)
 const activeTool = ref('generate')
 const isGenerateWorkspace = computed(() => activeTool.value === 'generate')
+const useGalleryRecordEventName = 'imgsgen:use-gallery-record'
+const galleryTask = {
+  ...task,
+  useGalleryRecord(record) {
+    activeTool.value = 'generate'
+    task.useGalleryRecord(record)
+  },
+}
+
+function switchToGenerateWorkspace() {
+  activeTool.value = 'generate'
+}
 
 function scrollOutputIntoView() {
   if (!window.matchMedia('(max-width: 820px)').matches) return
@@ -38,6 +45,14 @@ watch(
     if (previousCount === 0 && nextCount > 0) scrollOutputIntoView()
   },
 )
+
+onMounted(() => {
+  window.addEventListener(useGalleryRecordEventName, switchToGenerateWorkspace)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener(useGalleryRecordEventName, switchToGenerateWorkspace)
+})
 </script>
 
 <template>
@@ -65,7 +80,7 @@ watch(
       </div>
     </section>
 
-    <GalleryDrawer :task="task" />
+    <GalleryDrawer :task="galleryTask" />
     <ImagePreviewModal :task="task" />
 
     <Toast :message="notice" />

@@ -105,8 +105,8 @@
 
 .showcase-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
 }
 
 .showcase-load-more {
@@ -257,6 +257,7 @@
   width: min(1120px, 100%);
   max-height: min(820px, calc(100vh - 48px));
   overflow: hidden;
+  animation: modal-zoom-in var(--dur-3) var(--ease-spring) both;
 }
 
 .prompt-detail-modal .modal-head {
@@ -280,6 +281,17 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface-soft);
+  box-shadow:
+    var(--shadow-sm),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition:
+    border-color var(--dur-3) var(--ease-standard),
+    box-shadow var(--dur-3) var(--ease-standard);
+}
+
+.prompt-detail-image:hover {
+  border-color: var(--primary-strong);
+  box-shadow: var(--shadow-md);
 }
 
 .prompt-detail-image img {
@@ -288,6 +300,11 @@
   height: 100%;
   max-height: 620px;
   object-fit: contain;
+  transition: transform var(--dur-4) var(--ease-standard);
+}
+
+.prompt-detail-image:hover img {
+  transform: scale(1.025);
 }
 
 .prompt-detail-body {
@@ -316,6 +333,7 @@
   border-left: 3px solid var(--warn);
   padding-left: 12px;
   font-size: var(--fs-sm);
+  margin-bottom: 16px;
 }
 
 .prompt-detail-columns {
@@ -566,5 +584,16 @@
   .showcase-load-more {
     margin-top: 16px;
     padding: 14px;
+  }
+}
+
+@keyframes modal-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }

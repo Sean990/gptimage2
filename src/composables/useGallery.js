@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { canReuseGenerationRecord, getGenerationRecordTypeLabel } from './useGenerationPayload'
 
 const galleryStorageKey = 'gptImage2Gallery'
 const deletedGalleryStorageKey = 'gptImage2DeletedGalleryIds'
@@ -304,8 +305,12 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     return Array.isArray(record.images) && record.images.length > 0
   }
 
+  function canReuseGalleryRecord(record) {
+    return canReuseGenerationRecord(record)
+  }
+
   function galleryRecordMode(record) {
-    return modes?.find((item) => item.value === record.mode)?.label || record.mode || '文生图'
+    return getGenerationRecordTypeLabel(record, modes)
   }
 
   function galleryRecordMeta(record) {
@@ -318,11 +323,13 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
         : successCount
           ? `${successCount} 张`
           : galleryRecordStatusLabel(record)
-    return [galleryRecordMode(record), record.resolution, record.ratio, imageCountText].filter(Boolean).join(' · ')
+    const modeText = canReuseGalleryRecord(record) ? galleryRecordMode(record) : ''
+    return [modeText, record.resolution, record.ratio, imageCountText].filter(Boolean).join(' · ')
   }
 
   return {
     canPreviewGalleryRecord,
+    canReuseGalleryRecord,
     formatGalleryDate,
     formatGallerySyncTime,
     gallery,

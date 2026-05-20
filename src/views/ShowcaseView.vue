@@ -328,7 +328,8 @@ onMounted(loadLocalLibrary)
           <div class="section-title align-left" style="margin-bottom: 18px">
             <h2>案例</h2>
             <p>
-              匹配 {{ filteredItems.length }} 个案例，已加载 {{ shownCaseCount }} 个。先看高相关内容，继续浏览时再按需展开。
+              匹配 {{ filteredItems.length }} 个案例，已加载
+              {{ shownCaseCount }} 个。先看高相关内容，继续浏览时再按需展开。
             </p>
           </div>
           <EmptyState v-if="loading" title="正在加载本地 Prompt 内容库" description="案例和模板来自项目内置快照。">

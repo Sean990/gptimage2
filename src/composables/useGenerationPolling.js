@@ -42,13 +42,20 @@ export function useGenerationPolling({
   setGallerySyncMessage,
   showNotice,
 }) {
-  let taskPollTimer = null
+  const taskPollTimers = new Map()
   let galleryRefreshTimer = null
 
-  function clearTaskPollTimer() {
-    if (!taskPollTimer) return
-    window.clearTimeout(taskPollTimer)
-    taskPollTimer = null
+  function clearTaskPollTimer(taskId = '') {
+    if (taskId) {
+      const timer = taskPollTimers.get(taskId)
+      if (!timer) return
+      window.clearTimeout(timer)
+      taskPollTimers.delete(taskId)
+      return
+    }
+
+    taskPollTimers.forEach((timer) => window.clearTimeout(timer))
+    taskPollTimers.clear()
   }
 
   async function fetchQueuePosition(taskId) {
@@ -64,7 +71,7 @@ export function useGenerationPolling({
   }
 
   async function waitForGenerationTask(taskId) {
-    clearTaskPollTimer()
+    clearTaskPollTimer(taskId)
     let pollInterval = 1500
     let consecutiveFailures = 0
     const MAX_FAILURES = 5
@@ -81,9 +88,9 @@ export function useGenerationPolling({
           pollInterval = 1500
 
           // 如果任务在排队，更新队列位置信息
-          if (task.status === 'queued' && queuePosition) {
+          if (task.status === 'queued' && queuePosition && activeTaskId.value === taskId) {
             await fetchQueuePosition(taskId)
-          } else if (queuePosition) {
+          } else if (queuePosition && activeTaskId.value === taskId) {
             queuePosition.value = null
           }
 
@@ -95,18 +102,20 @@ export function useGenerationPolling({
             saving: '正在保存图片',
             cancel_requested: '正在取消任务',
           }[task.status]
-          loadingStage.value = statusText || '后台生成中'
+          if (activeTaskId.value === taskId) {
+            loadingStage.value = statusText || '后台生成中'
+          }
 
           if (isGenerationTaskSuccessful(task)) {
-            clearTaskPollTimer()
-            if (queuePosition) queuePosition.value = null
+            clearTaskPollTimer(taskId)
+            if (queuePosition && activeTaskId.value === taskId) queuePosition.value = null
             if (galleryOpen.value) syncCloudGallery({ silent: true })
             resolve(task)
             return
           }
           if (['failed', 'canceled'].includes(task.status)) {
-            clearTaskPollTimer()
-            if (queuePosition) queuePosition.value = null
+            clearTaskPollTimer(taskId)
+            if (queuePosition && activeTaskId.value === taskId) queuePosition.value = null
             persistLocalGallery()
             reject(
               new Error(
@@ -118,17 +127,17 @@ export function useGenerationPolling({
             )
             return
           }
-          taskPollTimer = window.setTimeout(poll, pollInterval)
+          taskPollTimers.set(taskId, window.setTimeout(poll, pollInterval))
         } catch (error) {
           consecutiveFailures++
           console.warn('[生成任务轮询失败]', consecutiveFailures, '/', MAX_FAILURES, error)
           if (consecutiveFailures >= MAX_FAILURES) {
-            clearTaskPollTimer()
+            clearTaskPollTimer(taskId)
             reject(new Error('生成任务轮询失败次数过多，请检查网络后重试'))
             return
           }
           pollInterval = Math.min(pollInterval * 1.6, MAX_INTERVAL)
-          taskPollTimer = window.setTimeout(poll, pollInterval)
+          taskPollTimers.set(taskId, window.setTimeout(poll, pollInterval))
         }
       }
       poll()
@@ -245,7 +254,7 @@ export function useGenerationPolling({
     scheduleGalleryRefresh,
     stopGeneration,
     syncCloudGallery,
-    taskPollTimer,
+    taskPollTimers,
     waitForGenerationTask,
   }
 }

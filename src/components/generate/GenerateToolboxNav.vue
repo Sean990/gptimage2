@@ -1,5 +1,5 @@
 <script setup>
-import { ArrowRight, Expand, ImagePlus, Maximize2, Scissors } from 'lucide-vue-next'
+import { ArrowRight, Eraser, Expand, ImagePlus, Maximize2, Scissors } from 'lucide-vue-next'
 
 const props = defineProps({
   activeTool: {
@@ -34,10 +34,17 @@ const toolboxItems = [
   },
   {
     key: 'cutout',
-    title: '一键抠图',
+    title: '智能抠图',
     label: '主体分离',
     description: '透明背景输出',
     icon: Scissors,
+  },
+  {
+    key: 'erase',
+    title: '一键消除',
+    label: '瑕疵清理',
+    description: '移除多余元素',
+    icon: Eraser,
   },
 ]
 

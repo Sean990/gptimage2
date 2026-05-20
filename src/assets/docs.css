@@ -14,21 +14,44 @@
 .side-nav a,
 .side-nav button {
   display: flex;
+  position: relative;
   width: 100%;
   border: 0;
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
   color: var(--muted);
   background: transparent;
   text-align: left;
-  font-weight: 800;
+  font-weight: var(--fw-semibold);
+  transition:
+    color var(--dur-2) var(--ease-standard),
+    background-color var(--dur-2) var(--ease-standard),
+    padding-left var(--dur-2) var(--ease-standard);
 }
 
 .side-nav a:hover,
-.side-nav button:hover,
+.side-nav button:hover {
+  color: var(--text-strong);
+  background: var(--surface-soft);
+  padding-left: 18px;
+}
+
 .side-nav .active {
   color: var(--primary-strong);
-  background: rgba(37, 99, 235, 0.08);
+  background: var(--primary-soft);
+  padding-left: 18px;
+}
+
+.side-nav .active::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3.5px;
+  height: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
 }
 
 .side-nav {
@@ -56,24 +79,31 @@
 }
 
 .doc-section h2 {
-  margin: 0 0 12px;
+  margin: 0 0 14px;
+  color: var(--text-strong);
 }
 
 .doc-section p,
 .doc-section li {
   color: var(--muted);
-  line-height: 1.8;
+  line-height: 1.9;
+  margin-bottom: 14px;
+}
+
+.doc-section p:last-child,
+.doc-section li:last-child {
+  margin-bottom: 0;
 }
 
 .code-box {
   overflow-x: auto;
-  border: 1px solid #dbeafe;
-  border-radius: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
   padding: 16px;
-  color: #1e3a8a;
-  background: #eff6ff;
-  font-family: 'JetBrains Mono', Consolas, monospace;
-  font-size: 14px;
+  color: var(--primary-strong);
+  background: var(--primary-soft);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--fs-sm);
   line-height: 1.7;
 }
 
@@ -95,6 +125,16 @@
     flex: 0 0 auto;
     width: auto;
     white-space: nowrap;
+  }
+
+  .side-nav a:hover,
+  .side-nav button:hover,
+  .side-nav .active {
+    padding-left: 14px;
+  }
+
+  .side-nav .active::before {
+    display: none;
   }
 }
 

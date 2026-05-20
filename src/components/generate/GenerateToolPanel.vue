@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   Check,
   ChevronDown,
@@ -16,6 +16,8 @@ import {
   X,
   Zap,
 } from 'lucide-vue-next'
+import FloatingActionBar from './FloatingActionBar.vue'
+import OptionPicker from './OptionPicker.vue'
 
 const props = defineProps({
   task: {
@@ -74,6 +76,7 @@ const {
   outputCompression,
   outputFormat,
   outputFormats,
+  outputLoading,
   processMaskFiles,
   processReferenceFiles,
   prompt,
@@ -102,35 +105,20 @@ const {
   reversePrompt,
   reversePromptCost,
   reversing,
-  selectedAspectRatioLabel,
-  selectedBackgroundLabel,
   selectedModel,
-  selectedModerationLabel,
-  selectedOutputFormatLabel,
-  selectedQualityLabel,
-  selectedResolutionLabel,
-  selectMenuOpen,
   selectModel,
   selectSimpleOption,
   showReferenceSection,
   stopGeneration,
   supportsOutputCompression,
   toggleModelMenu,
-  toggleSelectMenu,
   uploads,
   urlInput,
 } = props.task
 
 const referenceDragActive = ref(false)
 const maskDragActive = ref(false)
-const generationActionsSlotRef = ref(null)
-const generationActionsRef = ref(null)
-const generationActionsStuck = ref(false)
-const generationActionsRect = ref({ left: 0, width: 0 })
-const generationActionsViewportMargin = 16
-let generationActionsRaf = 0
-let generationActionsObserver = null
-let generationActionsUsesScrollFallback = false
+const countDropdownOpen = ref('')
 
 const imageCountOptions = computed(() => [
   { label: '1 张', value: 1 },
@@ -149,83 +137,33 @@ function selectImageCount(count) {
   selectSimpleOption('batchCount', count)
 }
 
-const generationActionsStyle = computed(() =>
-  generationActionsStuck.value
-    ? {
-        left: `${generationActionsRect.value.left}px`,
-        width: `${generationActionsRect.value.width}px`,
-      }
-    : null,
-)
-
-function updateGenerationActionsRect() {
-  const slot = generationActionsSlotRef.value
-  if (!slot) return null
-
-  const slotRect = slot.getBoundingClientRect()
-  generationActionsRect.value = {
-    left: Math.max(12, Math.round(slotRect.left)),
-    width: Math.round(slotRect.width),
-  }
-  return slotRect
+function isCountDropdownOpen(key) {
+  return countDropdownOpen.value === key
 }
 
-function updateGenerationActionsStickiness() {
-  generationActionsRaf = 0
-  if (typeof window === 'undefined') return
-  const slotRect = updateGenerationActionsRect()
-  if (!slotRect || !generationActionsRef.value) return
-
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight
-  const viewportBottom = viewportHeight - generationActionsViewportMargin
-  const isSlotUsable = slotRect.top >= 0 && slotRect.bottom <= viewportBottom
-  generationActionsStuck.value = !isSlotUsable
+function toggleCountDropdown(key) {
+  countDropdownOpen.value = countDropdownOpen.value === key ? '' : key
 }
 
-function queueGenerationActionsUpdate() {
-  if (generationActionsRaf || typeof window === 'undefined') return
-  generationActionsRaf = window.requestAnimationFrame(updateGenerationActionsStickiness)
+function closeCountDropdown() {
+  countDropdownOpen.value = ''
 }
 
-function observeGenerationActionsSlot() {
-  if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return false
-  const slot = generationActionsSlotRef.value
-  if (!slot) return false
+function handleSelectImageCount(count) {
+  selectImageCount(count)
+  closeCountDropdown()
+}
 
-  generationActionsObserver = new IntersectionObserver(
-    ([entry]) => {
-      updateGenerationActionsRect()
-      const isSlotUsable = entry.isIntersecting && entry.intersectionRatio >= 0.999
-      generationActionsStuck.value = !isSlotUsable
-    },
-    {
-      root: null,
-      rootMargin: `0px 0px -${generationActionsViewportMargin}px 0px`,
-      threshold: [0, 0.999, 1],
-    },
-  )
-  generationActionsObserver.observe(slot)
-  return true
+function getCountOptionHint(item) {
+  return item.value === normalizedImageCount.value ? '当前张数' : '切换张数'
 }
 
 onMounted(() => {
-  if (typeof window === 'undefined') return
-  nextTick(() => {
-    updateGenerationActionsStickiness()
-    generationActionsUsesScrollFallback = !observeGenerationActionsSlot()
-    if (generationActionsUsesScrollFallback) {
-      window.addEventListener('scroll', queueGenerationActionsUpdate, { passive: true })
-    }
-    window.addEventListener('resize', queueGenerationActionsUpdate)
-  })
+  document.addEventListener('click', closeCountDropdown)
 })
 
 onUnmounted(() => {
-  if (typeof window === 'undefined') return
-  if (generationActionsUsesScrollFallback) window.removeEventListener('scroll', queueGenerationActionsUpdate)
-  window.removeEventListener('resize', queueGenerationActionsUpdate)
-  generationActionsObserver?.disconnect()
-  if (generationActionsRaf) window.cancelAnimationFrame(generationActionsRaf)
+  document.removeEventListener('click', closeCountDropdown)
 })
 
 function hasFiles(event) {
@@ -287,6 +225,7 @@ async function onMaskDrop(event) {
   if (!files || !files.length) return
   await processMaskFiles(files)
 }
+
 </script>
 
 <template>
@@ -325,6 +264,7 @@ async function onMaskDrop(event) {
         </button>
       </div>
     </div>
+
     <div class="settings-grid">
       <div class="field model-field">
         <label for="model">模型选择</label>
@@ -371,113 +311,21 @@ async function onMaskDrop(event) {
           </div>
         </div>
       </div>
-      <div class="field">
-        <label for="aspect-ratio">画幅比例</label>
-        <div class="model-picker select-picker">
-          <button
-            id="aspect-ratio"
-            class="model-picker-button select-picker-button"
-            type="button"
-            :aria-label="`画幅比例，当前为 ${selectedAspectRatioLabel}`"
-            :aria-expanded="selectMenuOpen === 'aspectRatio'"
-            aria-haspopup="listbox"
-            aria-controls="aspect-ratio-menu"
-            @click.stop="toggleSelectMenu('aspectRatio')"
-            @keydown.escape="closeSelectMenu"
-          >
-            <span class="model-picker-copy">
-              <span class="model-preview-head">
-                <strong>{{ selectedAspectRatioLabel }}</strong>
-              </span>
-            </span>
-            <ChevronDown
-              class="model-picker-arrow"
-              :class="{ open: selectMenuOpen === 'aspectRatio' }"
-              aria-hidden="true"
-            />
-          </button>
-          <div
-            v-if="selectMenuOpen === 'aspectRatio'"
-            id="aspect-ratio-menu"
-            class="model-menu select-menu"
-            role="listbox"
-            aria-labelledby="aspect-ratio"
-          >
-            <button
-              v-for="item in aspectRatios"
-              :key="item.value"
-              class="model-option select-option"
-              :class="{ active: item.value === aspectRatio }"
-              type="button"
-              role="option"
-              :aria-selected="item.value === aspectRatio"
-              @click.stop="selectSimpleOption('aspectRatio', item.value)"
-              @keydown.escape="closeSelectMenu"
-            >
-              <span>
-                <span class="model-option-head">
-                  <strong>{{ item.label }}</strong>
-                </span>
-              </span>
-              <Check v-if="item.value === aspectRatio" aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="field">
-        <label for="resolution">分辨率</label>
-        <div class="model-picker select-picker">
-          <button
-            id="resolution"
-            class="model-picker-button select-picker-button"
-            type="button"
-            :aria-label="`分辨率，当前为 ${selectedResolutionLabel}`"
-            :aria-expanded="selectMenuOpen === 'resolution'"
-            aria-haspopup="listbox"
-            aria-controls="resolution-menu"
-            @click.stop="toggleSelectMenu('resolution')"
-            @keydown.escape="closeSelectMenu"
-          >
-            <span class="model-picker-copy">
-              <span class="model-preview-head">
-                <strong>{{ selectedResolutionLabel }}</strong>
-              </span>
-            </span>
-            <ChevronDown
-              class="model-picker-arrow"
-              :class="{ open: selectMenuOpen === 'resolution' }"
-              aria-hidden="true"
-            />
-          </button>
-          <div
-            v-if="selectMenuOpen === 'resolution'"
-            id="resolution-menu"
-            class="model-menu select-menu"
-            role="listbox"
-            aria-labelledby="resolution"
-          >
-            <button
-              v-for="item in resolutionOptions"
-              :key="item.value"
-              class="model-option select-option"
-              :class="{ active: item.value === resolution }"
-              type="button"
-              role="option"
-              :aria-selected="item.value === resolution"
-              @click.stop="selectSimpleOption('resolution', item.value)"
-              @keydown.escape="closeSelectMenu"
-            >
-              <span>
-                <span class="model-option-head">
-                  <strong>{{ item.label }}</strong>
-                </span>
-              </span>
-              <Check v-if="item.value === resolution" aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-        <small v-if="resolution !== 'auto'">{{ resolutionLabel }}</small>
-      </div>
+      <OptionPicker
+        id="aspect-ratio"
+        label="画幅比例"
+        :options="aspectRatios"
+        :model-value="aspectRatio"
+        @update:model-value="selectSimpleOption('aspectRatio', $event)"
+      />
+      <OptionPicker
+        id="resolution"
+        label="分辨率"
+        :options="resolutionOptions"
+        :model-value="resolution"
+        :hint="resolution !== 'auto' ? resolutionLabel : ''"
+        @update:model-value="selectSimpleOption('resolution', $event)"
+      />
     </div>
 
     <div v-if="showReferenceSection" class="field reference-section">
@@ -581,10 +429,6 @@ async function onMaskDrop(event) {
             </h3>
             <span>把参考图解析成可继续编辑的结构化 Prompt 草稿</span>
           </div>
-          <div class="reverse-badges" aria-label="反推能力摘要">
-            <span><Gem aria-hidden="true" />{{ reversePromptCost }} 积分</span>
-            <span><Zap aria-hidden="true" />约 10 秒</span>
-          </div>
         </div>
         <div class="reverse-feature-body">
           <p>上传已授权图片后，系统会整理主体、服装、光线、镜头和氛围描述，并自动写入提示词输入框。</p>
@@ -596,19 +440,14 @@ async function onMaskDrop(event) {
           </div>
         </div>
         <div class="reverse-inline-actions">
-          <button
-            class="btn reverse-action"
-            type="button"
-            :disabled="!canReverse || reversing"
-            @click="reversePrompt"
-          >
+          <button class="btn reverse-action" type="button" :disabled="!canReverse || reversing" @click="reversePrompt">
             <Loader2 v-if="reversing" class="spinner" aria-hidden="true" />
             <Wand2 v-else aria-hidden="true" />
             {{ reversing ? '反推中...' : canReverse ? '生成反推提示词' : '请先上传图片' }}
           </button>
           <div class="reverse-meta">
-            <span>输出到提示词框</span>
-            <span>支持继续修改</span>
+            <span><Gem aria-hidden="true" />{{ reversePromptCost }} 积分</span>
+            <span><Zap aria-hidden="true" />约 10 秒</span>
           </div>
         </div>
       </div>
@@ -659,218 +498,34 @@ async function onMaskDrop(event) {
         <ChevronDown aria-hidden="true" />
       </summary>
       <div class="advanced-grid">
-        <div class="field">
-          <label for="quality">质量</label>
-          <div class="model-picker select-picker">
-            <button
-              id="quality"
-              class="model-picker-button select-picker-button"
-              type="button"
-              :aria-label="`质量，当前为 ${selectedQualityLabel}`"
-              :aria-expanded="selectMenuOpen === 'quality'"
-              aria-haspopup="listbox"
-              aria-controls="quality-menu"
-              @click.stop="toggleSelectMenu('quality')"
-              @keydown.escape="closeSelectMenu"
-            >
-              <span class="model-picker-copy">
-                <span class="model-preview-head">
-                  <strong>{{ selectedQualityLabel }}</strong>
-                </span>
-              </span>
-              <ChevronDown
-                class="model-picker-arrow"
-                :class="{ open: selectMenuOpen === 'quality' }"
-                aria-hidden="true"
-              />
-            </button>
-            <div
-              v-if="selectMenuOpen === 'quality'"
-              id="quality-menu"
-              class="model-menu select-menu"
-              role="listbox"
-              aria-labelledby="quality"
-            >
-              <button
-                v-for="item in qualities"
-                :key="item.value"
-                class="model-option select-option"
-                :class="{ active: item.value === quality }"
-                type="button"
-                role="option"
-                :aria-selected="item.value === quality"
-                @click.stop="selectSimpleOption('quality', item.value)"
-                @keydown.escape="closeSelectMenu"
-              >
-                <span>
-                  <span class="model-option-head">
-                    <strong>{{ item.label }}</strong>
-                  </span>
-                </span>
-                <Check v-if="item.value === quality" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="field">
-          <label for="output-format">输出格式</label>
-          <div class="model-picker select-picker">
-            <button
-              id="output-format"
-              class="model-picker-button select-picker-button"
-              type="button"
-              :aria-label="`输出格式，当前为 ${selectedOutputFormatLabel}`"
-              :aria-expanded="selectMenuOpen === 'outputFormat'"
-              aria-haspopup="listbox"
-              aria-controls="output-format-menu"
-              @click.stop="toggleSelectMenu('outputFormat')"
-              @keydown.escape="closeSelectMenu"
-            >
-              <span class="model-picker-copy">
-                <span class="model-preview-head">
-                  <strong>{{ selectedOutputFormatLabel }}</strong>
-                </span>
-              </span>
-              <ChevronDown
-                class="model-picker-arrow"
-                :class="{ open: selectMenuOpen === 'outputFormat' }"
-                aria-hidden="true"
-              />
-            </button>
-            <div
-              v-if="selectMenuOpen === 'outputFormat'"
-              id="output-format-menu"
-              class="model-menu select-menu"
-              role="listbox"
-              aria-labelledby="output-format"
-            >
-              <button
-                v-for="item in outputFormats"
-                :key="item.value"
-                class="model-option select-option"
-                :class="{ active: item.value === outputFormat }"
-                type="button"
-                role="option"
-                :aria-selected="item.value === outputFormat"
-                @click.stop="selectSimpleOption('outputFormat', item.value)"
-                @keydown.escape="closeSelectMenu"
-              >
-                <span>
-                  <span class="model-option-head">
-                    <strong>{{ item.label }}</strong>
-                  </span>
-                </span>
-                <Check v-if="item.value === outputFormat" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="field">
-          <label for="background">背景</label>
-          <div class="model-picker select-picker">
-            <button
-              id="background"
-              class="model-picker-button select-picker-button"
-              type="button"
-              :aria-label="`背景，当前为 ${selectedBackgroundLabel}`"
-              :aria-expanded="selectMenuOpen === 'background'"
-              aria-haspopup="listbox"
-              aria-controls="background-menu"
-              @click.stop="toggleSelectMenu('background')"
-              @keydown.escape="closeSelectMenu"
-            >
-              <span class="model-picker-copy">
-                <span class="model-preview-head">
-                  <strong>{{ selectedBackgroundLabel }}</strong>
-                </span>
-              </span>
-              <ChevronDown
-                class="model-picker-arrow"
-                :class="{ open: selectMenuOpen === 'background' }"
-                aria-hidden="true"
-              />
-            </button>
-            <div
-              v-if="selectMenuOpen === 'background'"
-              id="background-menu"
-              class="model-menu select-menu"
-              role="listbox"
-              aria-labelledby="background"
-            >
-              <button
-                v-for="item in backgroundOptions"
-                :key="item.value"
-                class="model-option select-option"
-                :class="{ active: item.value === background }"
-                type="button"
-                role="option"
-                :aria-selected="item.value === background"
-                @click.stop="selectSimpleOption('background', item.value)"
-                @keydown.escape="closeSelectMenu"
-              >
-                <span>
-                  <span class="model-option-head">
-                    <strong>{{ item.label }}</strong>
-                  </span>
-                </span>
-                <Check v-if="item.value === background" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="field">
-          <label for="moderation">内容审核</label>
-          <div class="model-picker select-picker">
-            <button
-              id="moderation"
-              class="model-picker-button select-picker-button"
-              type="button"
-              :aria-label="`内容审核，当前为 ${selectedModerationLabel}`"
-              :aria-expanded="selectMenuOpen === 'moderation'"
-              aria-haspopup="listbox"
-              aria-controls="moderation-menu"
-              @click.stop="toggleSelectMenu('moderation')"
-              @keydown.escape="closeSelectMenu"
-            >
-              <span class="model-picker-copy">
-                <span class="model-preview-head">
-                  <strong>{{ selectedModerationLabel }}</strong>
-                </span>
-              </span>
-              <ChevronDown
-                class="model-picker-arrow"
-                :class="{ open: selectMenuOpen === 'moderation' }"
-                aria-hidden="true"
-              />
-            </button>
-            <div
-              v-if="selectMenuOpen === 'moderation'"
-              id="moderation-menu"
-              class="model-menu select-menu"
-              role="listbox"
-              aria-labelledby="moderation"
-            >
-              <button
-                v-for="item in moderationOptions"
-                :key="item.value"
-                class="model-option select-option"
-                :class="{ active: item.value === moderation }"
-                type="button"
-                role="option"
-                :aria-selected="item.value === moderation"
-                @click.stop="selectSimpleOption('moderation', item.value)"
-                @keydown.escape="closeSelectMenu"
-              >
-                <span>
-                  <span class="model-option-head">
-                    <strong>{{ item.label }}</strong>
-                  </span>
-                </span>
-                <Check v-if="item.value === moderation" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <OptionPicker
+          id="quality"
+          label="质量"
+          :options="qualities"
+          :model-value="quality"
+          @update:model-value="selectSimpleOption('quality', $event)"
+        />
+        <OptionPicker
+          id="output-format"
+          label="输出格式"
+          :options="outputFormats"
+          :model-value="outputFormat"
+          @update:model-value="selectSimpleOption('outputFormat', $event)"
+        />
+        <OptionPicker
+          id="background"
+          label="背景"
+          :options="backgroundOptions"
+          :model-value="background"
+          @update:model-value="selectSimpleOption('background', $event)"
+        />
+        <OptionPicker
+          id="moderation"
+          label="内容审核"
+          :options="moderationOptions"
+          :model-value="moderation"
+          @update:model-value="selectSimpleOption('moderation', $event)"
+        />
         <div v-if="supportsOutputCompression()" class="field">
           <label for="compression">压缩 {{ outputCompression }}%</label>
           <input id="compression" v-model.number="outputCompression" type="range" min="0" max="100" />
@@ -908,7 +563,8 @@ async function onMaskDrop(event) {
         >
           <ImagePlus aria-hidden="true" />
           <strong>点击上传蒙版</strong>
-          <span>或拖拽 PNG 蒙版到此区域，透明区域会被编辑</span>
+          <span>或拖拽 PNG 蒙版到此区域</span>
+          <span>透明区域会被编辑</span>
           <input type="file" accept="image/png" hidden @change="onMaskFileChange" />
         </label>
         <p class="compliance-hint">请勿通过蒙版编辑未获授权的人脸、身体、证件、隐私区域或可能造成误导的敏感内容。</p>
@@ -953,13 +609,8 @@ async function onMaskDrop(event) {
       </div>
     </details>
 
-    <div ref="generationActionsSlotRef" class="generation-actions-slot">
-      <div
-        ref="generationActionsRef"
-        class="generation-actions"
-        :class="{ 'is-placeholder-hidden': generationActionsStuck }"
-        :aria-hidden="generationActionsStuck"
-      >
+    <FloatingActionBar aria-label="快捷生成操作">
+      <template #default>
         <button class="btn btn-primary" type="button" :aria-busy="loading" :disabled="loading" @click="generate">
           <Sparkles v-if="!loading" aria-hidden="true" />
           <Loader2 v-else class="spinner" aria-hidden="true" />
@@ -977,52 +628,46 @@ async function onMaskDrop(event) {
           <Square aria-hidden="true" />
           停止生成
         </button>
-        <span class="generation-cost-pill">
-          <Gem aria-hidden="true" />
-          本次消耗 {{ creditCost }} 积分
-        </span>
-      </div>
-    </div>
-    <Teleport to="body">
-      <div
-        v-if="generationActionsStuck"
-        class="generation-actions generation-actions-floating"
-        :style="generationActionsStyle"
-        aria-label="快捷生成操作"
-      >
-        <button class="btn btn-primary" type="button" :aria-busy="loading" :disabled="loading" @click="generate">
-          <Sparkles v-if="!loading" aria-hidden="true" />
-          <Loader2 v-else class="spinner" aria-hidden="true" />
-          {{
-            loading
-              ? batchMode
-                ? '批量生成中...'
-                : '正在创建图像...'
-              : batchMode
-                ? `批量生成 ${normalizedImageCount} 张图片`
-                : '开始生成'
-          }}
-        </button>
-        <button v-if="loading" class="btn btn-soft" type="button" @click="stopGeneration">
-          <Square aria-hidden="true" />
-          停止生成
-        </button>
-        <span class="generation-cost-pill">
-          <Gem aria-hidden="true" />
-          本次消耗 {{ creditCost }} 积分
-        </span>
-      </div>
-    </Teleport>
+        <div class="count-dropdown-container" @click.stop @keydown.escape.stop="closeCountDropdown">
+          <button
+            class="generation-cost-pill count-dropdown-trigger"
+            type="button"
+            aria-haspopup="listbox"
+            :aria-expanded="isCountDropdownOpen('footer')"
+            aria-label="选择生成图片数量"
+            @click="toggleCountDropdown('footer')"
+          >
+            <Gem aria-hidden="true" />
+            消耗 {{ creditCost }} 积分
+            <ChevronDown :class="{ rotate: isCountDropdownOpen('footer') }" aria-hidden="true" />
+          </button>
+          <ul v-if="isCountDropdownOpen('footer')" class="count-dropdown-menu" role="listbox" aria-label="生成图片数量">
+            <li
+              v-for="item in imageCountOptions"
+              :key="item.value"
+              :class="{ active: normalizedImageCount === item.value }"
+              role="option"
+              :aria-selected="normalizedImageCount === item.value"
+            >
+              <button type="button" @click.stop="handleSelectImageCount(item.value)">
+                <strong>{{ item.label }}</strong>
+                <span>{{ getCountOptionHint(item) }}</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+      </template>
+    </FloatingActionBar>
     <div class="compliance-notice" role="note">
       <strong>提交前请确认素材来源合法，并同意平台进行内容安全审核和 AI 生成标识处理。</strong>
       <span>不得生成违法违规、侵权、虚假新闻、冒用身份、侵犯肖像隐私或危害公共利益的内容。</span>
     </div>
-    <div class="generation-inline-notice" :class="{ active: loading || lastGenerationNotice }" role="note">
+    <div class="generation-inline-notice" :class="{ active: outputLoading || lastGenerationNotice }" role="note">
       <div>
-        <strong>{{ loading ? generationSubmittedTip : lastGenerationNotice || generationIdleTip }}</strong>
+        <strong>{{ outputLoading ? generationSubmittedTip : lastGenerationNotice || generationIdleTip }}</strong>
         <span>{{ generationCostText }}</span>
       </div>
-      <button v-if="loading || lastGenerationNotice" class="btn btn-ghost" type="button" @click="openGallery">
+      <button v-if="outputLoading || lastGenerationNotice" class="btn btn-ghost" type="button" @click="openGallery">
         <GalleryHorizontal aria-hidden="true" />
         查看图库进度
       </button>

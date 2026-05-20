@@ -68,6 +68,20 @@ test('未登录点击开始生成会触发登录弹窗', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /登录/ })).toBeVisible()
 })
 
+test('图片处理入口可以切换到智能抠图和一键消除独立面板', async ({ page }) => {
+  await page.goto('/generate')
+
+  await page.getByRole('button', { name: /智能抠图/ }).click()
+  await expect(page.getByRole('heading', { name: '智能抠图' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '开始智能抠图' })).toBeVisible()
+  await expect(page.getByText('透明 PNG')).toBeVisible()
+
+  await page.getByRole('button', { name: /一键消除/ }).click()
+  await expect(page.getByRole('heading', { name: '一键消除' })).toBeVisible()
+  await expect(page.getByLabel('需要消除的内容')).toBeVisible()
+  await expect(page.getByRole('button', { name: '开始一键消除' })).toBeVisible()
+})
+
 test('未登录点击提示词优化器开始优化会触发登录弹窗', async ({ page }) => {
   await page.goto('/prompt-optimizer')
 

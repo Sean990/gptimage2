@@ -1,5 +1,30 @@
 import { resolveApiUrl } from '../services/api'
 
+export const imageToolLabels = {
+  upscale: '高清放大',
+  outpaint: '自由扩图',
+  cutout: '智能抠图',
+  erase: '一键消除',
+}
+
+export function getGenerationRecordToolKey(record = {}) {
+  return (
+    [record.tool, record.toolKey, record.tool_key, record.action, record.type]
+      .map((value) => String(value || '').trim())
+      .find((value) => imageToolLabels[value]) || ''
+  )
+}
+
+export function canReuseGenerationRecord(record = {}) {
+  return !getGenerationRecordToolKey(record)
+}
+
+export function getGenerationRecordTypeLabel(record = {}, modes = []) {
+  const toolKey = getGenerationRecordToolKey(record)
+  if (toolKey) return imageToolLabels[toolKey]
+  return modes?.find((item) => item.value === record.mode)?.label || record.mode || '文生图'
+}
+
 export function resolveOutputSize(sizeMatrix, resolution, aspectRatio) {
   if (resolution === 'auto' || aspectRatio === 'auto') return 'auto'
   return sizeMatrix[resolution]?.[aspectRatio] || 'auto'
@@ -15,6 +40,8 @@ export function normalizeGeneratedImage(item = {}, index = 0, defaults = {}) {
     model: item.model || defaults.model,
     mode: item.mode || defaults.mode,
     apiMode: item.apiMode || defaults.apiMode,
+    tool: item.tool || defaults.tool,
+    toolParams: item.toolParams || item.tool_params || defaults.toolParams || defaults.tool_params,
     ratio: item.ratio,
     resolution: item.resolution,
     size: item.size || defaults.size,
@@ -39,6 +66,8 @@ export function normalizeGenerationRecord(record = {}, defaults = {}) {
     model: record?.model || defaults.model,
     mode: record?.mode || defaults.mode,
     apiMode: record?.apiMode || defaults.apiMode,
+    tool: record?.tool || defaults.tool,
+    toolParams: record?.toolParams || record?.tool_params || defaults.toolParams || defaults.tool_params,
     ratio: record?.ratio || defaults.ratio,
     resolution: record?.resolution || defaults.resolution,
     size: record?.size || defaults.size,
@@ -88,6 +117,8 @@ export function mapRecordImages(record = {}) {
     model: item.model,
     mode: item.mode,
     apiMode: item.apiMode,
+    tool: item.tool,
+    toolParams: item.toolParams,
     ratio: item.ratio,
     resolution: item.resolution,
     size: item.size,

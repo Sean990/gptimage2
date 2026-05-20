@@ -34,13 +34,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <button
-    v-show="showButton"
-    class="back-to-top-button"
-    type="button"
-    aria-label="回到顶部"
-    @click="scrollToTop"
-  >
+  <button v-show="showButton" class="back-to-top-button" type="button" aria-label="回到顶部" @click="scrollToTop">
     <ArrowUp aria-hidden="true" />
   </button>
 </template>

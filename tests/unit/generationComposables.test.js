@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
+import { useGenerateAction } from '../../src/composables/useGenerateAction'
 import { useGenerationBilling } from '../../src/composables/useGenerationBilling'
 import { createGptLoadingDots } from '../../src/composables/useGenerationLoading'
 import { isGenerationTaskSuccessful, useGenerationPolling } from '../../src/composables/useGenerationPolling'
@@ -18,6 +19,7 @@ describe('生成页拆分 composables', () => {
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     localStorage.clear()
   })
 
@@ -121,6 +123,203 @@ describe('生成页拆分 composables', () => {
     expect(record.images).toHaveLength(3)
     expect(record.partialFailureMessage).toContain('已生成 3/4 张')
     expect(isGenerationTaskSuccessful(record)).toBe(true)
+  })
+
+  it('专用图片工具提交时合并结构化工具参数', async () => {
+    const loading = ref(false)
+    const outputLoading = ref(false)
+    const output = ref([])
+    const gallery = ref([])
+    const activeTaskId = ref('')
+    const api = {
+      generateImages: vi.fn().mockResolvedValue({
+        id: 'task-tool-upscale',
+        status: 'completed',
+        images: [{ url: '/uploads/upscale.png' }],
+      }),
+    }
+    const action = useGenerateAction({
+      api,
+      auth: {
+        token: ref('token'),
+        initialized: ref(true),
+        refreshMe: vi.fn().mockResolvedValue(),
+      },
+      activeTaskId,
+      creditCost: ref(5),
+      formState: {
+        prompt: ref('高清保留产品文字边缘'),
+        mode: ref('image'),
+        size: ref('auto'),
+        aspectRatio: ref('auto'),
+        resolution: ref('4K'),
+        normalizedImageCount: ref(1),
+        quality: ref('high'),
+        outputFormat: ref('png'),
+        background: ref('auto'),
+        moderation: ref('auto'),
+        outputCompression: ref(100),
+        requiresReference: ref(true),
+        batchMode: ref(false),
+        supportsOutputCompression: () => false,
+      },
+      gallery,
+      generationAbortController: ref(null),
+      getMaskReference: vi.fn(),
+      getReferences: vi.fn(() => ['https://example.com/source.png']),
+      hasUnreadyUpload: vi.fn(() => false),
+      hasUsageCostConfig: ref(true),
+      isAuthenticated: ref(true),
+      loadSiteData: vi.fn(),
+      loading,
+      loadingStage: ref('准备提交生成任务'),
+      mergeGalleryRecords: vi.fn((records, current = []) => [...records, ...current]),
+      model: ref('gpt-image-2'),
+      modelOptions: ref([]),
+      openLoginFromGenerate: vi.fn(),
+      output,
+      outputLoading,
+      persistLocalGallery: vi.fn(),
+      referenceCount: ref(1),
+      selectedModelAvailable: ref(true),
+      setLastGenerationNotice: vi.fn(),
+      showNotice: vi.fn(),
+      showReferenceSection: ref(true),
+      userCredits: ref(30),
+      waitForGenerationTask: vi.fn(),
+    })
+
+    await action.generate({
+      tool: 'upscale',
+      action: 'upscale',
+      tool_params: {
+        scale: '4x',
+        enhance_mode: 'product',
+        sharpness: 'crisp',
+        face_restore: 'off',
+      },
+    })
+
+    expect(api.generateImages).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool: 'upscale',
+        action: 'upscale',
+        tool_params: expect.objectContaining({
+          scale: '4x',
+          enhance_mode: 'product',
+          sharpness: 'crisp',
+          face_restore: 'off',
+        }),
+        mode: 'image',
+        references: ['https://example.com/source.png'],
+      }),
+      expect.any(Object),
+    )
+    expect(output.value[0]).toEqual(expect.objectContaining({ tool: 'upscale' }))
+  })
+
+  it('提交后释放按钮但结果区保持生成动画直到轮询完成', async () => {
+    let resolveGenerationTask
+    const waitForGenerationTask = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          resolveGenerationTask = resolve
+        }),
+    )
+    const loading = ref(false)
+    const outputLoading = ref(false)
+    const output = ref([])
+    const gallery = ref([])
+    const activeTaskId = ref('')
+    const showNotice = vi.fn()
+    const setLastGenerationNotice = vi.fn()
+    const mergeGalleryRecords = vi.fn((records, current = []) => [...records, ...current])
+    const persistLocalGallery = vi.fn()
+    const auth = {
+      token: ref('token'),
+      initialized: ref(true),
+      refreshMe: vi.fn().mockResolvedValue(),
+    }
+    const action = useGenerateAction({
+      api: {
+        generateImages: vi.fn().mockResolvedValue({
+          id: 'task-running',
+          status: 'running',
+          images: [],
+        }),
+      },
+      auth,
+      activeTaskId,
+      creditCost: ref(3),
+      formState: {
+        prompt: ref('生成一张蓝色产品海报'),
+        mode: ref('generate'),
+        size: ref('auto'),
+        aspectRatio: ref('1:1'),
+        resolution: ref('1K'),
+        normalizedImageCount: ref(1),
+        quality: ref('auto'),
+        outputFormat: ref('png'),
+        background: ref('auto'),
+        moderation: ref('auto'),
+        outputCompression: ref(100),
+        requiresReference: ref(false),
+        batchMode: ref(false),
+        supportsOutputCompression: () => false,
+      },
+      gallery,
+      generationAbortController: ref(null),
+      getMaskReference: vi.fn(),
+      getReferences: vi.fn(() => []),
+      hasUnreadyUpload: vi.fn(() => false),
+      hasUsageCostConfig: ref(true),
+      isAuthenticated: ref(true),
+      loadSiteData: vi.fn(),
+      loading,
+      loadingStage: ref('准备提交生成任务'),
+      mergeGalleryRecords,
+      model: ref('gpt-image-2'),
+      modelOptions: ref([]),
+      openLoginFromGenerate: vi.fn(),
+      output,
+      outputLoading,
+      persistLocalGallery,
+      referenceCount: ref(0),
+      selectedModelAvailable: ref(true),
+      setLastGenerationNotice,
+      showNotice,
+      showReferenceSection: ref(false),
+      userCredits: ref(30),
+      waitForGenerationTask,
+    })
+
+    await action.generate()
+
+    await vi.waitFor(() => {
+      expect(waitForGenerationTask).toHaveBeenCalledWith('task-running')
+    })
+    expect(loading.value).toBe(false)
+    expect(outputLoading.value).toBe(true)
+    expect(activeTaskId.value).toBe('task-running')
+    expect(setLastGenerationNotice).toHaveBeenCalledWith(
+      '任务已提交，结果区会持续显示进度；你也可以继续生成或处理下一张图片。',
+    )
+
+    resolveGenerationTask({
+      id: 'task-running',
+      status: 'completed',
+      images: [{ url: '/uploads/result.png' }],
+    })
+    await vi.waitFor(() => {
+      expect(output.value).toHaveLength(1)
+    })
+
+    expect(loading.value).toBe(false)
+    expect(outputLoading.value).toBe(false)
+    expect(activeTaskId.value).toBe('')
+    expect(output.value[0].src).toContain('/uploads/result.png')
+    expect(showNotice).toHaveBeenLastCalledWith('图像生成完成')
+    expect(persistLocalGallery).toHaveBeenCalled()
   })
 
   it('删除图库记录后，云端同步返回同一记录不会重新显示', () => {
@@ -290,5 +489,65 @@ describe('生成页拆分 composables', () => {
     expect(localStorage.getItem('gptImage2GalleryClearedBefore')).toBeNull()
     expect(localStorage.getItem('gptImage2DeletedGalleryIds')).toContain('id:task-deleted-single')
     expect(gallery.value.map((record) => record.id)).toEqual(['task-cleared-before'])
+  })
+
+  it('多个生成任务轮询不会互相取消', async () => {
+    vi.useFakeTimers()
+    const callCounts = new Map()
+    const api = {
+      getGenerationTask: vi.fn(async (id) => {
+        const count = (callCounts.get(id) || 0) + 1
+        callCounts.set(id, count)
+        if (id === 'task-a' && count > 1) {
+          return {
+            id,
+            status: 'completed',
+            images: [{ url: '/uploads/task-a.png' }],
+          }
+        }
+        return { id, status: 'running', images: [] }
+      }),
+      getQueuePosition: vi.fn(),
+    }
+    const { clearTaskPollTimer, waitForGenerationTask } = useGenerationPolling({
+      activeTaskId: ref('task-b'),
+      api,
+      clearGalleryClearedBefore: vi.fn(),
+      gallery: ref([]),
+      galleryLastSyncedAt: ref(''),
+      galleryOpen: ref(false),
+      gallerySyncError: ref(''),
+      gallerySyncing: ref(false),
+      gallerySyncMessage: ref(''),
+      generationAbortController: ref(null),
+      hasPendingGalleryRecords: ref(false),
+      isAuthenticated: ref(true),
+      isGalleryRecordPending: () => false,
+      loadLocalGallery: () => [],
+      loading: ref(false),
+      loadingStage: ref(''),
+      mergeGalleryRecords: (records, current = []) => [...records, ...current],
+      normalizeGenerationRecord,
+      persistLocalGallery: vi.fn(),
+      queuePosition: ref(null),
+      setGallerySyncMessage: vi.fn(),
+      showNotice: vi.fn(),
+    })
+
+    const firstTask = waitForGenerationTask('task-a')
+    await vi.waitFor(() => {
+      expect(api.getGenerationTask).toHaveBeenCalledWith('task-a')
+    })
+
+    waitForGenerationTask('task-b')
+    await vi.waitFor(() => {
+      expect(api.getGenerationTask).toHaveBeenCalledWith('task-b')
+    })
+
+    await vi.advanceTimersByTimeAsync(1500)
+
+    await expect(firstTask).resolves.toMatchObject({ id: 'task-a', status: 'completed' })
+    expect(callCounts.get('task-a')).toBe(2)
+    clearTaskPollTimer()
   })
 })

@@ -191,6 +191,12 @@ function toggleAccountMenu() {
   open.value = false
 }
 
+function toggleMobileMenu() {
+  const nextOpen = !open.value
+  open.value = nextOpen
+  if (nextOpen) accountMenuOpen.value = false
+}
+
 function closeAccountMenu() {
   accountMenuOpen.value = false
 }
@@ -365,12 +371,21 @@ onBeforeUnmount(() => {
           登录
         </button>
         <button
+          v-if="!isAuthenticated"
+          class="icon-button mobile-login-button"
+          type="button"
+          aria-label="登录"
+          @click="openLogin"
+        >
+          <LogIn aria-hidden="true" />
+        </button>
+        <button
           class="icon-button mobile-toggle"
           type="button"
           aria-controls="mobile-menu"
           :aria-expanded="open"
           :aria-label="open ? '关闭菜单' : '打开菜单'"
-          @click="open = !open"
+          @click="toggleMobileMenu"
         >
           <X v-if="open" aria-hidden="true" />
           <Menu v-else aria-hidden="true" />
@@ -394,14 +409,6 @@ onBeforeUnmount(() => {
           {{ item.label }}
         </RouterLink>
       </template>
-      <button class="mobile-theme-toggle" type="button" :aria-pressed="isDark" @click="toggleTheme">
-        <Sun v-if="isDark" aria-hidden="true" />
-        <Moon v-else aria-hidden="true" />
-        {{ isDark ? '切换浅色模式' : '切换深色模式' }}
-      </button>
-      <RouterLink v-if="isAuthenticated" to="/my-orders">个人中心 · {{ currentUser.credits }} 积分</RouterLink>
-      <button v-if="isAuthenticated" type="button" @click="logout">退出登录</button>
-      <button v-else type="button" @click="openLogin">登录</button>
     </nav>
     <div v-if="open" class="mobile-panel-backdrop" aria-hidden="true" @click="open = false"></div>
   </header>

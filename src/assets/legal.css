@@ -26,18 +26,23 @@
 
 .legal-card section {
   border-top: 1px solid var(--line);
-  padding-top: 22px;
-  margin-top: 22px;
+  padding-top: 24px;
+  margin-top: 24px;
 }
 
 .legal-card h2 {
-  margin: 0 0 10px;
+  margin: 0 0 14px;
+  color: var(--text-strong);
 }
 
 .legal-card p {
-  margin: 0;
+  margin: 0 0 18px;
   color: var(--muted);
-  line-height: 1.85;
+  line-height: 1.95;
+}
+
+.legal-card p:last-child {
+  margin-bottom: 0;
 }
 
 .not-found {

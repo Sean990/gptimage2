@@ -145,6 +145,7 @@ button,
 
   .brand {
     min-width: 0;
+    max-width: calc(100vw - 148px);
   }
 
   .brand > span:last-child {
@@ -156,7 +157,8 @@ button,
     gap: 6px;
   }
 
-  .theme-toggle {
+  .theme-toggle,
+  .mobile-login-button {
     flex: 0 0 44px;
   }
 

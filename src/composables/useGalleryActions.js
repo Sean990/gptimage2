@@ -1,4 +1,9 @@
-import { mapRecordImages, normalizeGenerationRecord } from './useGenerationPayload'
+import {
+  canReuseGenerationRecord,
+  getGenerationRecordTypeLabel,
+  mapRecordImages,
+  normalizeGenerationRecord,
+} from './useGenerationPayload'
 
 export function useGalleryActions({
   api,
@@ -16,6 +21,10 @@ export function useGalleryActions({
   showNotice,
 }) {
   function useGalleryRecord(record, formState) {
+    if (!canReuseGenerationRecord(record)) {
+      showNotice(`${getGenerationRecordTypeLabel(record)}记录仅支持预览和下载`)
+      return
+    }
     formState.prompt.value = record.prompt || formState.prompt.value
     model.value = record.model || model.value
     if (!selectedModelAvailable.value && modelOptions.value.length) {
@@ -33,6 +42,10 @@ export function useGalleryActions({
   }
 
   async function copyGalleryPrompt(record) {
+    if (!canReuseGenerationRecord(record)) {
+      showNotice(`${getGenerationRecordTypeLabel(record)}记录不展示提示词`)
+      return
+    }
     try {
       await navigator.clipboard.writeText(record.prompt || '')
       showNotice('图库提示词已复制')
@@ -43,11 +56,12 @@ export function useGalleryActions({
 
   function openGalleryImage(record, openImagePreview) {
     if (!record.images?.length) return
+    const showPrompt = canReuseGenerationRecord(record)
     openImagePreview(
       record.images.map((image, index) => ({
         src: image.url,
         title: image.title || `图库图片 ${index + 1}`,
-        prompt: record.prompt || image.prompt,
+        prompt: showPrompt ? record.prompt || image.prompt : '',
         model: record.model || image.model,
         resolution: record.resolution || image.resolution,
         ratio: record.ratio || image.ratio,

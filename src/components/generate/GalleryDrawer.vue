@@ -12,6 +12,7 @@ const props = defineProps({
 
 const {
   canPreviewGalleryRecord,
+  canReuseGalleryRecord,
   clearGallery,
   closeGallery,
   copyGalleryPrompt,
@@ -87,8 +88,10 @@ const {
           type="button"
           :aria-label="
             canPreviewGalleryRecord(record)
-              ? `预览 ${record.prompt || '图库图片'}`
-              : `${galleryRecordStatusLabel(record)} ${record.prompt || '生成任务'}`
+              ? `预览 ${canReuseGalleryRecord(record) ? record.prompt || '图库图片' : galleryRecordMode(record)}`
+              : `${galleryRecordStatusLabel(record)} ${
+                  canReuseGalleryRecord(record) ? record.prompt || '生成任务' : galleryRecordMode(record)
+                }`
           "
           :disabled="!canPreviewGalleryRecord(record)"
           @click="openGalleryImage(record)"
@@ -96,7 +99,7 @@ const {
           <img
             v-if="canPreviewGalleryRecord(record)"
             :src="galleryRecordCover(record)"
-            :alt="record.prompt || '图库图片'"
+            :alt="canReuseGalleryRecord(record) ? record.prompt || '图库图片' : galleryRecordMode(record)"
           />
           <span v-else class="gallery-task-placeholder" :class="{ active: isGalleryRecordPending(record) }">
             <span class="gallery-task-icon" aria-hidden="true">
@@ -115,12 +118,17 @@ const {
             <span>{{ formatGalleryDate(record.createdAt) }}</span>
             <span>{{ galleryRecordMeta(record) }}</span>
           </div>
-          <p>{{ record.prompt || '无提示词记录' }}</p>
+          <p v-if="canReuseGalleryRecord(record)">{{ record.prompt || '无提示词记录' }}</p>
           <p v-if="galleryRecordNotice(record)" class="gallery-card-notice">
             {{ galleryRecordNotice(record) }}
           </p>
           <div class="gallery-actions">
-            <button class="btn btn-soft" type="button" @click="useGalleryRecord(record)">
+            <button
+              v-if="canReuseGalleryRecord(record)"
+              class="btn btn-soft"
+              type="button"
+              @click="useGalleryRecord(record)"
+            >
               <Save aria-hidden="true" />
               复用
             </button>
@@ -142,7 +150,13 @@ const {
             >
               <Download aria-hidden="true" />
             </button>
-            <button class="icon-button" type="button" aria-label="复制提示词" @click="copyGalleryPrompt(record)">
+            <button
+              v-if="canReuseGalleryRecord(record)"
+              class="icon-button"
+              type="button"
+              aria-label="复制提示词"
+              @click="copyGalleryPrompt(record)"
+            >
               <Copy aria-hidden="true" />
             </button>
             <button class="icon-button" type="button" aria-label="删除记录" @click="removeGalleryRecord(record.id)">

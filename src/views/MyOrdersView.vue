@@ -293,17 +293,7 @@ async function createAvatarCropFile() {
   const context = canvas.getContext('2d')
   context.fillStyle = '#ffffff'
   context.fillRect(0, 0, canvas.width, canvas.height)
-  context.drawImage(
-    image,
-    sourceX,
-    sourceY,
-    sourceSize,
-    sourceSize,
-    0,
-    0,
-    avatarCropOutputSize,
-    avatarCropOutputSize,
-  )
+  context.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, avatarCropOutputSize, avatarCropOutputSize)
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
   if (!blob) throw new Error('头像裁剪失败，请重新选择图片')
@@ -898,10 +888,20 @@ watch(isAuthenticated, (authenticated) => {
                       <p v-if="avatarCropMessage" class="form-message" aria-live="polite">{{ avatarCropMessage }}</p>
 
                       <footer>
-                        <button class="btn btn-soft" type="button" :disabled="avatarCropUploading" @click="closeAvatarCropDialog">
+                        <button
+                          class="btn btn-soft"
+                          type="button"
+                          :disabled="avatarCropUploading"
+                          @click="closeAvatarCropDialog"
+                        >
                           取消
                         </button>
-                        <button class="btn btn-primary" type="button" :disabled="avatarCropUploading" @click="uploadCroppedAvatar">
+                        <button
+                          class="btn btn-primary"
+                          type="button"
+                          :disabled="avatarCropUploading"
+                          @click="uploadCroppedAvatar"
+                        >
                           <Upload aria-hidden="true" />
                           {{ avatarCropUploading ? '上传中...' : '确认上传' }}
                         </button>

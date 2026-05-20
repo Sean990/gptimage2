@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  canReuseGenerationRecord,
   compactPayload,
+  getGenerationRecordTypeLabel,
   inferImageExtension,
   mapRecordImages,
   normalizeGenerationRecord,
@@ -49,6 +51,26 @@ describe('生成 payload 工具', () => {
     expect(mapRecordImages(record)[0]).toEqual(
       expect.objectContaining({ src: expect.stringContaining('/uploads/a.png') }),
     )
+  })
+
+  it('独立图片工具记录只显示工具类型且不可复用提示词', () => {
+    const record = normalizeGenerationRecord(
+      {
+        id: 'task-tool-1',
+        prompt: '内部处理提示词',
+        tool: 'upscale',
+        action: 'upscale',
+        mode: 'image',
+        status: 'completed',
+        images: [{ url: '/uploads/upscale.png', title: '放大结果' }],
+      },
+      {
+        model: 'gpt-image-2',
+      },
+    )
+
+    expect(canReuseGenerationRecord(record)).toBe(false)
+    expect(getGenerationRecordTypeLabel(record)).toBe('高清放大')
   })
 
   it('下载文件名和扩展名保持可控', () => {

@@ -27,6 +27,7 @@ export function useGenerateAction({
   modelOptions,
   openLoginFromGenerate,
   output,
+  outputLoading,
   persistLocalGallery,
   referenceCount,
   selectedModelAvailable,
@@ -34,6 +35,7 @@ export function useGenerateAction({
   showNotice,
   showReferenceSection,
   userCredits,
+  waitForGenerationTask,
 }) {
   async function ensureAuthenticated() {
     if (isAuthenticated.value) return true
@@ -43,7 +45,7 @@ export function useGenerateAction({
     return isAuthenticated.value
   }
 
-  async function generate() {
+  async function generate(payloadOverrides = {}) {
     if (loading.value) return
     const generationStartTime = performance.now()
     const logGenerationDuration = () => {
@@ -91,6 +93,8 @@ export function useGenerateAction({
       return
     }
     loading.value = true
+    outputLoading.value = true
+    activeTaskId.value = ''
     emitGenerationEvent('imgsgen:generation-started', { cost: creditCost.value })
     setLastGenerationNotice?.('')
     output.value = []
@@ -115,6 +119,7 @@ export function useGenerateAction({
         output_compression: formState.supportsOutputCompression() ? formState.outputCompression.value : undefined,
         references: showReferenceSection.value ? getReferences() : [],
         mask: formState.mode.value === 'edit' ? getMaskReference() : '',
+        ...payloadOverrides,
       })
       const task = await api.generateImages(requestPayload, {
         signal: generationAbortController.value.signal,
@@ -126,29 +131,69 @@ export function useGenerateAction({
       persistLocalGallery()
       emitGenerationEvent('imgsgen:gallery-updated', { record: normalizedTask })
       void auth.refreshMe().catch(() => {})
-      setLastGenerationNotice?.('任务已提交，无需等待，可以立即开始生成下一张图；稍后可在我的图库查看进度。')
       if (isGenerationTaskSuccessful(task)) {
         output.value = mapRecordImages(normalizedTask)
+        outputLoading.value = false
+        activeTaskId.value = ''
+        loadingStage.value = '准备提交生成任务'
         const completionMessage =
           normalizedTask.partialFailureMessage || (formState.batchMode.value ? '批量生成完成' : '图像生成完成')
         showNotice(completionMessage)
         emitGenerationEvent('imgsgen:generation-completed', { message: completionMessage, record: normalizedTask })
       } else {
-        showNotice('任务已提交，无需等待，可以继续生成下一张图')
+        setLastGenerationNotice?.('任务已提交，结果区会持续显示进度；你也可以继续生成或处理下一张图片。')
+        showNotice('任务已提交，正在生成中')
+        void trackGenerationTask(task.id, requestPayload, normalizedTask)
       }
     } catch (error) {
       output.value = []
+      outputLoading.value = false
+      activeTaskId.value = ''
       if (error.isTimeout) showNotice(error.message || '请求超时，请稍后重试')
       else if (error.name === 'AbortError') showNotice('已停止提交生成任务')
       else showNotice(error.message || '图像生成失败，请稍后重试')
     } finally {
       logGenerationDuration()
-      activeTaskId.value = ''
       generationAbortController.value = null
       loading.value = false
-      loadingStage.value = '准备提交生成任务'
       emitGenerationEvent('imgsgen:generation-finished')
       void auth.refreshMe().catch(() => {})
+    }
+  }
+
+  async function trackGenerationTask(taskId, requestPayload, submittedTask) {
+    try {
+      const result = await waitForGenerationTask(taskId)
+      const normalizedResult = normalizeGenerationRecord(result, {
+        ...requestPayload,
+        createdAt: submittedTask.createdAt || new Date().toISOString(),
+      })
+      gallery.value = mergeGalleryRecords([normalizedResult], gallery.value)
+      persistLocalGallery()
+      emitGenerationEvent('imgsgen:gallery-updated', { record: normalizedResult })
+
+      if (activeTaskId.value === taskId) {
+        output.value = mapRecordImages(normalizedResult)
+        outputLoading.value = false
+        activeTaskId.value = ''
+        loadingStage.value = '准备提交生成任务'
+      }
+
+      const completionMessage =
+        normalizedResult.partialFailureMessage || (formState.batchMode.value ? '批量生成完成' : '图像生成完成')
+      showNotice(completionMessage)
+      emitGenerationEvent('imgsgen:generation-completed', { message: completionMessage, record: normalizedResult })
+      void auth.refreshMe().catch(() => {})
+    } catch (error) {
+      if (activeTaskId.value === taskId) {
+        output.value = []
+        outputLoading.value = false
+        activeTaskId.value = ''
+        loadingStage.value = '准备提交生成任务'
+        if (error.isTimeout) showNotice(error.message || '请求超时，请稍后重试')
+        else if (error.name === 'AbortError') showNotice('已停止提交生成任务')
+        else showNotice(error.message || '图像生成失败，请稍后重试')
+      }
     }
   }
 

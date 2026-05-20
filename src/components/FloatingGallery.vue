@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { CheckCircle2, GalleryHorizontal, Loader2 } from 'lucide-vue-next'
 import GalleryDrawer from './generate/GalleryDrawer.vue'
 import ImagePreviewModal from './generate/ImagePreviewModal.vue'
+import Toast from './Toast.vue'
 import { api } from '../services/api'
 import { useAuthStore } from '../services/authStore'
 import { generationWaitText, modes } from '../composables/generationConstants'
@@ -16,6 +17,7 @@ const galleryEventName = 'imgsgen:gallery-updated'
 const generationStartedEventName = 'imgsgen:generation-started'
 const generationFinishedEventName = 'imgsgen:generation-finished'
 const generationCompletedEventName = 'imgsgen:generation-completed'
+const useGalleryRecordEventName = 'imgsgen:use-gallery-record'
 
 const router = useRouter()
 const route = useRoute()
@@ -49,6 +51,7 @@ const galleryApi = useGallery({
 
 const {
   canPreviewGalleryRecord,
+  canReuseGalleryRecord,
   clearGalleryClearedBefore,
   formatGalleryDate,
   gallery,
@@ -194,10 +197,18 @@ function closeGallery() {
 
 function openGalleryImage(record) {
   if (!canPreviewGalleryRecord(record)) return
-  openImagePreview(mapRecordImages(record), 0, '图库图片')
+  const images = mapRecordImages(record).map((image) => ({
+    ...image,
+    prompt: canReuseGalleryRecord(record) ? image.prompt : '',
+  }))
+  openImagePreview(images, 0, '图库图片')
 }
 
 async function copyGalleryPrompt(record) {
+  if (!canReuseGalleryRecord(record)) {
+    showNotice(`${galleryRecordMode(record)}记录不展示提示词`)
+    return
+  }
   try {
     await navigator.clipboard.writeText(record.prompt || '')
     showNotice('图库提示词已复制')
@@ -226,9 +237,24 @@ function clearGallery() {
   showNotice('已清空本地图库')
 }
 
+function emitUseGalleryRecord(record) {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(useGalleryRecordEventName, { detail: { record } }))
+}
+
 function useGalleryRecord(record) {
+  if (!canReuseGalleryRecord(record)) {
+    showNotice(`${galleryRecordMode(record)}记录仅支持预览和下载`)
+    return
+  }
   closeGallery()
-  router.push({ path: '/generate', query: record.prompt ? { prompt: record.prompt } : {} })
+  if (route.path === '/generate') {
+    emitUseGalleryRecord(record)
+    return
+  }
+  router.push({ path: '/generate', query: record.prompt ? { prompt: record.prompt } : {} }).then(() => {
+    emitUseGalleryRecord(record)
+  })
 }
 
 function onGalleryUpdated(event) {
@@ -261,6 +287,7 @@ function onStorage(event) {
 
 const drawerTask = {
   canPreviewGalleryRecord,
+  canReuseGalleryRecord,
   clearGallery,
   closeGallery,
   copyGalleryPrompt,
@@ -344,14 +371,9 @@ onBeforeUnmount(() => {
       </span>
       <em v-if="galleryCount">{{ galleryCount }}</em>
     </button>
-    <div v-if="completionMessage" class="floating-gallery-complete" role="status" aria-live="polite">
-      {{ completionMessage }}
-    </div>
-    <div v-else-if="notice" class="floating-gallery-complete" role="status" aria-live="polite">
-      {{ notice }}
-    </div>
   </div>
 
   <GalleryDrawer :task="drawerTask" />
   <ImagePreviewModal :task="previewTask" />
+  <Toast :message="completionMessage || notice" :type="completionMessage ? 'success' : 'info'" />
 </template>

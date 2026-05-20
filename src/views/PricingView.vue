@@ -99,7 +99,9 @@ onMounted(() => {
         </div>
 
         <div v-if="billingEnabled" class="redeem-hint" v-fade-up="{ delay: 150 }">
-          <p>购买后会收到卡密兑换码，请前往 <router-link to="/my-orders">我的订单</router-link> 页面输入兑换码领取积分。</p>
+          <p>
+            购买后会收到卡密兑换码，请前往 <router-link to="/my-orders">我的订单</router-link> 页面输入兑换码领取积分。
+          </p>
         </div>
 
         <div v-if="!billingEnabled" class="pricing-disabled-panel">

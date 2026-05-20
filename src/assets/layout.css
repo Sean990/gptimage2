@@ -170,6 +170,10 @@
   display: none;
 }
 
+.mobile-login-button {
+  display: none;
+}
+
 .mobile-panel {
   display: none;
 }

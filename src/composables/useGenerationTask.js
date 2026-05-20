@@ -48,21 +48,17 @@ export function useGenerationTask() {
   const {
     activeModelKey,
     activeModelLabel,
-    closeModelMenu,
     loadImageModels,
     model,
-    modelGroups,
     modelMenuOpen,
     modelOptions,
     modelPicker,
-    selectedModel,
     selectedModelAvailable,
-    selectModel,
-    toggleModelMenu,
   } = modelPickerApi
 
   const output = ref([])
   const loading = ref(false)
+  const outputLoading = ref(false)
   const loadingStage = ref('准备提交生成任务')
   const queuePosition = ref(null)
   const lastGenerationNotice = ref('')
@@ -152,11 +148,10 @@ export function useGenerationTask() {
   const {
     closeGallery,
     disposeGenerationPolling,
-    openGallery,
     resetCloudGalleryState,
     scheduleGalleryRefresh,
-    stopGeneration,
     syncCloudGallery,
+    waitForGenerationTask,
   } = pollingApi
 
   const loadingUi = useGenerationLoading({
@@ -212,7 +207,7 @@ export function useGenerationTask() {
     batchMode: formState.batchMode,
     galleryOpen,
     imagePreview,
-    loading,
+    loading: computed(() => loading.value || outputLoading.value),
     maskCount,
     mode: formState.mode,
     normalizedImageCount: formState.normalizedImageCount,
@@ -261,6 +256,7 @@ export function useGenerationTask() {
     modelOptions,
     openLoginFromGenerate,
     output,
+    outputLoading,
     persistLocalGallery,
     referenceCount,
     selectedModelAvailable,
@@ -270,6 +266,7 @@ export function useGenerationTask() {
     showNotice,
     showReferenceSection,
     userCredits,
+    waitForGenerationTask,
   })
 
   function openPricingFromGenerate() {
@@ -299,6 +296,12 @@ export function useGenerationTask() {
     generationUI.handleWindowKeydown(event)
   }
 
+  function handleUseGalleryRecord(event) {
+    const record = event.detail?.record || event.detail
+    if (!record) return
+    galleryActions.useGalleryRecord(normalizeGenerationRecord(record), formState)
+  }
+
   watch(formState.mode, trimReferencesForMode)
   watch([galleryOpen, imagePreview], () => syncModalScrollLock(galleryOpen.value, imagePreview.value))
   watch([galleryOpen, hasPendingGalleryRecords, isAuthenticated], scheduleGalleryRefresh)
@@ -320,6 +323,7 @@ export function useGenerationTask() {
       .catch(() => {})
     window.addEventListener('click', closeMenusOnOutside)
     window.addEventListener('keydown', handleWindowKeydown)
+    window.addEventListener('imgsgen:use-gallery-record', handleUseGalleryRecord)
   })
 
   onBeforeUnmount(() => {
@@ -327,6 +331,7 @@ export function useGenerationTask() {
     syncGalleryScrollLock(false)
     window.removeEventListener('click', closeMenusOnOutside)
     window.removeEventListener('keydown', handleWindowKeydown)
+    window.removeEventListener('imgsgen:use-gallery-record', handleUseGalleryRecord)
     cleanupReferenceObjectUrls()
   })
 
@@ -340,6 +345,7 @@ export function useGenerationTask() {
     activeTaskId,
     generationAbortController,
     loading,
+    outputLoading,
     loadingStage,
     lastGenerationNotice,
     queuePosition,

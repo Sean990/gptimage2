@@ -161,7 +161,9 @@ onMounted(() => {
             <section v-if="billingEnabled" id="orders" class="card doc-section" v-fade-up>
               <ReceiptText aria-hidden="true" />
               <h2>订单与积分发放</h2>
-              <p>如平台开放积分方案，定价页会展示轻量创作、高级创作和专业创作套餐。提交方案后会创建订单，并显示订单号等处理信息。</p>
+              <p>
+                如平台开放积分方案，定价页会展示轻量创作、高级创作和专业创作套餐。提交方案后会创建订单，并显示订单号等处理信息。
+              </p>
               <ol>
                 <li>选择积分方案并创建订单。</li>
                 <li>复制订单号并按页面提示联系管理员处理。</li>

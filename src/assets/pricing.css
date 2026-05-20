@@ -162,24 +162,39 @@
   min-height: 510px;
   flex-direction: column;
   padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
   transition:
-    transform var(--dur-3) var(--ease-standard),
-    box-shadow var(--dur-3) var(--ease-standard),
-    border-color var(--dur-3) var(--ease-standard);
+    transform var(--dur-3) var(--ease-spring),
+    box-shadow var(--dur-3) var(--ease-spring),
+    border-color var(--dur-3) var(--ease-spring);
 }
 
 .price-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-xl);
+  transform: translateY(-6px);
+  border-color: var(--primary-strong);
+  box-shadow:
+    var(--shadow-lg),
+    0 12px 32px rgba(15, 23, 42, 0.05);
 }
 
 .price-card.featured {
-  border-color: rgba(47, 102, 245, 0.4);
-  box-shadow: 0 18px 44px rgba(47, 102, 245, 0.14);
+  border: 2px solid transparent;
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%) border-box;
+  box-shadow:
+    0 18px 44px rgba(37, 99, 235, 0.12),
+    0 0 0 1px rgba(37, 99, 235, 0.08);
 }
 
 .price-card.featured:hover {
-  box-shadow: 0 26px 56px rgba(47, 102, 245, 0.22);
+  transform: translateY(-6px);
+  box-shadow:
+    0 26px 56px rgba(37, 99, 235, 0.22),
+    0 0 24px rgba(37, 99, 235, 0.18);
 }
 
 .plan-head {
@@ -209,6 +224,16 @@
   font-size: var(--fs-xs);
   font-weight: var(--fw-bold);
   line-height: 1;
+  animation: badge-float 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes badge-float {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-3px);
+  }
 }
 
 .badge svg {

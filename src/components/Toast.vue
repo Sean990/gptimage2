@@ -1,5 +1,5 @@
 <script setup>
-import { AlertCircle, CheckCircle2, Info, TriangleAlert } from 'lucide-vue-next'
+import { AlertCircle, CheckCircle2, Info, TriangleAlert, X } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps({
@@ -14,7 +14,7 @@ const props = defineProps({
   },
   duration: {
     type: Number,
-    default: 2400,
+    default: 3000,
   },
   role: {
     type: String,
@@ -55,9 +55,13 @@ function scheduleHide() {
   if (typeof window === 'undefined' || props.duration <= 0) return
 
   hideTimer = window.setTimeout(() => {
-    visible.value = false
-    hideTimer = null
+    close()
   }, props.duration)
+}
+
+function close() {
+  visible.value = false
+  clearHideTimer()
 }
 
 watch(() => props.message, scheduleHide, { immediate: true })
@@ -67,13 +71,18 @@ onBeforeUnmount(clearHideTimer)
 
 <template>
   <Transition name="toast-fade">
-    <div v-if="message && visible" class="toast" :class="`toast--${type}`" :role="role" :aria-live="ariaLive">
-      <span class="toast-icon" aria-hidden="true">
-        <component :is="toastIcon" />
-      </span>
-      <span class="toast-message">
-        <slot>{{ message }}</slot>
-      </span>
+    <div v-if="message && visible" class="toast-wrapper" :role="role" :aria-live="ariaLive">
+      <div class="toast" :class="`toast--${type}`">
+        <span class="toast-icon" aria-hidden="true">
+          <component :is="toastIcon" />
+        </span>
+        <span class="toast-message">
+          <slot>{{ message }}</slot>
+        </span>
+        <button class="toast-close" type="button" aria-label="关闭提示" @click="close">
+          <X aria-hidden="true" />
+        </button>
+      </div>
     </div>
   </Transition>
 </template>
