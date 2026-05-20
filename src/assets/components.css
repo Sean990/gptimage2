@@ -158,6 +158,12 @@
   pointer-events: none;
 }
 
+@media (max-width: 820px) {
+  .floating-gallery-wrap {
+    bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+}
+
 .floating-gallery-button {
   position: relative;
   display: inline-grid;

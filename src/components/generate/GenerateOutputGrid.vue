@@ -7,6 +7,10 @@ const props = defineProps({
     type: Object,
     required: true,
   },
+  compact: {
+    type: Boolean,
+    default: false,
+  },
 })
 
 const {
@@ -86,7 +90,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <aside class="card output-panel">
+  <aside class="card output-panel" :class="{ 'output-panel--compact': compact }">
     <div class="output-panel-head">
       <div class="output-title">
         <Layers3 aria-hidden="true" />
