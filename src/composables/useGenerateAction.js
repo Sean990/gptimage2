@@ -14,6 +14,7 @@ export function useGenerateAction({
   formState,
   gallery,
   generationAbortController,
+  generationRunId,
   getMaskReference,
   getReferences,
   hasUnreadyUpload,
@@ -92,6 +93,10 @@ export function useGenerateAction({
       showNotice(`已切换到可用模型 ${modelOptions.value[0].name}，请重新提交`)
       return
     }
+    const runId = generationRunId ? generationRunId.value + 1 : 0
+    const isCurrentRun = () => !generationRunId || generationRunId.value === runId
+    if (generationRunId) generationRunId.value = runId
+    const abortController = new AbortController()
     loading.value = true
     outputLoading.value = true
     activeTaskId.value = ''
@@ -99,7 +104,7 @@ export function useGenerateAction({
     setLastGenerationNotice?.('')
     output.value = []
     loadingStage.value = '准备提交生成任务'
-    generationAbortController.value = new AbortController()
+    generationAbortController.value = abortController
 
     try {
       const requestPayload = compactPayload({
@@ -122,8 +127,9 @@ export function useGenerateAction({
         ...payloadOverrides,
       })
       const task = await api.generateImages(requestPayload, {
-        signal: generationAbortController.value.signal,
+        signal: abortController.signal,
       })
+      if (!isCurrentRun()) return
       activeTaskId.value = task.id
       loadingStage.value = '任务已提交，后台生成中'
       const normalizedTask = normalizeGenerationRecord(task, requestPayload)
@@ -143,9 +149,10 @@ export function useGenerateAction({
       } else {
         setLastGenerationNotice?.('任务已提交，结果区会持续显示进度；你也可以继续生成或处理下一张图片。')
         showNotice('任务已提交，正在生成中')
-        void trackGenerationTask(task.id, requestPayload, normalizedTask)
+        void trackGenerationTask(task.id, requestPayload, normalizedTask, runId)
       }
     } catch (error) {
+      if (!isCurrentRun()) return
       output.value = []
       outputLoading.value = false
       activeTaskId.value = ''
@@ -154,14 +161,15 @@ export function useGenerateAction({
       else showNotice(error.message || '图像生成失败，请稍后重试')
     } finally {
       logGenerationDuration()
-      generationAbortController.value = null
-      loading.value = false
+      if (generationAbortController.value === abortController) generationAbortController.value = null
+      if (isCurrentRun()) loading.value = false
       emitGenerationEvent('imgsgen:generation-finished')
       void auth.refreshMe().catch(() => {})
     }
   }
 
-  async function trackGenerationTask(taskId, requestPayload, submittedTask) {
+  async function trackGenerationTask(taskId, requestPayload, submittedTask, runId = generationRunId?.value) {
+    const isCurrentRun = () => !generationRunId || generationRunId.value === runId
     try {
       const result = await waitForGenerationTask(taskId)
       const normalizedResult = normalizeGenerationRecord(result, {
@@ -172,7 +180,7 @@ export function useGenerateAction({
       persistLocalGallery()
       emitGenerationEvent('imgsgen:gallery-updated', { record: normalizedResult })
 
-      if (activeTaskId.value === taskId) {
+      if (isCurrentRun() && activeTaskId.value === taskId) {
         output.value = mapRecordImages(normalizedResult)
         outputLoading.value = false
         activeTaskId.value = ''
@@ -181,11 +189,13 @@ export function useGenerateAction({
 
       const completionMessage =
         normalizedResult.partialFailureMessage || (formState.batchMode.value ? '批量生成完成' : '图像生成完成')
-      showNotice(completionMessage)
-      emitGenerationEvent('imgsgen:generation-completed', { message: completionMessage, record: normalizedResult })
-      void auth.refreshMe().catch(() => {})
+      if (isCurrentRun()) {
+        showNotice(completionMessage)
+        emitGenerationEvent('imgsgen:generation-completed', { message: completionMessage, record: normalizedResult })
+        void auth.refreshMe().catch(() => {})
+      }
     } catch (error) {
-      if (activeTaskId.value === taskId) {
+      if (isCurrentRun() && activeTaskId.value === taskId) {
         output.value = []
         outputLoading.value = false
         activeTaskId.value = ''

@@ -5,12 +5,18 @@ export const imageToolLabels = {
   outpaint: '自由扩图',
   cutout: '智能抠图',
   erase: '一键消除',
+  'region-edit': '局部改图',
+  'layer-split': '智能分层',
+}
+
+function normalizeRecordToolKey(value) {
+  return String(value || '').trim().toLowerCase().replace(/[_\s]+/g, '-')
 }
 
 export function getGenerationRecordToolKey(record = {}) {
   return (
     [record.tool, record.toolKey, record.tool_key, record.action, record.type]
-      .map((value) => String(value || '').trim())
+      .map(normalizeRecordToolKey)
       .find((value) => imageToolLabels[value]) || ''
   )
 }
@@ -30,8 +36,61 @@ export function resolveOutputSize(sizeMatrix, resolution, aspectRatio) {
   return sizeMatrix[resolution]?.[aspectRatio] || 'auto'
 }
 
+function normalizeImageList(value) {
+  return (Array.isArray(value) ? value : [value])
+    .map((item) => (typeof item === 'string' ? item : item?.src || item?.url || ''))
+    .map(resolveApiUrl)
+    .filter(Boolean)
+}
+
+function normalizeImageLayers(layers = []) {
+  return (Array.isArray(layers) ? layers : [])
+    .map((layer, index) => {
+      const layerUrl = layer.url || layer.src || layer.image_url || ''
+      const src = resolveApiUrl(layerUrl)
+      if (!src) return null
+
+      return {
+        id: layer.id || `layer-${index}`,
+        type: layer.type || layer.layerType || layer.layer_type || `layer-${index + 1}`,
+        label: layer.label || layer.layerLabel || layer.layer_label || layer.title || `图层 ${index + 1}`,
+        title: layer.title || layer.label || layer.layerLabel || `图层 ${index + 1}`,
+        src,
+        visible: layer.visible !== false,
+        outputFormat: layer.outputFormat || layer.output_format || 'png',
+        createdAt: layer.createdAt,
+      }
+    })
+    .filter(Boolean)
+}
+
+function normalizeEditHistory(history = []) {
+  return (Array.isArray(history) ? history : [])
+    .map((item, index) => {
+      const beforeSrc = resolveApiUrl(item.beforeSrc || item.before_src || item.source || '')
+      const afterSrc = resolveApiUrl(item.afterSrc || item.after_src || item.result || '')
+      if (!beforeSrc || !afterSrc) return null
+
+      return {
+        id: item.id || `edit-${index}`,
+        beforeSrc,
+        afterSrc,
+        prompt: item.prompt || item.instruction || '',
+        region: item.region || null,
+        createdAt: item.createdAt,
+      }
+    })
+    .filter(Boolean)
+}
+
 export function normalizeGeneratedImage(item = {}, index = 0, defaults = {}) {
   const imageUrl = item.url || item.src || item.image_url || item.image || ''
+  const sourceImages = normalizeImageList(
+    item.sourceImages || item.source_images || defaults.sourceImages || defaults.source_images || defaults.references || [],
+  )
+  const originalSrc = resolveApiUrl(
+    item.originalSrc || item.original_src || defaults.originalSrc || defaults.original_src || sourceImages[0] || '',
+  )
   return {
     id: item.id || `generated-${index}`,
     title: item.title || item.filename || `ImgsGen 生成图 ${index + 1}`,
@@ -46,8 +105,15 @@ export function normalizeGeneratedImage(item = {}, index = 0, defaults = {}) {
     resolution: item.resolution,
     size: item.size || defaults.size,
     quality: item.quality || defaults.quality,
-    outputFormat: item.output_format || defaults.output_format,
+    outputFormat: item.outputFormat || item.output_format || defaults.outputFormat || defaults.output_format,
     background: item.background || defaults.background,
+    originalSrc,
+    sourceImages,
+    layers: normalizeImageLayers(item.layers || defaults.layers),
+    layerType: item.layerType || item.layer_type || defaults.layerType || defaults.layer_type || '',
+    layerLabel: item.layerLabel || item.layer_label || defaults.layerLabel || defaults.layer_label || '',
+    visible: item.visible !== false,
+    editHistory: normalizeEditHistory(item.editHistory || item.edit_history || defaults.editHistory || defaults.edit_history),
     createdAt: item.createdAt || defaults.createdAt,
   }
 }
@@ -74,6 +140,8 @@ export function normalizeGenerationRecord(record = {}, defaults = {}) {
     quality: record?.quality || defaults.quality,
     output_format: record?.output_format || defaults.output_format,
     background: record?.background || defaults.background,
+    originalSrc: record?.originalSrc || record?.original_src || defaults.originalSrc || defaults.original_src,
+    sourceImages: record?.sourceImages || record?.source_images || record?.references || defaults.sourceImages || defaults.references,
     createdAt: record?.createdAt || defaults.createdAt,
   }
   const rawStatus =
@@ -125,6 +193,13 @@ export function mapRecordImages(record = {}) {
     quality: item.quality,
     outputFormat: item.outputFormat,
     background: item.background,
+    originalSrc: item.originalSrc,
+    sourceImages: item.sourceImages,
+    layers: item.layers,
+    layerType: item.layerType,
+    layerLabel: item.layerLabel,
+    visible: item.visible,
+    editHistory: item.editHistory,
     createdAt: item.createdAt,
   }))
 }

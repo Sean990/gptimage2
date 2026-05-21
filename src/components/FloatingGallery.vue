@@ -8,7 +8,7 @@ import Toast from './Toast.vue'
 import { api } from '../services/api'
 import { useAuthStore } from '../services/authStore'
 import { generationWaitText, modes } from '../composables/generationConstants'
-import { useGallery } from '../composables/useGallery'
+import { emitGalleryChanged, galleryChangedEventName, useGallery } from '../composables/useGallery'
 import { useImageDownload } from '../composables/useImageDownload'
 import { useImagePreview } from '../composables/useImagePreview'
 import { mapRecordImages, normalizeGenerationRecord } from '../composables/useGenerationPayload'
@@ -60,6 +60,7 @@ const {
   galleryOpen,
   galleryRecordCover,
   galleryRecordMeta,
+  galleryRecordModelLabel,
   galleryRecordMode,
   galleryRecordNotice,
   galleryRecordProgressText,
@@ -197,9 +198,21 @@ function closeGallery() {
 
 function openGalleryImage(record) {
   if (!canPreviewGalleryRecord(record)) return
-  const images = mapRecordImages(record).map((image) => ({
+  const images = mapRecordImages(record).map((image, index) => ({
     ...image,
-    prompt: canReuseGalleryRecord(record) ? image.prompt : '',
+    title: image.title || `图库图片 ${index + 1}`,
+    prompt: canReuseGalleryRecord(record) ? record.prompt || image.prompt || '' : '',
+    model: record.model || image.model,
+    mode: image.mode || record.mode,
+    apiMode: image.apiMode || record.apiMode,
+    resolution: record.resolution || image.resolution,
+    ratio: record.ratio || image.ratio,
+    tool: image.tool || record.tool || record.toolKey || record.tool_key,
+    action: image.action || record.action,
+    outputFormat: image.outputFormat || record.outputFormat || record.output_format,
+    originalSrc: image.originalSrc || record.originalSrc,
+    sourceImages: image.sourceImages?.length ? image.sourceImages : record.sourceImages || record.references || [],
+    record,
   }))
   openImagePreview(images, 0, '图库图片')
 }
@@ -222,6 +235,7 @@ async function removeGalleryRecord(recordId) {
   markGalleryRecordsDeleted(removedRecords.length ? removedRecords : [recordId])
   gallery.value = gallery.value.filter((record) => record.id !== recordId)
   persistLocalGallery()
+  emitGalleryChanged({ type: 'remove', recordId })
   if (isAuthenticated.value && recordId) {
     api.deleteGalleryRecord(recordId).catch((error) => {
       if (error?.status !== 404) console.warn('[云端图库删除失败]', error)
@@ -234,6 +248,7 @@ function clearGallery() {
   markGalleryRecordsDeleted(gallery.value)
   gallery.value = []
   persistLocalGallery()
+  emitGalleryChanged({ type: 'clear' })
   showNotice('已清空本地图库')
 }
 
@@ -285,6 +300,22 @@ function onStorage(event) {
   schedulePendingRefresh()
 }
 
+function onGalleryChanged(event) {
+  const detail = event?.detail || {}
+  if (detail.type === 'clear') {
+    gallery.value = []
+    schedulePendingRefresh()
+    return
+  }
+
+  const currentGallery =
+    detail.type === 'remove' && detail.recordId
+      ? gallery.value.filter((record) => record.id !== detail.recordId)
+      : gallery.value
+  gallery.value = mergeGalleryRecords(loadLocalGallery(), currentGallery)
+  schedulePendingRefresh()
+}
+
 const drawerTask = {
   canPreviewGalleryRecord,
   canReuseGalleryRecord,
@@ -298,6 +329,7 @@ const drawerTask = {
   galleryOpen,
   galleryRecordCover,
   galleryRecordMeta,
+  galleryRecordModelLabel,
   galleryRecordMode,
   galleryRecordNotice,
   galleryRecordProgressText,
@@ -316,7 +348,9 @@ const drawerTask = {
 }
 
 const previewTask = {
+  canReuseGalleryRecord,
   closeImagePreview,
+  copyGalleryPrompt,
   currentPreviewImage,
   downloadPreviewImage: () => downloadPreviewImage(currentPreviewImage.value),
   imagePreview,
@@ -327,6 +361,8 @@ const previewTask = {
   setPreviewIndex,
   showNextPreviewImage,
   showPreviousPreviewImage,
+  removeGalleryRecord,
+  useGalleryRecord,
 }
 
 watch([hasPendingGalleryRecords, isAuthenticated], schedulePendingRefresh)
@@ -342,6 +378,7 @@ onMounted(() => {
   window.addEventListener(generationStartedEventName, onGenerationStarted)
   window.addEventListener(generationFinishedEventName, onGenerationFinished)
   window.addEventListener(generationCompletedEventName, onGenerationCompleted)
+  window.addEventListener(galleryChangedEventName, onGalleryChanged)
   window.addEventListener('storage', onStorage)
 })
 
@@ -353,6 +390,7 @@ onBeforeUnmount(() => {
   window.removeEventListener(generationStartedEventName, onGenerationStarted)
   window.removeEventListener(generationFinishedEventName, onGenerationFinished)
   window.removeEventListener(generationCompletedEventName, onGenerationCompleted)
+  window.removeEventListener(galleryChangedEventName, onGalleryChanged)
   window.removeEventListener('storage', onStorage)
 })
 </script>

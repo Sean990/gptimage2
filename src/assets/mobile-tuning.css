@@ -349,7 +349,7 @@ button,
   }
 
   .image-preview-modal {
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto auto;
     width: calc(100vw - 16px);
     height: calc(100dvh - 18px);
     max-height: calc(100dvh - 18px);
@@ -404,10 +404,11 @@ button,
 
   .image-preview-actions {
     flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 8px;
   }
 
-  .image-preview-actions .btn {
+  .image-preview-actions:not(.gallery-actions) .btn {
     flex: 1;
     min-width: 120px;
     min-height: 44px;
@@ -1110,7 +1111,7 @@ button,
   .output-actions .btn,
   .optimizer-actions .btn,
   .gallery-toolbar-actions .btn,
-  .image-preview-actions .btn {
+  .image-preview-actions:not(.gallery-actions) .btn {
     min-height: 44px;
   }
 

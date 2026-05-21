@@ -62,6 +62,12 @@ export function formatModelLabel(modelKey, rawValue = '') {
   return rawValue.trim() || '当前模型'
 }
 
+export function formatGenerationModelLabel(value = '') {
+  const rawValue = String(value || '').trim()
+  if (!rawValue) return ''
+  return formatModelLabel(normalizeModelKey(rawValue), rawValue)
+}
+
 export function normalizeModelListPayload(payload) {
   if (Array.isArray(payload)) return payload
 

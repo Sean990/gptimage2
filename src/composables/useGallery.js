@@ -1,9 +1,11 @@
 import { computed, ref } from 'vue'
 import { canReuseGenerationRecord, getGenerationRecordTypeLabel } from './useGenerationPayload'
+import { formatGenerationModelLabel } from './useModelPicker'
 
 const galleryStorageKey = 'gptImage2Gallery'
 const deletedGalleryStorageKey = 'gptImage2DeletedGalleryIds'
 const galleryClearedBeforeStorageKey = 'gptImage2GalleryClearedBefore'
+export const galleryChangedEventName = 'imgsgen:gallery-changed'
 const maxLocalGalleryRecords = 20
 const maxDeletedGalleryIds = 500
 const galleryProgressStatuses = new Set(['queued', 'running', 'saving', 'cancel_requested'])
@@ -141,6 +143,11 @@ export function filterVisibleGalleryRecords(records = [], options = {}) {
   return (Array.isArray(records) ? records : []).filter(
     (record) => !isGalleryRecordDeleted(record, { deletedIds, deletedBefore }),
   )
+}
+
+export function emitGalleryChanged(detail = {}) {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(galleryChangedEventName, { detail }))
 }
 
 export function useGallery({ generationWaitText, isAuthenticated, modes, normalizeGenerationRecord, showNotice } = {}) {
@@ -313,6 +320,11 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     return getGenerationRecordTypeLabel(record, modes)
   }
 
+  function galleryRecordModelLabel(record = {}) {
+    const imageModel = record.images?.find((image) => image?.model)?.model
+    return formatGenerationModelLabel(record.model || imageModel)
+  }
+
   function galleryRecordMeta(record) {
     const successCount = record.images.length
     const requestedCount = Number(record.requestedCount || successCount || 0)
@@ -340,6 +352,7 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     galleryProgressStatuses,
     galleryRecordCover,
     galleryRecordMeta,
+    galleryRecordModelLabel,
     galleryRecordMode,
     galleryRecordNotice,
     galleryRecordProgressText,

@@ -5,14 +5,14 @@ import { useAuthStore } from '../services/authStore'
 import { useSiteStore } from '../services/siteStore'
 import * as constants from './generationConstants'
 import { useGalleryActions } from './useGalleryActions'
-import { useGallery } from './useGallery'
+import { galleryChangedEventName, useGallery } from './useGallery'
 import { useGenerateAction } from './useGenerateAction'
 import { useGenerationBilling } from './useGenerationBilling'
 import { useGenerationForm } from './useGenerationForm'
 import { useGenerationLoading } from './useGenerationLoading'
-import { useGenerationPolling } from './useGenerationPolling'
+import { isGenerationTaskSuccessful, useGenerationPolling } from './useGenerationPolling'
 import { useGenerationUI } from './useGenerationUI'
-import { normalizeGenerationRecord } from './useGenerationPayload'
+import { compactPayload, mapRecordImages, normalizeGenerationRecord } from './useGenerationPayload'
 import { useImageDownload } from './useImageDownload'
 import { useImagePreview } from './useImagePreview'
 import { useModelPicker } from './useModelPicker'
@@ -59,10 +59,17 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
   const output = ref([])
   const loading = ref(false)
   const outputLoading = ref(false)
+  const outputActionLoading = ref(false)
+  const outputActionTargetId = ref('')
+  const outputActionRecordId = ref('')
+  const outputActionType = ref('')
+  const outputActionRunId = ref(0)
   const loadingStage = ref('准备提交生成任务')
+  const initialLoadingStage = loadingStage.value
   const queuePosition = ref(null)
   const lastGenerationNotice = ref('')
   const generationAbortController = ref(null)
+  const generationRunId = ref(0)
   const activeTaskId = ref('')
   const isAuthenticated = computed(() => auth.isAuthenticated.value)
 
@@ -243,6 +250,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     formState,
     gallery,
     generationAbortController,
+    generationRunId,
     getMaskReference,
     getReferences,
     hasUnreadyUpload,
@@ -303,10 +311,273 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     return used
   }
 
+  async function ensureOutputActionReady() {
+    if (outputActionLoading.value || loading.value || outputLoading.value) return false
+    if (!isAuthenticated.value) {
+      if (auth.token.value && !auth.initialized.value) {
+        await auth.refreshMe().catch(() => {})
+      }
+      if (!isAuthenticated.value) {
+        showNotice('请先登录后继续处理结果图')
+        openLoginFromGenerate()
+        return false
+      }
+    }
+    if (!selectedModelAvailable.value && modelOptions.value.length) {
+      model.value = modelOptions.value[0].value
+      showNotice(`已切换到可用模型 ${modelOptions.value[0].name}，请重新提交`)
+      return false
+    }
+    return true
+  }
+
+  function getOutputActionTargetKey(item, index) {
+    return item.id || item.src || `output-${index}`
+  }
+
+  function startOutputAction(item, index, type) {
+    outputActionRunId.value += 1
+    outputActionLoading.value = true
+    outputActionTargetId.value = getOutputActionTargetKey(item, index)
+    outputActionRecordId.value = ''
+    outputActionType.value = type
+    return outputActionRunId.value
+  }
+
+  function isCurrentOutputActionRun(runId) {
+    return outputActionRunId.value === runId
+  }
+
+  function finishOutputAction(runId) {
+    if (!isCurrentOutputActionRun(runId)) return
+    outputActionLoading.value = false
+    outputActionTargetId.value = ''
+    outputActionRecordId.value = ''
+    outputActionType.value = ''
+  }
+
+  function cancelOutputAction() {
+    outputActionRunId.value += 1
+    outputActionLoading.value = false
+    outputActionTargetId.value = ''
+    outputActionRecordId.value = ''
+    outputActionType.value = ''
+  }
+
+  function resetGenerationOutput() {
+    generationRunId.value += 1
+    generationAbortController.value?.abort()
+    generationAbortController.value = null
+    loading.value = false
+    outputLoading.value = false
+    activeTaskId.value = ''
+    queuePosition.value = null
+    output.value = []
+    lastGenerationNotice.value = ''
+    loadingStage.value = initialLoadingStage
+    cancelOutputAction()
+    closeImagePreview()
+  }
+
+  async function resolveOutputActionRecord(taskPayload, requestPayload, { runId } = {}) {
+    const submittedRecord = normalizeGenerationRecord(taskPayload, requestPayload)
+    outputActionRecordId.value = submittedRecord.id || taskPayload?.id || ''
+    if (runId && !isCurrentOutputActionRun(runId)) return null
+
+    gallery.value = mergeGalleryRecords([submittedRecord], gallery.value)
+    persistLocalGallery()
+
+    if (isGenerationTaskSuccessful(taskPayload)) return submittedRecord
+
+    const result = await waitForGenerationTask(taskPayload.id)
+    if (runId && !isCurrentOutputActionRun(runId)) return null
+
+    const normalizedResult = normalizeGenerationRecord(result, {
+      ...requestPayload,
+      createdAt: submittedRecord.createdAt || new Date().toISOString(),
+    })
+    gallery.value = mergeGalleryRecords([normalizedResult], gallery.value)
+    persistLocalGallery()
+    return normalizedResult
+  }
+
+  function replaceOutputItem(index, nextItem) {
+    output.value = output.value.map((item, itemIndex) => (itemIndex === index ? nextItem : item))
+  }
+
+  function buildOutputActionPayload(item, action, payload = {}) {
+    return compactPayload({
+      prompt: payload.prompt,
+      model: model.value,
+      mode: action === 'region-edit' ? 'edit' : 'image',
+      api_mode: 'image',
+      action,
+      tool: action,
+      ratio: item.ratio || formState.aspectRatio.value,
+      resolution: item.resolution || formState.resolution.value || '4K',
+      n: action === 'layer-split' ? 3 : 1,
+      quality: 'high',
+      output_format: 'png',
+      background: action === 'layer-split' ? 'transparent' : 'auto',
+      references: [item.src],
+      mask: payload.mask,
+      tool_params: payload.toolParams,
+    })
+  }
+
+  async function submitOutputRegionEdit(item, index, { prompt: editPrompt, mask, region, radius } = {}) {
+    const instruction = String(editPrompt || '').trim()
+    if (!instruction) {
+      showNotice('请输入局部修改要求')
+      return null
+    }
+    if (!mask) {
+      showNotice('请先在结果图上拖动框选要修改的区域')
+      return null
+    }
+    if (!(await ensureOutputActionReady())) return null
+
+    const runId = startOutputAction(item, index, 'region-edit')
+
+    try {
+      const requestPayload = buildOutputActionPayload(item, 'region-edit', {
+        prompt: instruction,
+        mask,
+        toolParams: {
+          instruction,
+          source_image: item.src,
+          region,
+          radius,
+        },
+      })
+      const taskPayload = await api.generateImages(requestPayload)
+      if (!isCurrentOutputActionRun(runId)) return null
+
+      const record = await resolveOutputActionRecord(taskPayload, requestPayload, { runId })
+      if (!record || !isCurrentOutputActionRun(runId)) return null
+
+      const [resultImage] = mapRecordImages(record)
+      if (!resultImage?.src) throw new Error('局部改图未返回图片结果')
+
+      const beforeSrc = item.src
+      const editHistory = [
+        ...(item.editHistory || []),
+        ...(resultImage.editHistory?.length
+          ? resultImage.editHistory
+          : [
+              {
+                beforeSrc,
+                afterSrc: resultImage.src,
+                prompt: instruction,
+                region,
+                createdAt: new Date().toISOString(),
+              },
+            ]),
+      ]
+
+      replaceOutputItem(index, {
+        ...item,
+        ...resultImage,
+        originalSrc: item.originalSrc || beforeSrc,
+        sourceImages: Array.from(new Set([...(item.sourceImages || []), beforeSrc])),
+        layers: resultImage.layers?.length ? resultImage.layers : [],
+        editHistory,
+      })
+      showNotice('局部改图完成')
+      void auth.refreshMe().catch(() => {})
+      return record
+    } catch (error) {
+      if (!isCurrentOutputActionRun(runId)) return null
+      showNotice(error.message || '局部改图失败，请稍后重试')
+      return null
+    } finally {
+      finishOutputAction(runId)
+    }
+  }
+
+  async function submitOutputLayerSplit(item, index) {
+    if (!(await ensureOutputActionReady())) return null
+
+    const runId = startOutputAction(item, index, 'layer-split')
+
+    try {
+      const requestPayload = buildOutputActionPayload(item, 'layer-split', {
+        prompt: '将当前图片分离为主体、文字和背景三个独立图层。',
+        toolParams: {
+          source_image: item.src,
+          layer_types: ['subject', 'text', 'background'],
+        },
+      })
+      const taskPayload = await api.generateImages(requestPayload)
+      if (!isCurrentOutputActionRun(runId)) return null
+
+      const record = await resolveOutputActionRecord(taskPayload, requestPayload, { runId })
+      if (!record || !isCurrentOutputActionRun(runId)) return null
+
+      const layers = mapRecordImages(record)
+        .filter((image) => image.src)
+        .map((image, layerIndex) => ({
+          id: image.id || `layer-${layerIndex}`,
+          type: image.layerType || ['subject', 'text', 'background'][layerIndex] || `layer-${layerIndex + 1}`,
+          label: image.layerLabel || image.title || `图层 ${layerIndex + 1}`,
+          title: image.title || image.layerLabel || `图层 ${layerIndex + 1}`,
+          src: image.src,
+          visible: image.visible !== false,
+          outputFormat: image.outputFormat || 'png',
+          createdAt: image.createdAt,
+        }))
+
+      if (!layers.length) throw new Error('智能分层未返回图层图片')
+
+      replaceOutputItem(index, {
+        ...item,
+        originalSrc: item.originalSrc || item.src,
+        sourceImages: Array.from(new Set([...(item.sourceImages || []), item.src])),
+        layers,
+      })
+      showNotice('智能分层完成')
+      void auth.refreshMe().catch(() => {})
+      return record
+    } catch (error) {
+      if (!isCurrentOutputActionRun(runId)) return null
+      showNotice(error.message || '智能分层失败，请稍后重试')
+      return null
+    } finally {
+      finishOutputAction(runId)
+    }
+  }
+
   function handleUseGalleryRecord(event) {
     const record = event.detail?.record || event.detail
     if (!record) return
     useGalleryRecord(record)
+  }
+
+  function handleGalleryChanged(event) {
+    const detail = event?.detail || {}
+    if (detail.type === 'clear') {
+      gallery.value = []
+      cancelOutputAction()
+      return
+    }
+
+    if (
+      detail.type === 'remove' &&
+      detail.recordId &&
+      (detail.recordId === outputActionRecordId.value ||
+        output.value.some(
+          (item, index) =>
+            getOutputActionTargetKey(item, index) === outputActionTargetId.value && item.record?.id === detail.recordId,
+        ))
+    ) {
+      cancelOutputAction()
+    }
+
+    const currentGallery =
+      detail.type === 'remove' && detail.recordId
+        ? gallery.value.filter((record) => record.id !== detail.recordId)
+        : gallery.value
+    gallery.value = mergeGalleryRecords(loadLocalGallery(), currentGallery)
   }
 
   watch(formState.mode, trimReferencesForMode)
@@ -331,6 +602,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     window.addEventListener('click', closeMenusOnOutside)
     window.addEventListener('keydown', handleWindowKeydown)
     window.addEventListener('imgsgen:use-gallery-record', handleUseGalleryRecord)
+    window.addEventListener(galleryChangedEventName, handleGalleryChanged)
   })
 
   onBeforeUnmount(() => {
@@ -339,6 +611,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     window.removeEventListener('click', closeMenusOnOutside)
     window.removeEventListener('keydown', handleWindowKeydown)
     window.removeEventListener('imgsgen:use-gallery-record', handleUseGalleryRecord)
+    window.removeEventListener(galleryChangedEventName, handleGalleryChanged)
     cleanupReferenceObjectUrls()
   })
 
@@ -352,7 +625,12 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     activeTaskId,
     generationAbortController,
     loading,
+    resetGenerationOutput,
     outputLoading,
+    outputActionLoading,
+    outputActionTargetId,
+    outputActionRecordId,
+    outputActionType,
     loadingStage,
     lastGenerationNotice,
     queuePosition,
@@ -403,6 +681,8 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     sizeMatrix: constants.sizeMatrix,
     // Actions
     generate,
+    submitOutputRegionEdit,
+    submitOutputLayerSplit,
     enableBatchMode,
     disableBatchMode,
     openLoginFromGenerate,

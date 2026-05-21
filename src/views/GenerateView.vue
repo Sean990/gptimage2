@@ -20,7 +20,7 @@ let mobileMediaQuery = null
 
 const task = useGenerationTask({ onGalleryRecordUsed: handleGalleryRecordUsed })
 
-const { batchMode, footerTipText, notice, output } = task
+const { batchMode, footerTipText, notice, output, resetGenerationOutput } = task
 
 const isGenerateWorkspace = computed(() => activeTool.value === 'generate')
 const outputSignature = computed(() => output.value.map((item) => item.src || item.url || item.title || '').join('|'))
@@ -28,6 +28,12 @@ const outputSignature = computed(() => output.value.map((item) => item.src || it
 function handleGalleryRecordUsed() {
   activeTool.value = 'generate'
   scrollOutputIntoView()
+}
+
+function selectTool(toolKey) {
+  if (!toolKey || activeTool.value === toolKey) return
+  resetGenerationOutput()
+  activeTool.value = toolKey
 }
 
 function scrollOutputIntoView() {
@@ -64,16 +70,16 @@ onBeforeUnmount(() => {
 <template>
   <main class="page generate-page" :class="{ 'batch-mode-page': batchMode, 'mobile-mode': isMobile }">
     <template v-if="isMobile">
-      <GenerateMobileShell :task="task" :active-tool="activeTool" @update:active-tool="activeTool = $event" />
+      <GenerateMobileShell :task="task" :active-tool="activeTool" @update:active-tool="selectTool" />
     </template>
 
     <template v-else>
       <section class="section-tight">
         <div class="container generate-shell">
-          <GenerateToolboxNav class="generate-toolbox-fallback" v-model:active-tool="activeTool" />
+          <GenerateToolboxNav class="generate-toolbox-fallback" :active-tool="activeTool" @update:active-tool="selectTool" />
 
           <div class="generate-studio" v-fade-up="{ delay: 100 }">
-            <GenerateSideRail class="generate-studio-rail" v-model:active-tool="activeTool" />
+            <GenerateSideRail class="generate-studio-rail" :active-tool="activeTool" @update:active-tool="selectTool" />
 
             <div
               class="generate-studio-main"

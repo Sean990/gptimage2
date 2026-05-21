@@ -617,6 +617,37 @@
   color: #94a3b8;
 }
 
+:root[data-theme='dark'] .image-preview-model {
+  color: #bfdbfe;
+  border-color: rgba(96, 165, 250, 0.24);
+  background: rgba(37, 99, 235, 0.18);
+}
+
+:root[data-theme='dark'] .image-preview-actions {
+  border-top-color: rgba(51, 65, 85, 0.86);
+}
+
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-reuse {
+  color: #93c5fd;
+  border-color: rgba(96, 165, 250, 0.24);
+  background: rgba(37, 99, 235, 0.18);
+}
+
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-copy,
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-download,
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-compare,
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-delete {
+  color: var(--text);
+  border-color: var(--line);
+  background: var(--surface);
+}
+
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-compare.active {
+  color: #93c5fd;
+  border-color: rgba(96, 165, 250, 0.28);
+  background: rgba(37, 99, 235, 0.2);
+}
+
 :root[data-theme='dark'] .image-preview-thumb {
   background: #0f172a;
 }

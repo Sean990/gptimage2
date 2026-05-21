@@ -53,6 +53,44 @@ describe('生成 payload 工具', () => {
     )
   })
 
+  it('保留结果图原图、图层和改图历史元数据', () => {
+    const record = normalizeGenerationRecord(
+      {
+        id: 'task-layer-1',
+        prompt: '分层',
+        tool: 'layer-split',
+        status: 'completed',
+        images: [
+          {
+            url: '/uploads/current.png',
+            originalSrc: '/uploads/source.png',
+            layers: [{ type: 'subject', label: '主体', url: '/uploads/subject.png' }],
+            editHistory: [{ beforeSrc: '/uploads/before.png', afterSrc: '/uploads/current.png', prompt: '换颜色' }],
+          },
+        ],
+      },
+      { model: 'gpt-image-2' },
+    )
+    const [image] = mapRecordImages(record)
+
+    expect(getGenerationRecordTypeLabel(record)).toBe('智能分层')
+    expect(image.originalSrc).toContain('/uploads/source.png')
+    expect(image.layers[0]).toEqual(
+      expect.objectContaining({
+        type: 'subject',
+        label: '主体',
+        src: expect.stringContaining('/uploads/subject.png'),
+      }),
+    )
+    expect(image.editHistory[0]).toEqual(
+      expect.objectContaining({
+        beforeSrc: expect.stringContaining('/uploads/before.png'),
+        afterSrc: expect.stringContaining('/uploads/current.png'),
+        prompt: '换颜色',
+      }),
+    )
+  })
+
   it('独立图片工具记录只显示工具类型且不可复用提示词', () => {
     const record = normalizeGenerationRecord(
       {

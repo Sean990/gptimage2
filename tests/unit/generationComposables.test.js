@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useGenerateAction } from '../../src/composables/useGenerateAction'
+import { useGalleryActions } from '../../src/composables/useGalleryActions'
 import { useGenerationBilling } from '../../src/composables/useGenerationBilling'
 import { createGptLoadingDots } from '../../src/composables/useGenerationLoading'
 import { isGenerationTaskSuccessful, useGenerationPolling } from '../../src/composables/useGenerationPolling'
+import { useGenerationUI } from '../../src/composables/useGenerationUI'
 import { normalizeGenerationRecord } from '../../src/composables/useGenerationPayload'
 import { filterVisibleGalleryRecords, useGallery } from '../../src/composables/useGallery'
 import { normalizeModelListPayload } from '../../src/composables/useModelPicker'
@@ -35,6 +37,33 @@ describe('生成页拆分 composables', () => {
         litRadius: expect.any(Number),
       }),
     )
+  })
+
+  it('2 张和 4 张结果使用多图布局样式', () => {
+    const normalizedImageCount = ref(2)
+    const ui = useGenerationUI({
+      batchMode: ref(false),
+      galleryOpen: ref(false),
+      imagePreview: ref(null),
+      loading: ref(false),
+      maskCount: ref(0),
+      mode: ref('generate'),
+      normalizedImageCount,
+      output: ref([]),
+      aspectRatio: ref('1:1'),
+      closeGallery: vi.fn(),
+      closeImagePreview: vi.fn(),
+      showNextPreviewImage: vi.fn(),
+      showPreviousPreviewImage: vi.fn(),
+    })
+
+    expect(ui.outputGridClass.value).toBe('output-grid--many')
+
+    normalizedImageCount.value = 4
+    expect(ui.outputGridClass.value).toBe('output-grid--many')
+
+    normalizedImageCount.value = 3
+    expect(ui.outputGridClass.value).toBe('output-grid--three')
   })
 
   it('识别尚未上传完成的本地引用图', () => {
@@ -109,6 +138,16 @@ describe('生成页拆分 composables', () => {
     ])
   })
 
+  it('图库记录会把模型 ID 转成用户可读名称', () => {
+    const { galleryRecordModelLabel } = useGallery({
+      normalizeGenerationRecord,
+    })
+
+    expect(galleryRecordModelLabel({ model: 'gpt-image-2', images: [] })).toBe('ImgsGen')
+    expect(galleryRecordModelLabel({ images: [{ model: 'nano-banana-pro' }] })).toBe('Nano Banana Pro')
+    expect(galleryRecordModelLabel({ model: '', images: [] })).toBe('')
+  })
+
   it('把批量生成的部分成功记录保留为可用结果', () => {
     const record = normalizeGenerationRecord({
       id: 'task-partial',
@@ -123,6 +162,66 @@ describe('生成页拆分 composables', () => {
     expect(record.images).toHaveLength(3)
     expect(record.partialFailureMessage).toContain('已生成 3/4 张')
     expect(isGenerationTaskSuccessful(record)).toBe(true)
+  })
+
+  it('复用多图图库记录时同步生成张数', () => {
+    const output = ref([])
+    const formState = {
+      prompt: ref(''),
+      mode: ref('generate'),
+      aspectRatio: ref('3:4'),
+      resolution: ref('1K'),
+      quality: ref('auto'),
+      outputFormat: ref('png'),
+      background: ref('auto'),
+      batchMode: ref(false),
+      batchCount: ref(2),
+      batchCountOptions: [
+        { value: 2 },
+        { value: 4 },
+        { value: 6 },
+        { value: 8 },
+        { value: 10 },
+      ],
+    }
+    const actions = useGalleryActions({
+      api: {},
+      gallery: ref([]),
+      galleryOpen: ref(true),
+      gallerySyncMessage: ref(''),
+      isAuthenticated: ref(false),
+      markGalleryRecordsDeleted: vi.fn(),
+      mergeGalleryRecords: vi.fn((records, current = []) => [...records, ...current]),
+      model: ref('gpt-image-2'),
+      modelOptions: ref([]),
+      output,
+      persistLocalGallery: vi.fn(),
+      selectedModelAvailable: ref(true),
+      showNotice: vi.fn(),
+    })
+
+    const used = actions.useGalleryRecord(
+      normalizeGenerationRecord({
+        id: 'task-batch-reuse',
+        prompt: '复用四张图',
+        mode: 'generate',
+        ratio: '1:1',
+        resolution: '4K',
+        requestedCount: 4,
+        images: [
+          { url: '/uploads/reuse-1.png' },
+          { url: '/uploads/reuse-2.png' },
+          { url: '/uploads/reuse-3.png' },
+          { url: '/uploads/reuse-4.png' },
+        ],
+      }),
+      formState,
+    )
+
+    expect(used).toBe(true)
+    expect(formState.batchMode.value).toBe(true)
+    expect(formState.batchCount.value).toBe(4)
+    expect(output.value).toHaveLength(4)
   })
 
   it('专用图片工具提交时合并结构化工具参数', async () => {

@@ -32,11 +32,13 @@ export function useGenerationUI({
 
   const outputGridClass = computed(() => {
     const count = activeOutputCount.value
-    if (count <= 1) return 'output-grid--single'
-    if (count === 2) return 'output-grid--two'
-    if (count === 3) return 'output-grid--three'
-    if (count === 4) return 'output-grid--four'
-    return 'output-grid--many'
+    const classes = []
+    if (count <= 1) classes.push('output-grid--single')
+    else if (count === 3) classes.push('output-grid--three')
+    else classes.push('output-grid--many')
+
+    if (isLandscapeRatio(aspectRatio.value)) classes.push('output-grid--landscape')
+    return classes.join(' ')
   })
 
   const outputAspectStyle = computed(() => ({
@@ -78,6 +80,13 @@ export function useGenerationUI({
     }
     if (event.key !== 'Escape') return
     if (galleryOpen.value) closeGallery()
+  }
+
+  function isLandscapeRatio(value) {
+    const [width, height] = String(value || '')
+      .split(':')
+      .map((part) => Number(part))
+    return Number.isFinite(width) && Number.isFinite(height) && width > height
   }
 
   return {

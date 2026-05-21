@@ -23,6 +23,7 @@ const {
   galleryOpen,
   galleryRecordCover,
   galleryRecordMeta,
+  galleryRecordModelLabel = () => '',
   galleryRecordMode,
   galleryRecordNotice,
   galleryRecordProgressText,
@@ -111,7 +112,12 @@ const {
               <small>{{ galleryRecordProgressText(record) }}</small>
             </span>
           </span>
-          <span class="thumb-chip">{{ galleryRecordMode(record) }}</span>
+          <span class="gallery-cover-chips">
+            <span class="thumb-chip">{{ galleryRecordMode(record) }}</span>
+            <span v-if="galleryRecordModelLabel(record)" class="thumb-chip thumb-chip--model">
+              模型：{{ galleryRecordModelLabel(record) }}
+            </span>
+          </span>
         </button>
         <div class="gallery-card-body">
           <div class="gallery-card-meta">
