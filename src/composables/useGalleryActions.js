@@ -23,7 +23,7 @@ export function useGalleryActions({
   function useGalleryRecord(record, formState) {
     if (!canReuseGenerationRecord(record)) {
       showNotice(`${getGenerationRecordTypeLabel(record)}记录仅支持预览和下载`)
-      return
+      return false
     }
     formState.prompt.value = record.prompt || formState.prompt.value
     model.value = record.model || model.value
@@ -39,6 +39,7 @@ export function useGalleryActions({
     output.value = mapRecordImages(record)
     galleryOpen.value = false
     showNotice('已载入图库记录')
+    return true
   }
 
   async function copyGalleryPrompt(record) {

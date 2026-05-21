@@ -338,6 +338,7 @@ async function onMaskDrop(event) {
         <div class="control-row">
           <input
             id="image-url"
+            name="reference_image_url"
             v-model.trim="urlInput"
             type="url"
             inputmode="url"
@@ -369,6 +370,7 @@ async function onMaskDrop(event) {
         <span>或拖拽图片到此区域</span>
         <span>{{ referenceUploadHint }}</span>
         <input
+          name="reference_images"
           type="file"
           accept="image/png,image/jpeg,image/webp"
           :multiple="mode !== 'edit'"
@@ -475,7 +477,7 @@ async function onMaskDrop(event) {
           </button>
         </div>
       </div>
-      <textarea id="prompt" v-model.trim="prompt" :placeholder="promptPlaceholder" spellcheck="false" />
+      <textarea id="prompt" name="prompt" v-model.trim="prompt" :placeholder="promptPlaceholder" spellcheck="false" />
       <div class="quality-meter" aria-live="polite">
         <div class="quality-meter-head">
           <span>{{ promptQualityLabel }}</span>
@@ -528,7 +530,14 @@ async function onMaskDrop(event) {
         />
         <div v-if="supportsOutputCompression()" class="field">
           <label for="compression">压缩 {{ outputCompression }}%</label>
-          <input id="compression" v-model.number="outputCompression" type="range" min="0" max="100" />
+          <input
+            id="compression"
+            name="output_compression"
+            v-model.number="outputCompression"
+            type="range"
+            min="0"
+            max="100"
+          />
         </div>
       </div>
       <div v-if="mode === 'edit'" class="mask-panel">
@@ -536,6 +545,7 @@ async function onMaskDrop(event) {
         <div class="control-row">
           <input
             id="mask-url"
+            name="mask_url"
             v-model.trim="maskUrlInput"
             type="url"
             inputmode="url"
@@ -565,7 +575,7 @@ async function onMaskDrop(event) {
           <strong>点击上传蒙版</strong>
           <span>或拖拽 PNG 蒙版到此区域</span>
           <span>透明区域会被编辑</span>
-          <input type="file" accept="image/png" hidden @change="onMaskFileChange" />
+          <input name="mask_image" type="file" accept="image/png" hidden @change="onMaskFileChange" />
         </label>
         <p class="compliance-hint">请勿通过蒙版编辑未获授权的人脸、身体、证件、隐私区域或可能造成误导的敏感内容。</p>
         <div v-if="maskCount" class="reference-grid mask-grid">

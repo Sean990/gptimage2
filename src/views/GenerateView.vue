@@ -13,33 +13,29 @@ import ImagePreviewModal from '../components/generate/ImagePreviewModal.vue'
 import { useGenerationTask } from '../composables/useGenerationTask'
 import '../assets/generate.css'
 
-const task = useGenerationTask()
-
-const { batchMode, footerTipText, notice, output } = task
-
 const outputPanelRef = ref(null)
 const activeTool = ref('generate')
 const isMobile = ref(false)
-const isGenerateWorkspace = computed(() => activeTool.value === 'generate')
-const useGalleryRecordEventName = 'imgsgen:use-gallery-record'
 let mobileMediaQuery = null
-const galleryTask = {
-  ...task,
-  useGalleryRecord(record) {
-    activeTool.value = 'generate'
-    task.useGalleryRecord(record)
-  },
-}
 
-function switchToGenerateWorkspace() {
+const task = useGenerationTask({ onGalleryRecordUsed: handleGalleryRecordUsed })
+
+const { batchMode, footerTipText, notice, output } = task
+
+const isGenerateWorkspace = computed(() => activeTool.value === 'generate')
+const outputSignature = computed(() => output.value.map((item) => item.src || item.url || item.title || '').join('|'))
+
+function handleGalleryRecordUsed() {
   activeTool.value = 'generate'
+  scrollOutputIntoView()
 }
 
 function scrollOutputIntoView() {
-  if (!isMobile.value) return
+  if (!isMobile.value || typeof document === 'undefined') return
   nextTick(() => {
     const target = outputPanelRef.value?.$el || document.querySelector('.mobile-output-section')
-    target?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    target?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'nearest' })
   })
 }
 
@@ -48,9 +44,9 @@ function updateMobileState(event = mobileMediaQuery) {
 }
 
 watch(
-  () => output.value.length,
-  (nextCount, previousCount) => {
-    if (previousCount === 0 && nextCount > 0) scrollOutputIntoView()
+  outputSignature,
+  (nextSignature, previousSignature) => {
+    if (nextSignature && nextSignature !== previousSignature) scrollOutputIntoView()
   },
 )
 
@@ -58,12 +54,10 @@ onMounted(() => {
   mobileMediaQuery = window.matchMedia('(max-width: 820px)')
   updateMobileState()
   mobileMediaQuery.addEventListener('change', updateMobileState)
-  window.addEventListener(useGalleryRecordEventName, switchToGenerateWorkspace)
 })
 
 onBeforeUnmount(() => {
   mobileMediaQuery?.removeEventListener('change', updateMobileState)
-  window.removeEventListener(useGalleryRecordEventName, switchToGenerateWorkspace)
 })
 </script>
 
@@ -100,7 +94,7 @@ onBeforeUnmount(() => {
       </section>
     </template>
 
-    <GalleryDrawer :task="galleryTask" />
+    <GalleryDrawer :task="task" />
     <ImagePreviewModal :task="task" />
 
     <Toast :message="notice" />

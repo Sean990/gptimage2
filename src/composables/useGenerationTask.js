@@ -21,7 +21,7 @@ import { usePromptUI } from './usePromptUI'
 import { useReferenceImages } from './useReferenceImages'
 import { useScrollLock } from './useScrollLock'
 
-export function useGenerationTask() {
+export function useGenerationTask({ onGalleryRecordUsed } = {}) {
   const route = useRoute()
   const router = useRouter()
   const auth = useAuthStore()
@@ -296,10 +296,17 @@ export function useGenerationTask() {
     generationUI.handleWindowKeydown(event)
   }
 
+  function useGalleryRecord(record) {
+    const normalizedRecord = normalizeGenerationRecord(record)
+    const used = galleryActions.useGalleryRecord(normalizedRecord, formState)
+    if (used) onGalleryRecordUsed?.(normalizedRecord)
+    return used
+  }
+
   function handleUseGalleryRecord(event) {
     const record = event.detail?.record || event.detail
     if (!record) return
-    galleryActions.useGalleryRecord(normalizeGenerationRecord(record), formState)
+    useGalleryRecord(record)
   }
 
   watch(formState.mode, trimReferencesForMode)
@@ -362,7 +369,7 @@ export function useGenerationTask() {
     openGalleryImage: (record) => galleryActions.openGalleryImage(record, openImagePreview),
     removeGalleryRecord: galleryActions.removeGalleryRecord,
     saveCurrentOutputToGallery: () => galleryActions.saveCurrentOutputToGallery(formState),
-    useGalleryRecord: (record) => galleryActions.useGalleryRecord(record, formState),
+    useGalleryRecord,
     // Polling / queue
     ...pollingApi,
     // Image preview

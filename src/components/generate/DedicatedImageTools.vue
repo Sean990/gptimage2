@@ -421,6 +421,7 @@ async function onDrop(tool, event) {
             <div class="image-tool-url-row">
               <input
                 :id="`image-tool-url-${tool.key}`"
+                :name="`${tool.key}_image_url`"
                 :value="getDraft(tool).url"
                 type="url"
                 :placeholder="tool.urlPlaceholder"
@@ -453,6 +454,7 @@ async function onDrop(tool, event) {
             <span>JPG / PNG / WEBP，单次处理 1 张图片</span>
             <input
               :id="`image-tool-upload-${tool.key}`"
+              :name="`${tool.key}_image`"
               type="file"
               accept="image/png,image/jpeg,image/webp"
               hidden
@@ -486,6 +488,7 @@ async function onDrop(tool, event) {
             <label :for="`${tool.key}-extra`">{{ tool.extraInput.label }}</label>
             <input
               :id="`${tool.key}-extra`"
+              :name="`${tool.key}_${tool.extraInput.key}`"
               :value="getDraft(tool)[tool.extraInput.key]"
               type="text"
               :placeholder="tool.extraInput.placeholder"
@@ -511,6 +514,7 @@ async function onDrop(tool, event) {
         <label class="image-tool-field image-tool-note">
           <span>处理要求</span>
           <textarea
+            :name="`${tool.key}_note`"
             :value="getDraft(tool).note"
             :placeholder="tool.notePlaceholder"
             rows="3"
