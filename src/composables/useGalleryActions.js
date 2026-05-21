@@ -5,6 +5,7 @@ import {
   normalizeGenerationRecord,
 } from './useGenerationPayload'
 import { emitGalleryChanged } from './useGallery'
+import { logger } from '../utils/logger'
 
 function getAllowedImageCounts(formState = {}) {
   const counts = new Set([1])
@@ -134,7 +135,7 @@ export function useGalleryActions({
 
     if (isAuthenticated.value && recordId) {
       api.deleteGalleryRecord(recordId).catch((error) => {
-        if (error?.status !== 404) console.warn('云端图库删除失败', error)
+        if (error?.status !== 404) logger.warn('云端图库删除失败', error)
       })
     }
 

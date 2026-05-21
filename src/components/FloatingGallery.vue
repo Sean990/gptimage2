@@ -7,6 +7,7 @@ import ImagePreviewModal from './generate/ImagePreviewModal.vue'
 import Toast from './Toast.vue'
 import { api } from '../services/api'
 import { useAuthStore } from '../services/authStore'
+import { logger } from '../utils/logger'
 import { generationWaitText, modes } from '../composables/generationConstants'
 import { emitGalleryChanged, galleryChangedEventName, useGallery } from '../composables/useGallery'
 import { useImageDownload } from '../composables/useImageDownload'
@@ -135,7 +136,7 @@ async function syncCloudGallery({ silent = false } = {}) {
     persistLocalGallery()
     if (!silent) setGallerySyncMessage('云端图库已同步')
   } catch (error) {
-    console.warn('[全站图库同步失败]', error)
+    logger.warn('全站图库同步失败', error)
     gallerySyncError.value = error.message || '云端图库同步失败'
     if (!silent && !gallery.value.length) showNotice(gallerySyncError.value)
   } finally {
@@ -238,7 +239,7 @@ async function removeGalleryRecord(recordId) {
   emitGalleryChanged({ type: 'remove', recordId })
   if (isAuthenticated.value && recordId) {
     api.deleteGalleryRecord(recordId).catch((error) => {
-      if (error?.status !== 404) console.warn('[云端图库删除失败]', error)
+      if (error?.status !== 404) logger.warn('云端图库删除失败', error)
     })
   }
   showNotice('已从图库移除')

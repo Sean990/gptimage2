@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger'
+
 const technicalErrorPattern = /upstream|上游|连接中断|connection|ECONNRE|socket|timeout|5\d{2}\s|内部错误|internal/i
 const successfulTaskStatuses = new Set([
   'completed',
@@ -64,9 +66,7 @@ export function useGenerationPolling({
       const position = await api.getQueuePosition(taskId)
       queuePosition.value = position
     } catch (error) {
-      if (import.meta.env.DEV) {
-        console.warn('[队列位置查询失败]', error)
-      }
+      logger.warn('队列位置查询失败', error)
     }
   }
 
@@ -130,7 +130,7 @@ export function useGenerationPolling({
           taskPollTimers.set(taskId, window.setTimeout(poll, pollInterval))
         } catch (error) {
           consecutiveFailures++
-          console.warn('[生成任务轮询失败]', consecutiveFailures, '/', MAX_FAILURES, error)
+          logger.warn('生成任务轮询失败', `${consecutiveFailures}/${MAX_FAILURES}`, error)
           if (consecutiveFailures >= MAX_FAILURES) {
             clearTaskPollTimer(taskId)
             reject(new Error('生成任务轮询失败次数过多，请检查网络后重试'))
@@ -211,7 +211,7 @@ export function useGenerationPolling({
       persistLocalGallery()
       if (!silent) setGallerySyncMessage('云端图库已同步')
     } catch (error) {
-      console.warn('[云端图库同步失败]', error)
+      logger.warn('云端图库同步失败', error)
       gallerySyncError.value = error.message || '云端图库同步失败'
       if (!silent && !gallery.value.length) showNotice(gallerySyncError.value)
     } finally {
