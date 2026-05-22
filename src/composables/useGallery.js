@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { canReuseGenerationRecord, getGenerationRecordTypeLabel } from './useGenerationPayload'
 import { formatGenerationModelLabel } from './useModelPicker'
+import { getThumbnailUrl } from '../utils/imageOptimizer'
 
 const galleryStorageKey = 'gptImage2Gallery'
 const deletedGalleryStorageKey = 'gptImage2DeletedGalleryIds'
@@ -257,7 +258,8 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
   }
 
   function galleryRecordCover(record) {
-    return record.images[0]?.url || ''
+    const originalUrl = record.images[0]?.url || ''
+    return getThumbnailUrl(originalUrl)
   }
 
   function galleryRecordStatusLabel(record) {

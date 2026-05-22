@@ -17,6 +17,7 @@ import {
   Split,
   WandSparkles,
 } from 'lucide-vue-next'
+import { getThumbnailUrl } from '../../utils/imageOptimizer'
 
 const props = defineProps({
   task: {
@@ -1184,7 +1185,7 @@ onBeforeUnmount(() => {
           >
             <img
               v-if="canPreviewGalleryRecord(record)"
-              :src="galleryRecordCover(record)"
+              :src="getThumbnailUrl(galleryRecordCover(record))"
               :alt="canReuseGalleryRecord(record) ? record.prompt || '最近任务图片' : galleryRecordMode(record)"
             />
             <span v-else>

@@ -10,6 +10,7 @@ import {
   ScissorsLineDashed,
   Split,
 } from 'lucide-vue-next'
+import { getMediumImageUrl } from '../../utils/imageOptimizer'
 
 const props = defineProps({
   item: {
@@ -95,6 +96,11 @@ const stageClass = computed(() => ({
   'output-image-stage--editing': props.isEditing,
   'output-image-stage--dragging': props.editDragActive,
 }))
+
+const optimizedImageSrc = computed(() => {
+  const originalUrl = props.item.src || props.item.url
+  return getMediumImageUrl(originalUrl)
+})
 </script>
 
 <template>
@@ -111,7 +117,7 @@ const stageClass = computed(() => ({
       @contextmenu="isEditing ? $emit('cancel-edit', $event, item, index) : null"
       @keydown="$emit('stage-keydown', $event, item, index)"
     >
-      <img :src="item.src || item.url" :alt="item.title" loading="lazy" draggable="false" />
+      <img :src="optimizedImageSrc" :alt="item.title" loading="lazy" draggable="false" />
 
       <template v-if="isCompareActive && item.originalSrc">
         <div class="output-compare-overlay">
