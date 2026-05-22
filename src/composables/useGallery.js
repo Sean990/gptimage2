@@ -1,5 +1,9 @@
 import { computed, ref } from 'vue'
-import { canReuseGenerationRecord, getGenerationRecordTypeLabel } from './useGenerationPayload'
+import {
+  canReuseGenerationRecord,
+  getGenerationRecordToolKey,
+  getGenerationRecordTypeLabel,
+} from './useGenerationPayload'
 import { formatGenerationModelLabel } from './useModelPicker'
 import { getThumbnailUrl } from '../utils/imageOptimizer'
 
@@ -142,7 +146,9 @@ export function filterVisibleGalleryRecords(records = [], options = {}) {
   const deletedIds = options.deletedIds || loadDeletedGalleryIds()
   const deletedBefore = Number.isFinite(options.deletedBefore) ? options.deletedBefore : loadGalleryClearedBefore()
   return (Array.isArray(records) ? records : []).filter(
-    (record) => !isGalleryRecordDeleted(record, { deletedIds, deletedBefore }),
+    (record) =>
+      getGenerationRecordToolKey(record) !== 'layer-split' &&
+      !isGalleryRecordDeleted(record, { deletedIds, deletedBefore }),
   )
 }
 
@@ -207,6 +213,7 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
       .flat()
       .map((record) => normalizeGenerationRecord(record))
       .forEach((record) => {
+        if (getGenerationRecordToolKey(record) === 'layer-split') return
         if (isGalleryRecordDeleted(record, { deletedIds, deletedBefore })) return
         const shouldKeepEmptyRecord = galleryRetainedEmptyStatuses.has(record.status)
         if (!record.images.length && !shouldKeepEmptyRecord) return

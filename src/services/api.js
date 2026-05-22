@@ -92,6 +92,45 @@ function normalizePayload(payload) {
   return payload?.success === false ? payload : (payload?.data ?? payload)
 }
 
+const layerSplitBackgroundKeys = new Set(['background', 'output_background', 'outputBackground'])
+
+function normalizeToolKey(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-')
+}
+
+function hasLayerSplitParams(value = {}) {
+  const layerTypes = value?.layer_types || value?.layerTypes
+  return Array.isArray(layerTypes) && layerTypes.length > 0
+}
+
+function isLayerSplitGeneratePayload(payload = {}) {
+  const toolParams = payload.tool_params || payload.toolParams || {}
+  return (
+    [payload.action, payload.tool, payload.toolKey, payload.tool_key, toolParams.action, toolParams.tool]
+      .map(normalizeToolKey)
+      .includes('layer-split') || hasLayerSplitParams(toolParams)
+  )
+}
+
+function stripLayerSplitBackgroundOptions(value) {
+  if (Array.isArray(value)) return value.map(stripLayerSplitBackgroundOptions)
+  if (!value || typeof value !== 'object') return value
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !layerSplitBackgroundKeys.has(key))
+      .map(([key, entryValue]) => [key, stripLayerSplitBackgroundOptions(entryValue)]),
+  )
+}
+
+function normalizeGenerateRequestPayload(payload = {}) {
+  if (!isLayerSplitGeneratePayload(payload)) return payload
+  return stripLayerSplitBackgroundOptions(payload)
+}
+
 function getRequestMethod(options = {}) {
   return String(options.method || 'GET').toUpperCase()
 }
@@ -209,20 +248,21 @@ async function request(path, options = {}) {
 }
 
 async function requestGenerateImages(payload, options = {}) {
+  const requestPayload = normalizeGenerateRequestPayload(payload)
   const response = await fetchWithTimeout(`${API_ORIGIN}/api/generate`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       ...authHeaders(),
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(requestPayload),
     signal: options.signal,
   })
 
   if (!response.ok && response.status === 404) {
     return request('/generate/images', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(requestPayload),
       signal: options.signal,
     })
   }
@@ -329,6 +369,11 @@ export const api = {
     }),
   getGenerationTask: (id) => request(`/generate/tasks/${encodeURIComponent(id)}`),
   getQueuePosition: (id) => request(`/generate/tasks/${encodeURIComponent(id)}/position`),
+  retryGenerationTask: (id, payload = {}) =>
+    request(`/generate/tasks/${encodeURIComponent(id)}/retry`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   cancelGenerationTask: (id) =>
     request(`/generate/tasks/${encodeURIComponent(id)}/cancel`, {
       method: 'POST',

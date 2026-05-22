@@ -183,18 +183,8 @@
   .filter-row,
   .prompt-controls,
   .control-row,
-  .generation-actions,
-  .generation-inline-notice {
+  .generation-actions {
     grid-template-columns: 1fr;
-  }
-
-  .generation-inline-notice {
-    display: grid;
-  }
-
-  .generation-inline-notice .btn {
-    width: 100%;
-    justify-content: center;
   }
 
   .library-tabs {

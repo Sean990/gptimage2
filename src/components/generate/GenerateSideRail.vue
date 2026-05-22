@@ -31,6 +31,7 @@ function select(key) {
       type="button"
       class="generate-side-rail-item"
       :class="[`rail-item-${item.key}`, { active: props.activeTool === item.key }]"
+      :aria-label="item.title"
       :aria-pressed="props.activeTool === item.key"
       :title="item.title"
       @click="select(item.key)"

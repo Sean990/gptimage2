@@ -10,7 +10,10 @@ export const imageToolLabels = {
 }
 
 function normalizeRecordToolKey(value) {
-  return String(value || '').trim().toLowerCase().replace(/[_\s]+/g, '-')
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, '-')
 }
 
 export function getGenerationRecordToolKey(record = {}) {
@@ -86,7 +89,12 @@ function normalizeEditHistory(history = []) {
 export function normalizeGeneratedImage(item = {}, index = 0, defaults = {}) {
   const imageUrl = item.url || item.src || item.image_url || item.image || ''
   const sourceImages = normalizeImageList(
-    item.sourceImages || item.source_images || defaults.sourceImages || defaults.source_images || defaults.references || [],
+    item.sourceImages ||
+      item.source_images ||
+      defaults.sourceImages ||
+      defaults.source_images ||
+      defaults.references ||
+      [],
   )
   const originalSrc = resolveApiUrl(
     item.originalSrc || item.original_src || defaults.originalSrc || defaults.original_src || sourceImages[0] || '',
@@ -101,8 +109,8 @@ export function normalizeGeneratedImage(item = {}, index = 0, defaults = {}) {
     apiMode: item.apiMode || defaults.apiMode,
     tool: item.tool || defaults.tool,
     toolParams: item.toolParams || item.tool_params || defaults.toolParams || defaults.tool_params,
-    ratio: item.ratio,
-    resolution: item.resolution,
+    ratio: item.ratio || defaults.ratio,
+    resolution: item.resolution || defaults.resolution,
     size: item.size || defaults.size,
     quality: item.quality || defaults.quality,
     outputFormat: item.outputFormat || item.output_format || defaults.outputFormat || defaults.output_format,
@@ -112,8 +120,29 @@ export function normalizeGeneratedImage(item = {}, index = 0, defaults = {}) {
     layers: normalizeImageLayers(item.layers || defaults.layers),
     layerType: item.layerType || item.layer_type || defaults.layerType || defaults.layer_type || '',
     layerLabel: item.layerLabel || item.layer_label || defaults.layerLabel || defaults.layer_label || '',
+    layerSplitRecord:
+      item.layerSplitRecord ||
+      item.layer_split_record ||
+      defaults.layerSplitRecord ||
+      defaults.layer_split_record ||
+      null,
+    layerSplitFailedSlots:
+      item.layerSplitFailedSlots ||
+      item.layer_split_failed_slots ||
+      defaults.layerSplitFailedSlots ||
+      defaults.layer_split_failed_slots ||
+      [],
+    layerSplitRequestedTypes:
+      item.layerSplitRequestedTypes ||
+      item.layer_split_requested_types ||
+      defaults.layerSplitRequestedTypes ||
+      defaults.layer_split_requested_types ||
+      [],
+    layerSplitError: item.layerSplitError || item.layer_split_error || defaults.layerSplitError || '',
     visible: item.visible !== false,
-    editHistory: normalizeEditHistory(item.editHistory || item.edit_history || defaults.editHistory || defaults.edit_history),
+    editHistory: normalizeEditHistory(
+      item.editHistory || item.edit_history || defaults.editHistory || defaults.edit_history,
+    ),
     createdAt: item.createdAt || defaults.createdAt,
   }
 }
@@ -141,7 +170,12 @@ export function normalizeGenerationRecord(record = {}, defaults = {}) {
     output_format: record?.output_format || defaults.output_format,
     background: record?.background || defaults.background,
     originalSrc: record?.originalSrc || record?.original_src || defaults.originalSrc || defaults.original_src,
-    sourceImages: record?.sourceImages || record?.source_images || record?.references || defaults.sourceImages || defaults.references,
+    sourceImages:
+      record?.sourceImages ||
+      record?.source_images ||
+      record?.references ||
+      defaults.sourceImages ||
+      defaults.references,
     createdAt: record?.createdAt || defaults.createdAt,
   }
   const rawStatus =
@@ -198,6 +232,10 @@ export function mapRecordImages(record = {}) {
     layers: item.layers,
     layerType: item.layerType,
     layerLabel: item.layerLabel,
+    layerSplitRecord: item.layerSplitRecord,
+    layerSplitFailedSlots: item.layerSplitFailedSlots,
+    layerSplitRequestedTypes: item.layerSplitRequestedTypes,
+    layerSplitError: item.layerSplitError,
     visible: item.visible,
     editHistory: item.editHistory,
     createdAt: item.createdAt,

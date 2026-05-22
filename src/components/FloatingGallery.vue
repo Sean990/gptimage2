@@ -231,6 +231,16 @@ async function copyGalleryPrompt(record) {
   }
 }
 
+function canRetryGalleryRecord(record = {}) {
+  if (!record.id) return false
+  if (!canReuseGalleryRecord(record)) return false
+  const status = String(record.status || '').toLowerCase()
+  return (
+    ['failed', 'canceled', 'partial_completed', 'completed_with_errors'].includes(status) ||
+    Number(record.failedCount || 0) > 0
+  )
+}
+
 async function removeGalleryRecord(recordId) {
   const removedRecords = gallery.value.filter((record) => record.id === recordId)
   markGalleryRecordsDeleted(removedRecords.length ? removedRecords : [recordId])
@@ -253,9 +263,9 @@ function clearGallery() {
   showNotice('已清空本地图库')
 }
 
-function emitUseGalleryRecord(record) {
+function emitUseGalleryRecord(record, options = {}) {
   if (typeof window === 'undefined') return
-  window.dispatchEvent(new CustomEvent(useGalleryRecordEventName, { detail: { record } }))
+  window.dispatchEvent(new CustomEvent(useGalleryRecordEventName, { detail: { record, ...options } }))
 }
 
 function useGalleryRecord(record) {
@@ -271,6 +281,23 @@ function useGalleryRecord(record) {
   router.push({ path: '/generate', query: record.prompt ? { prompt: record.prompt } : {} }).then(() => {
     emitUseGalleryRecord(record)
   })
+}
+
+async function retryGalleryRecord(record) {
+  const normalizedRecord = normalizeGenerationRecord(record)
+  if (!canRetryGalleryRecord(normalizedRecord)) return false
+
+  closeGallery()
+  showNotice('正在打开原任务重试')
+
+  if (route.path === '/generate') {
+    emitUseGalleryRecord(normalizedRecord, { retry: true })
+    return true
+  }
+
+  await router.push({ path: '/generate', query: normalizedRecord.prompt ? { prompt: normalizedRecord.prompt } : {} })
+  emitUseGalleryRecord(normalizedRecord, { retry: true })
+  return true
 }
 
 function onGalleryUpdated(event) {
@@ -319,6 +346,7 @@ function onGalleryChanged(event) {
 
 const drawerTask = {
   canPreviewGalleryRecord,
+  canRetryGalleryRecord,
   canReuseGalleryRecord,
   clearGallery,
   closeGallery,
@@ -344,6 +372,7 @@ const drawerTask = {
   maxLocalGalleryRecords,
   openGalleryImage,
   removeGalleryRecord,
+  retryGalleryRecord,
   syncCloudGallery,
   useGalleryRecord,
 }

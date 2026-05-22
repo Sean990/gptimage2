@@ -112,7 +112,8 @@
 }
 
 :root[data-theme='dark'] .generate-page .field input::placeholder,
-:root[data-theme='dark'] .generate-page .field textarea::placeholder {
+:root[data-theme='dark'] .generate-page .field textarea::placeholder,
+:root[data-theme='dark'] .generate-page .mask-panel .control-row input::placeholder {
   color: #7b8aa1;
 }
 
@@ -431,7 +432,6 @@
 }
 
 :root[data-theme='dark'] .generation-actions,
-:root[data-theme='dark'] .generation-inline-notice,
 :root[data-theme='dark'] .compliance-notice,
 :root[data-theme='dark'] .loading-status {
   border-color: rgba(148, 163, 184, 0.2);
@@ -462,13 +462,11 @@
   border-color: rgba(148, 163, 184, 0.16);
 }
 
-:root[data-theme='dark'] .generation-inline-notice strong,
 :root[data-theme='dark'] .compliance-notice strong,
 :root[data-theme='dark'] .gallery-task-placeholder strong {
   color: var(--text-strong);
 }
 
-:root[data-theme='dark'] .generation-inline-notice span,
 :root[data-theme='dark'] .compliance-notice span,
 :root[data-theme='dark'] .gallery-task-placeholder small {
   color: var(--subtle);

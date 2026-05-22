@@ -1,5 +1,6 @@
 import { compactPayload, mapRecordImages, normalizeGenerationRecord } from './useGenerationPayload'
 import { isGenerationTaskSuccessful } from './useGenerationPolling'
+import { generationSubmittedTip } from './generationConstants'
 
 function emitGenerationEvent(name, detail = {}) {
   if (typeof window === 'undefined') return
@@ -33,6 +34,8 @@ export function useGenerateAction({
   referenceCount,
   selectedModelAvailable,
   setLastGenerationNotice,
+  setLastGenerationRetryRecord,
+  setLastGenerationRetryAvailable,
   showNotice,
   showReferenceSection,
   userCredits,
@@ -102,6 +105,8 @@ export function useGenerateAction({
     activeTaskId.value = ''
     emitGenerationEvent('imgsgen:generation-started', { cost: creditCost.value })
     setLastGenerationNotice?.('')
+    setLastGenerationRetryRecord?.(null)
+    setLastGenerationRetryAvailable?.(false)
     output.value = []
     loadingStage.value = '准备提交生成任务'
     generationAbortController.value = abortController
@@ -147,7 +152,7 @@ export function useGenerateAction({
         showNotice(completionMessage)
         emitGenerationEvent('imgsgen:generation-completed', { message: completionMessage, record: normalizedTask })
       } else {
-        setLastGenerationNotice?.('任务已提交，结果区会持续显示进度；你也可以继续生成或处理下一张图片。')
+        setLastGenerationNotice?.(generationSubmittedTip)
         showNotice('任务已提交，正在生成中')
         void trackGenerationTask(task.id, requestPayload, normalizedTask, runId)
       }
@@ -159,6 +164,11 @@ export function useGenerateAction({
       if (error.isTimeout) showNotice(error.message || '请求超时，请稍后重试')
       else if (error.name === 'AbortError') showNotice('已停止提交生成任务')
       else showNotice(error.message || '图像生成失败，请稍后重试')
+      if (error.name !== 'AbortError') {
+        setLastGenerationNotice?.(error.message || '图像生成失败，请重试或在我的图库查看失败任务。')
+        setLastGenerationRetryRecord?.(null)
+        setLastGenerationRetryAvailable?.(true)
+      }
     } finally {
       logGenerationDuration()
       if (generationAbortController.value === abortController) generationAbortController.value = null
@@ -203,6 +213,15 @@ export function useGenerateAction({
         if (error.isTimeout) showNotice(error.message || '请求超时，请稍后重试')
         else if (error.name === 'AbortError') showNotice('已停止提交生成任务')
         else showNotice(error.message || '图像生成失败，请稍后重试')
+        if (error.name !== 'AbortError') {
+          setLastGenerationNotice?.(error.message || '图像生成失败，请重试或在我的图库查看失败任务。')
+          setLastGenerationRetryRecord?.({
+            ...submittedTask,
+            status: 'failed',
+            errorMessage: error.message,
+          })
+          setLastGenerationRetryAvailable?.(true)
+        }
       }
     }
   }

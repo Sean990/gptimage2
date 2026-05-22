@@ -1,8 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
-  ChevronLeft,
-  ChevronRight,
   Copy,
   Download,
   Eye,
@@ -12,6 +10,7 @@ import {
   Layers3,
   Loader2,
   MousePointerClick,
+  RefreshCw,
   ScissorsLineDashed,
   Save,
   Split,
@@ -32,29 +31,24 @@ const props = defineProps({
 
 const {
   activeMode,
-  activeModelLabel,
   batchMode,
   canPreviewGalleryRecord,
+  canRetryGalleryRecord,
   canReuseGalleryRecord,
-  copyCurrentPrompt,
   copyGalleryPrompt,
   downloadImage,
   downloadGalleryRecord,
-  formatGalleryDate,
   gallery,
   galleryRecordCover,
-  galleryRecordMeta,
   galleryRecordMode,
   galleryRecordStatusLabel,
   generationSubmittedTip,
   gptLoadingDots,
   isGalleryRecordPending,
-  loadingHint,
-  loadingStatusText,
   loadingTileCount,
-  loadingTitle,
   loadingVariant,
   normalizedImageCount,
+  openGallery,
   openGalleryImage,
   openImagePreview,
   output,
@@ -65,9 +59,8 @@ const {
   outputAspectStyle,
   outputGridClass,
   outputPlaceholders,
-  queuePosition,
+  retryGalleryRecord,
   resolutionLabel,
-  saveCurrentOutputToGallery,
   selectedModel,
   submitOutputLayerSplit,
   submitOutputRegionEdit,
@@ -75,7 +68,6 @@ const {
 } = props.task
 
 const prefersLightweightLoading = ref(false)
-const recentStartIndex = ref(0)
 const compareItemKey = ref('')
 const layerItemKey = ref('')
 const editingItemKey = ref('')
@@ -107,10 +99,11 @@ const activeOutputIndex = computed(() => {
 })
 const activeOutputEntry = computed(() => outputEntries.value[activeOutputIndex.value] || null)
 const displayedOutputEntries = computed(() => (activeOutputEntry.value ? [activeOutputEntry.value] : []))
-const primaryOutput = computed(() => activeOutputEntry.value?.item || output.value[0] || null)
+const selectedOutputUsesAutoRatio = computed(() => usesAutoOutputRatio(activeOutputEntry.value?.item))
 const selectedOutputRatio = computed(() => getOutputRatioNumber(activeOutputEntry.value?.item))
 const selectedOutputIsLandscape = computed(() => selectedOutputRatio.value > 1.04)
 const outputRatioClass = computed(() => {
+  if (selectedOutputUsesAutoRatio.value) return 'output-ratio--auto'
   const ratio = selectedOutputRatio.value
   if (ratio >= 1.55) return 'output-ratio--wide'
   if (ratio > 1.04) return 'output-ratio--landscape'
@@ -122,72 +115,26 @@ const outputPresentationClass = computed(() => {
   if (!hasMultipleOutputs.value) return [outputGridClass.value, outputRatioClass.value].filter(Boolean).join(' ')
   return [
     'output-grid--presentation',
-    selectedOutputIsLandscape.value ? 'output-grid--thumbs-bottom output-grid--main-landscape' : 'output-grid--thumbs-left',
+    selectedOutputIsLandscape.value
+      ? 'output-grid--thumbs-bottom output-grid--main-landscape'
+      : 'output-grid--thumbs-left',
     outputRatioClass.value,
   ].join(' ')
 })
 const selectedOutputAspectStyle = computed(() => ({
-  ...outputAspectStyle.value,
-  '--output-ratio': getOutputRatioCss(activeOutputEntry.value?.item),
+  ...(selectedOutputUsesAutoRatio.value ? {} : outputAspectStyle.value),
+  ...(selectedOutputUsesAutoRatio.value ? {} : { '--output-ratio': getOutputRatioCss(activeOutputEntry.value?.item) }),
 }))
 const floatingPanelStyle = computed(() => ({
   '--output-floating-panel-left': `${floatingPanelPosition.value.left}px`,
   '--output-floating-panel-top': `${floatingPanelPosition.value.top}px`,
 }))
 const outputSignature = computed(() => outputEntries.value.map((entry) => entry.key).join('|'))
-const galleryImageKeys = computed(() => {
-  const keys = new Set()
-  gallery.value.forEach((record) => {
-    record.images?.forEach((image) => {
-      getImageMatchKeys(image).forEach((key) => keys.add(key))
-    })
-  })
-  return keys
-})
-const outputAlreadyInGallery = computed(() => {
-  const outputKeys = output.value.map((item) => getImageMatchKeys(item)).filter((keys) => keys.length)
-  return Boolean(outputKeys.length) && outputKeys.every((keys) => keys.some((key) => galleryImageKeys.value.has(key)))
-})
-const canSaveCurrentOutput = computed(() => output.value.length > 0 && !outputAlreadyInGallery.value)
-const outputActionSummary = computed(() =>
-  outputAlreadyInGallery.value
-    ? `${output.value.length} 张结果 · 已在图库，可预览下载`
-    : output.value.length > 1
-      ? `${output.value.length} 张结果 · 支持批量下载和入库`
-      : '1 张结果 · 可预览、下载和入库',
-)
-const maxRecentStartIndex = computed(() => Math.max(0, recentTasks.value.length - recentTaskLimit))
-const visibleRecentTasks = computed(() =>
-  recentTasks.value.slice(recentStartIndex.value, recentStartIndex.value + recentTaskLimit),
-)
-const canSlideRecentPrev = computed(() => recentStartIndex.value > 0)
-const canSlideRecentNext = computed(() => recentStartIndex.value < maxRecentStartIndex.value)
+const visibleRecentTasks = computed(() => recentTasks.value.slice(0, recentTaskLimit))
+const hasMoreRecentTasks = computed(() => recentTasks.value.length > recentTaskLimit)
 
 function syncLightweightLoadingPreference(event) {
   prefersLightweightLoading.value = Boolean(event.matches)
-}
-
-function slideRecentTasks(direction) {
-  recentStartIndex.value = Math.min(
-    maxRecentStartIndex.value,
-    Math.max(0, recentStartIndex.value + direction * recentTaskLimit),
-  )
-}
-
-function previewPrimaryOutput() {
-  if (!primaryOutput.value) return
-  openImagePreview(getOutputPreviewImages(), activeOutputIndex.value, '生成图片')
-}
-
-function downloadPrimaryOutput() {
-  if (!primaryOutput.value) return
-  downloadImage(primaryOutput.value, '生成图片')
-}
-
-function downloadAllOutputs() {
-  output.value.forEach((item, index) => {
-    window.setTimeout(() => downloadImage(item, `生成图片-${index + 1}`), index * 120)
-  })
 }
 
 function getImageMatchKeys(image = {}) {
@@ -246,6 +193,10 @@ function normalizeOutputPreviewImage(item = {}) {
     layers: item.layers?.length ? item.layers : recordImage.layers || [],
     layerType: item.layerType || recordImage.layerType,
     layerLabel: item.layerLabel || recordImage.layerLabel,
+    layerSplitRecord: item.layerSplitRecord || recordImage.layerSplitRecord,
+    layerSplitFailedSlots: item.layerSplitFailedSlots || recordImage.layerSplitFailedSlots || [],
+    layerSplitRequestedTypes: item.layerSplitRequestedTypes || recordImage.layerSplitRequestedTypes || [],
+    layerSplitError: item.layerSplitError || recordImage.layerSplitError,
     editHistory: item.editHistory?.length ? item.editHistory : recordImage.editHistory || [],
     record,
   }
@@ -269,6 +220,12 @@ function parseOutputRatio(value) {
   const height = Number(match[2])
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null
   return { width, height }
+}
+
+function usesAutoOutputRatio(item = {}) {
+  const ratioValues = [item.ratio, item.aspectRatio, item.size, item.resolution]
+  if (ratioValues.some((value) => String(value || '').trim() === 'auto')) return true
+  return !ratioValues.some((value) => parseOutputRatio(value))
 }
 
 function getOutputRatioParts(item = {}) {
@@ -595,8 +552,22 @@ function cancelEditSelection(event, item, index) {
   clearEditSelection(item, index)
 }
 
+function openOutputPreview(index) {
+  openImagePreview(getOutputPreviewImages(), index, '生成图片')
+}
+
+function handleOutputStageClick(event, item, index) {
+  if (isEditing(item, index) || event.defaultPrevented) return
+  openOutputPreview(index)
+}
+
 function handleImageStageKeyboard(event, item, index) {
-  if (!isEditing(item, index)) return
+  if (!isEditing(item, index)) {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    openOutputPreview(index)
+    return
+  }
 
   if (event.key === 'Escape') {
     cancelEditSelection(event, item, index)
@@ -679,12 +650,51 @@ async function startLayerSplit(item, index) {
   if (record) layerItemKey.value = key
 }
 
+async function retryLayerSplit(item, index, layer) {
+  const key = getOutputKey(item, index)
+  const record = await submitOutputLayerSplit(item, index, { layerType: layer.type })
+  if (record) layerItemKey.value = key
+}
+
+function getLayerSplitFailedSlots(item = {}) {
+  return Array.isArray(item.layerSplitFailedSlots) ? item.layerSplitFailedSlots : []
+}
+
+function getLayerSplitRequestedCount(item = {}) {
+  const requestedTypes = Array.isArray(item.layerSplitRequestedTypes) ? item.layerSplitRequestedTypes : []
+  const recordRequestedCount = Number(item.layerSplitRecord?.requestedCount || 0)
+  return Math.max(
+    requestedTypes.length,
+    recordRequestedCount,
+    (item.layers || []).length + getLayerSplitFailedSlots(item).length,
+  )
+}
+
+function getLayerPanelStatus(item = {}) {
+  const layerCount = item.layers?.length || 0
+  const failedCount = getLayerSplitFailedSlots(item).length
+  if (layerCount || failedCount) {
+    const requestedCount = getLayerSplitRequestedCount(item) || layerCount + failedCount
+    return failedCount ? `${layerCount}/${requestedCount} 个图层，${failedCount} 个失败` : `${layerCount} 个图层`
+  }
+  return '等待分层结果'
+}
+
+function getLayerSplitNotice(item = {}) {
+  if (item.layerSplitRecord?.partialFailureMessage) return item.layerSplitRecord.partialFailureMessage
+  if (item.layerSplitError) return item.layerSplitError
+  return ''
+}
+
 function toggleLayerVisibility(layer) {
   layer.visible = layer.visible === false
 }
 
 function downloadLayer(layer) {
-  downloadImage({ src: layer.src, title: layer.label || layer.title, outputFormat: layer.outputFormat || 'png' }, layer.label)
+  downloadImage(
+    { src: layer.src, title: layer.label || layer.title, outputFormat: layer.outputFormat || 'png' },
+    layer.label,
+  )
 }
 
 function downloadAllLayers(item) {
@@ -707,12 +717,6 @@ function recentTaskTagLabel(record) {
   }
   return statusLabel || galleryRecordMode(record) || '已记录'
 }
-
-watch(recentTasks, () => {
-  if (recentStartIndex.value > maxRecentStartIndex.value) {
-    recentStartIndex.value = maxRecentStartIndex.value
-  }
-})
 
 watch(outputSignature, (nextSignature, previousSignature) => {
   if (!nextSignature) {
@@ -770,35 +774,6 @@ onBeforeUnmount(() => {
         <span>{{ selectedModel.name }}</span>
         <span>{{ activeMode.label }}</span>
         <span>{{ normalizedImageCount }} 张</span>
-      </div>
-    </div>
-
-    <div v-if="output.length" class="output-quick-actions" aria-label="生成结果快捷操作">
-      <div>
-        <strong>结果操作</strong>
-        <span>{{ outputActionSummary }}</span>
-      </div>
-      <div class="output-quick-buttons">
-        <button class="btn btn-soft" type="button" @click="previewPrimaryOutput">
-          <Eye aria-hidden="true" />
-          预览
-        </button>
-        <button class="btn btn-soft" type="button" @click="downloadPrimaryOutput">
-          <Download aria-hidden="true" />
-          下载
-        </button>
-        <button v-if="output.length > 1" class="btn btn-soft" type="button" @click="downloadAllOutputs">
-          <Download aria-hidden="true" />
-          全部
-        </button>
-        <button v-if="canSaveCurrentOutput" class="btn btn-soft" type="button" @click="saveCurrentOutputToGallery">
-          <Save aria-hidden="true" />
-          入库
-        </button>
-        <button class="btn btn-soft" type="button" @click="copyCurrentPrompt">
-          <Copy aria-hidden="true" />
-          提示词
-        </button>
       </div>
     </div>
 
@@ -874,25 +849,7 @@ onBeforeUnmount(() => {
           </template>
 
           <div class="loading-status">
-            <div class="loading-status-head">
-              <span class="loading-status-dot" aria-hidden="true"></span>
-              <div>
-                <strong>{{ loadingTitle }}</strong>
-                <small>{{ activeModelLabel }} · {{ loadingStatusText }}</small>
-              </div>
-            </div>
-            <div class="loading-status-track" aria-hidden="true">
-              <span></span>
-            </div>
-            <div class="loading-status-body">
-              <p>{{ loadingHint }}</p>
-              <p v-if="queuePosition && queuePosition.position > 0" class="loading-queue-tip">
-                <strong>队列位置：</strong>第 {{ queuePosition.position }} / {{ queuePosition.total }} 位
-                <span v-if="queuePosition.position > 1">（前面还有 {{ queuePosition.position - 1 }} 个任务）</span>
-              </p>
-              <p class="loading-progress-tip">{{ generationSubmittedTip }}</p>
-            </div>
-            <small class="loading-review-note">审核设置不等于发布许可，商用和公开传播前仍需人工复核。</small>
+            <p class="loading-progress-tip">{{ generationSubmittedTip }}</p>
           </div>
         </div>
         <div
@@ -903,7 +860,7 @@ onBeforeUnmount(() => {
           :style="selectedOutputAspectStyle"
         >
           <figure
-            v-for="({ item, index, key }) in displayedOutputEntries"
+            v-for="{ item, index, key } in displayedOutputEntries"
             :key="key"
             class="output-item"
             :class="{
@@ -918,20 +875,22 @@ onBeforeUnmount(() => {
               :class="{
                 'output-image-stage--selecting': isEditing(item, index),
                 'output-image-stage--dragging': editDragItemKey === getOutputKey(item, index),
+                'output-image-stage--auto': usesAutoOutputRatio(item),
               }"
-              :role="isEditing(item, index) ? 'button' : null"
-              :tabindex="isEditing(item, index) ? 0 : null"
-              :aria-label="
-                isEditing(item, index)
-                  ? `拖动选择 ${item.title} 的修改区域`
-                  : null
-              "
+              role="button"
+              tabindex="0"
+              :aria-label="isEditing(item, index) ? `拖动选择 ${item.title} 的修改区域` : `预览 ${item.title}`"
+              @click="handleOutputStageClick($event, item, index)"
               @pointerdown="startEditSelectionDrag($event, item, index)"
               @contextmenu="cancelEditSelection($event, item, index)"
               @keydown="handleImageStageKeyboard($event, item, index)"
             >
               <template v-if="isCompareActive(item, index) && hasOriginalImage(item)">
-                <img class="output-compare-image output-compare-before" :src="item.originalSrc" :alt="`${item.title} 原图`" />
+                <img
+                  class="output-compare-image output-compare-before"
+                  :src="item.originalSrc"
+                  :alt="`${item.title} 原图`"
+                />
                 <img
                   class="output-compare-image output-compare-after"
                   :src="item.src"
@@ -989,10 +948,20 @@ onBeforeUnmount(() => {
               <button
                 class="icon-button"
                 type="button"
-                :aria-label="`预览 ${item.title}`"
-                @click.stop="openImagePreview(getOutputPreviewImages(), index, '生成图片')"
+                :aria-label="`下载 ${item.title}`"
+                @click.stop="downloadImage(item, item.title || '生成图片')"
               >
-                <Eye aria-hidden="true" />
+                <Download aria-hidden="true" />
+              </button>
+              <button
+                class="icon-button"
+                type="button"
+                :aria-label="item.layers?.length ? `查看 ${item.title} 图层` : `打开 ${item.title} 智能分层面板`"
+                :disabled="isOutputActionBusy(item, index)"
+                @click.stop="toggleLayerPanel(item, index)"
+              >
+                <Layers v-if="item.layers?.length" aria-hidden="true" />
+                <ScissorsLineDashed v-else aria-hidden="true" />
               </button>
               <button
                 v-if="hasOriginalImage(item)"
@@ -1011,109 +980,150 @@ onBeforeUnmount(() => {
               >
                 <MousePointerClick aria-hidden="true" />
               </button>
-              <button
-                class="icon-button"
-                type="button"
-                :aria-label="item.layers?.length ? `查看 ${item.title} 图层` : `打开 ${item.title} 智能分层面板`"
-                :disabled="isOutputActionBusy(item, index)"
-                @click.stop="toggleLayerPanel(item, index)"
-              >
-                <Layers v-if="item.layers?.length" aria-hidden="true" />
-                <ScissorsLineDashed v-else aria-hidden="true" />
-              </button>
-              <button
-                class="icon-button"
-                type="button"
-                :aria-label="`下载 ${item.title}`"
-                @click.stop="downloadImage(item, '生成图片')"
-              >
-                <Download aria-hidden="true" />
-              </button>
-              <button class="icon-button" type="button" aria-label="复制当前提示词" @click.stop="copyCurrentPrompt">
-                <Copy aria-hidden="true" />
-              </button>
             </figcaption>
 
             <Teleport to="body">
-            <Transition name="output-panel-slide" mode="out-in">
-            <form
-              v-if="isEditing(item, index)"
-              key="edit"
-              class="output-edit-popover"
-              :style="floatingPanelStyle"
-              @submit.prevent="submitRegionEdit(item, index)"
-            >
-              <div>
-                <strong>局部改图</strong>
-                <button
-                  v-if="getEditSelection(item, index)"
-                  class="text-button"
-                  type="button"
-                  @click="clearEditSelection(item, index)"
+              <Transition name="output-panel-slide" mode="out-in">
+                <form
+                  v-if="isEditing(item, index)"
+                  key="edit"
+                  class="output-edit-popover"
+                  :style="floatingPanelStyle"
+                  @submit.prevent="submitRegionEdit(item, index)"
                 >
-                  取消选区
-                </button>
-                <span v-else>拖动图片框选修改区域</span>
-              </div>
-              <textarea
-                rows="2"
-                :value="getEditPrompt(item, index)"
-                placeholder="例如：把这里换成金属质感按钮，保持周围光影"
-                @input="setEditPrompt(item, index, $event.target.value)"
-              ></textarea>
-              <button class="btn btn-primary" type="submit" :disabled="isOutputActionBusy(item, index, 'region-edit')">
-                <WandSparkles v-if="!isOutputActionBusy(item, index, 'region-edit')" aria-hidden="true" />
-                <Loader2 v-else class="spinner" aria-hidden="true" />
-                修改
-              </button>
-            </form>
+                  <div>
+                    <strong>局部改图</strong>
+                    <button
+                      v-if="getEditSelection(item, index)"
+                      class="text-button"
+                      type="button"
+                      @click="clearEditSelection(item, index)"
+                    >
+                      取消选区
+                    </button>
+                    <span v-else>拖动图片框选修改区域</span>
+                  </div>
+                  <textarea
+                    rows="2"
+                    :value="getEditPrompt(item, index)"
+                    placeholder="例如：把这里换成金属质感按钮，保持周围光影"
+                    @input="setEditPrompt(item, index, $event.target.value)"
+                  ></textarea>
+                  <button
+                    class="btn btn-primary"
+                    type="submit"
+                    :disabled="isOutputActionBusy(item, index, 'region-edit')"
+                  >
+                    <WandSparkles v-if="!isOutputActionBusy(item, index, 'region-edit')" aria-hidden="true" />
+                    <Loader2 v-else class="spinner" aria-hidden="true" />
+                    修改
+                  </button>
+                </form>
 
-            <div v-else-if="isLayerPanelActive(item, index)" key="layer" class="output-layer-panel" :style="floatingPanelStyle">
-              <div class="output-layer-head">
-                <div>
-                  <strong>透明 PNG 图层</strong>
-                  <span>{{ item.layers?.length ? `${item.layers.length} 个图层` : '等待分层结果' }}</span>
-                </div>
-                <button v-if="item.layers?.length" class="icon-button" type="button" aria-label="下载全部图层" @click="downloadAllLayers(item)">
-                  <Download aria-hidden="true" />
-                </button>
-              </div>
-              <div v-if="!item.layers?.length" class="output-layer-empty">
-                <span class="output-layer-guide" aria-hidden="true">
-                  <span class="output-layer-guide-card output-layer-guide-card-back"></span>
-                  <span class="output-layer-guide-card output-layer-guide-card-mid"></span>
-                  <span class="output-layer-guide-card output-layer-guide-card-front"></span>
-                </span>
-                <span>将结果图拆成主体、文字、背景透明 PNG 图层。</span>
-                <button
-                  class="btn btn-primary"
-                  type="button"
-                  :disabled="isOutputActionBusy(item, index, 'layer-split')"
-                  @click="startLayerSplit(item, index)"
+                <div
+                  v-else-if="isLayerPanelActive(item, index)"
+                  key="layer"
+                  class="output-layer-panel"
+                  :style="floatingPanelStyle"
                 >
-                  <ScissorsLineDashed v-if="!isOutputActionBusy(item, index, 'layer-split')" aria-hidden="true" />
-                  <Loader2 v-else class="spinner" aria-hidden="true" />
-                  {{ isOutputActionBusy(item, index, 'layer-split') ? '分层中' : '开始分层' }}
-                </button>
-              </div>
-              <div
-                v-for="layer in item.layers || []"
-                :key="layer.id || layer.src"
-                class="output-layer-row"
-                :class="{ muted: layer.visible === false }"
-              >
-                <img :src="layer.src" :alt="layer.label" />
-                <span>{{ layer.label }}</span>
-                <button class="icon-button" type="button" :aria-label="`${layer.visible === false ? '显示' : '隐藏'}${layer.label}`" @click="toggleLayerVisibility(layer)">
-                  <EyeOff v-if="layer.visible === false" aria-hidden="true" />
-                  <Eye v-else aria-hidden="true" />
-                </button>
-                <button class="icon-button" type="button" :aria-label="`下载${layer.label}`" @click.stop="downloadLayer(layer)">
-                  <Download aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-            </Transition>
+                  <div class="output-layer-head">
+                    <div>
+                      <strong>透明 PNG 图层</strong>
+                      <span>{{ getLayerPanelStatus(item) }}</span>
+                    </div>
+                    <button
+                      v-if="item.layers?.length"
+                      class="icon-button"
+                      type="button"
+                      aria-label="下载全部图层"
+                      @click="downloadAllLayers(item)"
+                    >
+                      <Download aria-hidden="true" />
+                    </button>
+                  </div>
+                  <p v-if="getLayerSplitNotice(item)" class="output-layer-notice">
+                    {{ getLayerSplitNotice(item) }}
+                  </p>
+                  <div v-if="!item.layers?.length && !getLayerSplitFailedSlots(item).length" class="output-layer-empty">
+                    <span class="output-layer-guide" aria-hidden="true">
+                      <span class="output-layer-guide-card output-layer-guide-card-back"></span>
+                      <span class="output-layer-guide-card output-layer-guide-card-mid"></span>
+                      <span class="output-layer-guide-card output-layer-guide-card-front"></span>
+                    </span>
+                    <span>将结果图拆成主体、文字、背景透明 PNG 图层。</span>
+                    <button
+                      class="btn btn-primary"
+                      type="button"
+                      :disabled="isOutputActionBusy(item, index, 'layer-split')"
+                      @click="startLayerSplit(item, index)"
+                    >
+                      <ScissorsLineDashed v-if="!isOutputActionBusy(item, index, 'layer-split')" aria-hidden="true" />
+                      <Loader2 v-else class="spinner" aria-hidden="true" />
+                      {{ isOutputActionBusy(item, index, 'layer-split') ? '分层中' : '开始分层' }}
+                    </button>
+                  </div>
+                  <div
+                    v-for="layer in item.layers || []"
+                    :key="layer.id || layer.src"
+                    class="output-layer-row"
+                    :class="{ muted: layer.visible === false }"
+                  >
+                    <img :src="layer.src" :alt="layer.label" />
+                    <span>{{ layer.label }}</span>
+                    <button
+                      class="icon-button"
+                      type="button"
+                      :aria-label="`重新生成${layer.label}`"
+                      :disabled="isOutputActionBusy(item, index, 'layer-split')"
+                      @click.stop="retryLayerSplit(item, index, layer)"
+                    >
+                      <RefreshCw
+                        :class="{ spinner: isOutputActionBusy(item, index, 'layer-split') }"
+                        aria-hidden="true"
+                      />
+                    </button>
+                    <button
+                      class="icon-button"
+                      type="button"
+                      :aria-label="`${layer.visible === false ? '显示' : '隐藏'}${layer.label}`"
+                      @click="toggleLayerVisibility(layer)"
+                    >
+                      <EyeOff v-if="layer.visible === false" aria-hidden="true" />
+                      <Eye v-else aria-hidden="true" />
+                    </button>
+                    <button
+                      class="icon-button"
+                      type="button"
+                      :aria-label="`下载${layer.label}`"
+                      @click.stop="downloadLayer(layer)"
+                    >
+                      <Download aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div
+                    v-for="slot in getLayerSplitFailedSlots(item)"
+                    :key="slot.id || slot.type"
+                    class="output-layer-row output-layer-row--failed"
+                  >
+                    <span class="output-layer-failed-thumb" aria-hidden="true">
+                      <RefreshCw />
+                    </span>
+                    <span>{{ slot.label }}图层生成失败</span>
+                    <button
+                      class="icon-button"
+                      type="button"
+                      :aria-label="`重新生成${slot.label}图层`"
+                      :disabled="isOutputActionBusy(item, index, 'layer-split')"
+                      @click.stop="retryLayerSplit(item, index, slot)"
+                    >
+                      <RefreshCw
+                        :class="{ spinner: isOutputActionBusy(item, index, 'layer-split') }"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </div>
+                </div>
+              </Transition>
             </Teleport>
           </figure>
 
@@ -1137,7 +1147,9 @@ onBeforeUnmount(() => {
           <div v-for="slot in outputPlaceholders" :key="slot" class="empty-output-slot">
             <ImagePlus v-if="slot === 1" aria-hidden="true" />
             <strong>{{ batchMode ? '等待批量结果' : '等待生成结果' }}</strong>
-            <span>{{ batchMode ? '选择张数后提交，结果会在这里按批次展示。' : '左侧完成提示词和参数后，点击开始生成。' }}</span>
+            <span>{{
+              batchMode ? '选择张数后提交，结果会在这里按批次展示。' : '左侧完成提示词和参数后，点击开始生成。'
+            }}</span>
           </div>
         </div>
       </Transition>
@@ -1147,41 +1159,38 @@ onBeforeUnmount(() => {
       <div class="recent-task-head">
         <div>
           <strong>最近任务</strong>
-          <span>固定显示 5 个，可左右切换</span>
         </div>
-        <div class="recent-task-controls">
+        <div v-if="hasMoreRecentTasks" class="recent-task-controls">
           <button
-            class="icon-button"
-            type="button"
-            aria-label="查看上一组最近任务"
-            :disabled="!canSlideRecentPrev"
-            @click="slideRecentTasks(-1)"
-          >
-            <ChevronLeft aria-hidden="true" />
-          </button>
-          <button
-            class="icon-button"
+            class="btn btn-soft recent-task-more"
             type="button"
             aria-label="查看更多最近任务"
-            :disabled="!canSlideRecentNext"
-            @click="slideRecentTasks(1)"
+            @click="openGallery"
           >
-            <ChevronRight aria-hidden="true" />
+            查看更多
           </button>
         </div>
       </div>
       <div class="recent-task-list">
         <article v-for="record in visibleRecentTasks" :key="record.id" class="recent-task-card">
-          <button
+          <component
+            :is="canPreviewGalleryRecord(record) ? 'button' : 'div'"
             class="recent-task-cover"
-            type="button"
-            :disabled="!canPreviewGalleryRecord(record)"
-            :aria-label="
+            :class="{ 'recent-task-cover--status': !canPreviewGalleryRecord(record) }"
+            v-bind="
               canPreviewGalleryRecord(record)
-                ? `预览最近任务 ${canReuseGalleryRecord(record) ? record.prompt || '' : galleryRecordMode(record)}`
-                : galleryRecordStatusLabel(record)
+                ? {
+                    type: 'button',
+                    'aria-label': `预览最近任务 ${
+                      canReuseGalleryRecord(record) ? record.prompt || '' : galleryRecordMode(record)
+                    }`,
+                  }
+                : {
+                    role: 'img',
+                    'aria-label': galleryRecordStatusLabel(record) || galleryRecordMode(record) || '最近任务',
+                  }
             "
-            @click="openGalleryImage(record)"
+            @click="canPreviewGalleryRecord(record) ? openGalleryImage(record) : null"
           >
             <img
               v-if="canPreviewGalleryRecord(record)"
@@ -1193,14 +1202,18 @@ onBeforeUnmount(() => {
               <ImagePlus v-else aria-hidden="true" />
             </span>
             <em :class="{ pending: isGalleryRecordPending(record) }">{{ recentTaskTagLabel(record) }}</em>
-          </button>
-          <div class="recent-task-copy">
-            <strong>{{
-              canReuseGalleryRecord(record) ? record.prompt || '无提示词记录' : galleryRecordMode(record)
-            }}</strong>
-            <span>{{ formatGalleryDate(record.createdAt) }} · {{ galleryRecordMeta(record) }}</span>
-          </div>
+          </component>
           <div class="recent-task-actions" aria-label="最近任务操作">
+            <button
+              v-if="canRetryGalleryRecord(record)"
+              class="icon-button"
+              type="button"
+              title="重新生成"
+              aria-label="重试最近任务"
+              @click="retryGalleryRecord(record)"
+            >
+              <RefreshCw aria-hidden="true" />
+            </button>
             <button
               v-if="canReuseGalleryRecord(record)"
               class="icon-button"
@@ -1212,11 +1225,11 @@ onBeforeUnmount(() => {
               <Save aria-hidden="true" />
             </button>
             <button
+              v-if="canPreviewGalleryRecord(record)"
               class="icon-button"
               type="button"
               title="下载图片"
               aria-label="下载最近任务图片"
-              :disabled="!canPreviewGalleryRecord(record)"
               @click="downloadGalleryRecord(record)"
             >
               <Download aria-hidden="true" />

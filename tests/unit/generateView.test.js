@@ -18,11 +18,24 @@ function createTask() {
   })
 
   return {
+    mode: ref('generate'),
+    aspectRatio: ref('3:4'),
+    resolution: ref('4K'),
     batchMode: ref(false),
+    batchCount: ref(4),
+    quality: ref('auto'),
+    outputFormat: ref('png'),
+    background: ref('auto'),
+    moderation: ref('auto'),
+    outputCompression: ref(0),
+    prompt: ref(''),
     footerTipText: ref('提示'),
+    getMaskReference: vi.fn(() => ''),
+    getReferences: vi.fn(() => []),
     notice: ref(''),
     output,
     resetGenerationOutput,
+    setReferenceUrls: vi.fn(),
   }
 }
 
@@ -48,7 +61,8 @@ function mountGenerateView() {
         GenerateToolboxNav: {
           emits: ['update:activeTool'],
           props: ['activeTool'],
-          template: '<button data-test="toolbox-generate" @click="$emit(\'update:activeTool\', \'generate\')">创作</button>',
+          template:
+            '<button data-test="toolbox-generate" @click="$emit(\'update:activeTool\', \'generate\')">创作</button>',
         },
         GenerateToolPanel: { template: '<section data-test="generate-panel" />' },
         ImagePreviewModal: { template: '<div />' },
@@ -78,6 +92,21 @@ describe('GenerateView', () => {
     expect(mockState.task.resetGenerationOutput).toHaveBeenCalledTimes(1)
     expect(mockState.task.output.value).toEqual([])
     expect(wrapper.get('[data-test="dedicated-tools"]').text()).toBe('upscale')
+  })
+
+  it('进入独立工具时临时关闭批量状态，回到 AI 生图后恢复原张数', async () => {
+    mockState.task.batchMode.value = true
+    mockState.task.batchCount.value = 4
+    const wrapper = mountGenerateView()
+
+    await wrapper.get('[data-test="side-upscale"]').trigger('click')
+
+    expect(mockState.task.batchMode.value).toBe(false)
+
+    await wrapper.get('[data-test="toolbox-generate"]').trigger('click')
+
+    expect(mockState.task.batchMode.value).toBe(true)
+    expect(mockState.task.batchCount.value).toBe(4)
   })
 
   it('重复选择当前板块不会清空结果', async () => {

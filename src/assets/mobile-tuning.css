@@ -757,10 +757,6 @@ button,
   }
 
   /* dock 只保留生成入口，图库改为全站悬浮入口 */
-  .generate-page .generation-inline-notice {
-    display: none !important;
-  }
-
   .generation-actions .btn {
     width: 100%;
     min-height: 50px;

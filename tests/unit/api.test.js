@@ -130,4 +130,85 @@ describe('api 请求层', () => {
       }),
     )
   })
+
+  it('重试生成任务时调用 POST /generate/tasks/:id/retry', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(createResponse({ success: true, data: { id: 'task/id 1', status: 'queued' } }))
+
+    await expect(api.retryGenerationTask('task/id 1', { n: 2, failed_only: true })).resolves.toEqual({
+      id: 'task/id 1',
+      status: 'queued',
+    })
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:3001/api/generate/tasks/task%2Fid%201/retry',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ n: 2, failed_only: true }),
+      }),
+    )
+  })
+
+  it('智能分层生成请求发送前会清掉透明背景参数', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(createResponse({ success: true, data: { id: 'task-layer', status: 'queued' } }))
+
+    await api.generateImages({
+      action: 'layer-split',
+      tool: 'layer_split',
+      background: 'transparent',
+      output_background: 'transparent',
+      output_format: 'png',
+      tool_params: {
+        layer_types: ['subject', 'text', 'background'],
+        background: 'transparent',
+        output_background: 'transparent',
+      },
+    })
+
+    const payload = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(payload).toEqual({
+      action: 'layer-split',
+      tool: 'layer_split',
+      output_format: 'png',
+      tool_params: {
+        layer_types: ['subject', 'text', 'background'],
+      },
+    })
+    expect(JSON.stringify(payload)).not.toContain('transparent')
+  })
+
+  it('含 layer_types 的分层请求即使 action 未覆盖也会清掉透明背景参数', async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(createResponse({ success: true, data: { id: 'task-layer', status: 'queued' } }))
+
+    await api.generateImages({
+      action: 'generate',
+      background: 'transparent',
+      output_format: 'png',
+      tool_params: {
+        layer_types: ['subject'],
+        output_background: 'transparent',
+        nested: {
+          background: 'transparent',
+          keep: 'value',
+        },
+      },
+    })
+
+    const payload = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(payload).toEqual({
+      action: 'generate',
+      output_format: 'png',
+      tool_params: {
+        layer_types: ['subject'],
+        nested: {
+          keep: 'value',
+        },
+      },
+    })
+    expect(JSON.stringify(payload)).not.toContain('transparent')
+  })
 })

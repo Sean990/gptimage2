@@ -527,6 +527,10 @@
   cursor: default;
 }
 
+.gallery-cover--status {
+  cursor: default;
+}
+
 .gallery-cover img {
   display: block;
   width: 100%;
@@ -888,7 +892,9 @@
   border: 0;
   padding: 0;
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.18), 0 0 18px rgba(15, 23, 42, 0.22);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.18),
+    0 0 18px rgba(15, 23, 42, 0.22);
   cursor: ew-resize;
   outline: none;
   touch-action: none;

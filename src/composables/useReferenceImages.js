@@ -120,7 +120,7 @@ export function useReferenceImages({
   const showReferenceSection = computed(() => requiresReference.value)
 
   function revokeUpload(item) {
-    if (item?.src) URL.revokeObjectURL(item.src)
+    if (String(item?.src || '').startsWith('blob:')) URL.revokeObjectURL(item.src)
   }
 
   function trimReferencesForMode() {
@@ -286,6 +286,27 @@ export function useReferenceImages({
     if (!silent) showNotice(includeMask ? '已清空素材' : '已清空参考图')
   }
 
+  function normalizeReferenceUrls(urls = []) {
+    return Array.from(new Set((Array.isArray(urls) ? urls : [urls]).map(resolveApiUrl).filter(Boolean)))
+  }
+
+  function setReferenceUrls(urls = [], { maskUrl = '', silent = false } = {}) {
+    clearReferences({ includeMask: true, silent: true })
+    const maxCount = maxReferenceCount.value
+    const references = normalizeReferenceUrls(urls).slice(0, maxCount)
+    const [firstReference, ...restReferences] = references
+
+    imageUrl.value = firstReference || ''
+    uploads.value = restReferences.map((src, index) => ({
+      name: `参考图 ${index + 2}`,
+      src,
+      remoteUrl: src,
+    }))
+    maskImageUrl.value = resolveApiUrl(maskUrl || '')
+
+    if (!silent && references.length) showNotice(mode.value === 'edit' ? '原图已恢复' : '参考图已恢复')
+  }
+
   function addUrlReference() {
     const nextUrl = urlInput.value.trim()
     if (!nextUrl) {
@@ -383,6 +404,7 @@ export function useReferenceImages({
     removeMaskUrlReference,
     removeUpload,
     removeUrlReference,
+    setReferenceUrls,
     showReferenceSection,
     trimReferencesForMode,
     uploads,

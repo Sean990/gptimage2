@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import {
   CheckCircle2,
   Eraser,
@@ -70,10 +70,42 @@ const toolConfigs = [
       '请基于原图进行高清放大和细节增强，保持主体、构图、颜色、透视和风格不变，提升清晰度、纹理、边缘质量和整体画面质感。',
     tips: ['不改构图', '保留文字边缘', '适合电商、人像、作品图'],
     params: [
-      { label: '放大倍数', key: 'scale', options: [{ label: '2X', value: '2x' }, { label: '4X', value: '4x' }] },
-      { label: '优化模式', key: 'enhanceMode', options: [{ label: '通用增强', value: 'general' }, { label: '人像修复', value: 'portrait' }, { label: '商品锐化', value: 'product' }, { label: '插画动漫', value: 'illustration' }] },
-      { label: '锐化强度', key: 'sharpness', options: [{ label: '自然', value: 'natural' }, { label: '均衡', value: 'balanced' }, { label: '更锐利', value: 'crisp' }] },
-      { label: '面部修复', key: 'faceRestore', options: [{ label: '自动', value: 'auto' }, { label: '开启', value: 'on' }, { label: '关闭', value: 'off' }] },
+      {
+        label: '放大倍数',
+        key: 'scale',
+        options: [
+          { label: '2X', value: '2x' },
+          { label: '4X', value: '4x' },
+        ],
+      },
+      {
+        label: '优化模式',
+        key: 'enhanceMode',
+        options: [
+          { label: '通用增强', value: 'general' },
+          { label: '人像修复', value: 'portrait' },
+          { label: '商品锐化', value: 'product' },
+          { label: '插画动漫', value: 'illustration' },
+        ],
+      },
+      {
+        label: '锐化强度',
+        key: 'sharpness',
+        options: [
+          { label: '自然', value: 'natural' },
+          { label: '均衡', value: 'balanced' },
+          { label: '更锐利', value: 'crisp' },
+        ],
+      },
+      {
+        label: '面部修复',
+        key: 'faceRestore',
+        options: [
+          { label: '自动', value: 'auto' },
+          { label: '开启', value: 'on' },
+          { label: '关闭', value: 'off' },
+        ],
+      },
     ],
   },
   {
@@ -95,10 +127,46 @@ const toolConfigs = [
       '请基于原图向画面外自然扩展场景，保持主体、透视、光线、色调、材质和镜头语言一致，补全边缘空间，让扩展区域看起来像原图本身的一部分。',
     tips: ['适配横竖版', '自然补全背景', '保持主体不变形'],
     params: [
-      { label: '扩图方向', key: 'direction', options: [{ label: '四周', value: '四周' }, { label: '向左', value: '向左' }, { label: '向右', value: '向右' }, { label: '向上', value: '向上' }, { label: '向下', value: '向下' }] },
-      { label: '目标比例', key: 'targetRatio', options: [{ label: '原图比例', value: '原图比例' }, { label: '1:1', value: '1:1' }, { label: '4:3', value: '4:3' }, { label: '3:4', value: '3:4' }, { label: '16:9', value: '16:9' }, { label: '9:16', value: '9:16' }] },
-      { label: '补全风格', key: 'fillStyle', options: [{ label: '匹配原图', value: 'match' }, { label: '更干净', value: 'clean' }, { label: '更丰富', value: 'rich' }] },
-      { label: '主体处理', key: 'protectSubject', options: [{ label: '保护主体', value: 'yes' }, { label: '允许微调', value: 'soft' }] },
+      {
+        label: '扩图方向',
+        key: 'direction',
+        options: [
+          { label: '四周', value: '四周' },
+          { label: '向左', value: '向左' },
+          { label: '向右', value: '向右' },
+          { label: '向上', value: '向上' },
+          { label: '向下', value: '向下' },
+        ],
+      },
+      {
+        label: '目标比例',
+        key: 'targetRatio',
+        options: [
+          { label: '原图比例', value: '原图比例' },
+          { label: '1:1', value: '1:1' },
+          { label: '4:3', value: '4:3' },
+          { label: '3:4', value: '3:4' },
+          { label: '16:9', value: '16:9' },
+          { label: '9:16', value: '9:16' },
+        ],
+      },
+      {
+        label: '补全风格',
+        key: 'fillStyle',
+        options: [
+          { label: '匹配原图', value: 'match' },
+          { label: '更干净', value: 'clean' },
+          { label: '更丰富', value: 'rich' },
+        ],
+      },
+      {
+        label: '主体处理',
+        key: 'protectSubject',
+        options: [
+          { label: '保护主体', value: 'yes' },
+          { label: '允许微调', value: 'soft' },
+        ],
+      },
     ],
   },
   {
@@ -120,10 +188,43 @@ const toolConfigs = [
       '请将原图主体完整、干净地分离出来，保留真实细节、发丝、半透明区域和自然边缘，移除背景并输出适合继续设计使用的图片。',
     tips: ['智能识别主体', '保留发丝细节', '适合商品和人物'],
     params: [
-      { label: '识别主体', key: 'subject', options: [{ label: '自动识别', value: 'auto' }, { label: '人物', value: 'person' }, { label: '商品', value: 'product' }, { label: '动物/复杂主体', value: 'complex' }] },
-      { label: '边缘处理', key: 'edge', options: [{ label: '自然边缘', value: 'natural' }, { label: '发丝精修', value: 'hair' }, { label: '硬边商品', value: 'hard' }] },
-      { label: '输出背景', key: 'bg', options: [{ label: '透明 PNG', value: 'transparent' }, { label: '纯白底', value: 'white' }, { label: '浅灰底', value: 'light' }] },
-      { label: '阴影处理', key: 'shadow', options: [{ label: '无阴影', value: 'none' }, { label: '保留原阴影', value: 'keep' }, { label: '轻微投影', value: 'soft' }] },
+      {
+        label: '识别主体',
+        key: 'subject',
+        options: [
+          { label: '自动识别', value: 'auto' },
+          { label: '人物', value: 'person' },
+          { label: '商品', value: 'product' },
+          { label: '动物/复杂主体', value: 'complex' },
+        ],
+      },
+      {
+        label: '边缘处理',
+        key: 'edge',
+        options: [
+          { label: '自然边缘', value: 'natural' },
+          { label: '发丝精修', value: 'hair' },
+          { label: '硬边商品', value: 'hard' },
+        ],
+      },
+      {
+        label: '输出背景',
+        key: 'bg',
+        options: [
+          { label: '透明 PNG', value: 'transparent' },
+          { label: '纯白底', value: 'white' },
+          { label: '浅灰底', value: 'light' },
+        ],
+      },
+      {
+        label: '阴影处理',
+        key: 'shadow',
+        options: [
+          { label: '无阴影', value: 'none' },
+          { label: '保留原阴影', value: 'keep' },
+          { label: '轻微投影', value: 'soft' },
+        ],
+      },
     ],
   },
   {
@@ -146,9 +247,33 @@ const toolConfigs = [
     tips: ['移除路人杂物', '自然修补背景', '保留主体和构图'],
     extraInput: { label: '需要消除的内容', key: 'target', placeholder: '例如：右侧路人、桌面水印、背景杂物' },
     params: [
-      { label: '修补方式', key: 'repair', options: [{ label: '自然修补', value: 'natural' }, { label: '纹理优先', value: 'texture' }, { label: '背景干净', value: 'clean' }] },
-      { label: '保护内容', key: 'preserve', options: [{ label: '保护主体', value: 'subject' }, { label: '保护文字', value: 'text' }, { label: '保护构图', value: 'composition' }] },
-      { label: '消除强度', key: 'strength', options: [{ label: '轻度', value: 'light' }, { label: '均衡', value: 'balanced' }, { label: '强力', value: 'strong' }] },
+      {
+        label: '修补方式',
+        key: 'repair',
+        options: [
+          { label: '自然修补', value: 'natural' },
+          { label: '纹理优先', value: 'texture' },
+          { label: '背景干净', value: 'clean' },
+        ],
+      },
+      {
+        label: '保护内容',
+        key: 'preserve',
+        options: [
+          { label: '保护主体', value: 'subject' },
+          { label: '保护文字', value: 'text' },
+          { label: '保护构图', value: 'composition' },
+        ],
+      },
+      {
+        label: '消除强度',
+        key: 'strength',
+        options: [
+          { label: '轻度', value: 'light' },
+          { label: '均衡', value: 'balanced' },
+          { label: '强力', value: 'strong' },
+        ],
+      },
     ],
   },
 ]
@@ -189,9 +314,11 @@ const toolDrafts = ref({
   },
 })
 
+const activeToolConfig = computed(() => toolConfigs.find((tool) => tool.key === props.activeToolKey) || null)
+
 const visibleTools = computed(() => {
   if (!props.activeToolKey) return toolConfigs
-  return toolConfigs.filter((tool) => tool.key === props.activeToolKey)
+  return activeToolConfig.value ? [activeToolConfig.value] : []
 })
 
 function getDraft(tool) {
@@ -201,7 +328,6 @@ function getDraft(tool) {
 function findOptionLabel(options, value) {
   return options.find((option) => option.value === value)?.label || value
 }
-
 
 function setDraftValue(tool, key, value) {
   getDraft(tool)[key] = value
@@ -282,6 +408,14 @@ function applyToolSettings(tool) {
   closeSelectMenu()
 }
 
+watch(
+  activeToolConfig,
+  (tool) => {
+    if (tool) applyToolSettings(tool)
+  },
+  { immediate: true },
+)
+
 function getToolSources(tool) {
   if (activeSourceToolKey.value !== tool.key) return []
   return getReferencePreviewImages()
@@ -342,6 +476,7 @@ async function submitTool(tool) {
   if (!validateToolBeforeSubmit(tool)) return
   applyToolSettings(tool)
   await generate({
+    n: 1,
     tool: tool.key,
     action: tool.key,
     tool_params: buildToolParams(tool),

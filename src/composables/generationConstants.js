@@ -75,6 +75,6 @@ export const moderationOptions = [
   { label: '宽松审核 low', value: 'low' },
 ]
 
-export const generationWaitText = '1~3 分钟'
+export const generationWaitText = '1~3分钟'
 export const generationIdleTip = `生成通常需要 ${generationWaitText}。提交后结果区会显示进度，你也可以继续生成或处理下一张图片。`
-export const generationSubmittedTip = `任务已提交，预计 ${generationWaitText} 完成。结果区会显示生成动画，你也可以继续生成或处理下一张图片，进度可在我的图库查看。`
+export const generationSubmittedTip = `任务已提交，预计${generationWaitText}完成。结果区会显示生成动画，你也可以继续生成或处理下一张图片，进度可在我的图库查看。`

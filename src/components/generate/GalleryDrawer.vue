@@ -1,5 +1,5 @@
 <script setup>
-import { Copy, Download, Eye, ImagePlus, Loader2, RefreshCw, Save, Trash2, X } from 'lucide-vue-next'
+import { Copy, Download, ImagePlus, Loader2, RefreshCw, Save, Trash2, X } from 'lucide-vue-next'
 import EmptyState from '../EmptyState.vue'
 import ModalDialog from '../ModalDialog.vue'
 
@@ -12,6 +12,7 @@ const props = defineProps({
 
 const {
   canPreviewGalleryRecord,
+  canRetryGalleryRecord = () => false,
   canReuseGalleryRecord,
   clearGallery,
   closeGallery,
@@ -37,6 +38,7 @@ const {
   maxLocalGalleryRecords,
   openGalleryImage,
   removeGalleryRecord,
+  retryGalleryRecord = () => false,
   syncCloudGallery,
   useGalleryRecord,
 } = props.task
@@ -84,18 +86,26 @@ const {
 
     <div v-if="gallery.length" class="gallery-grid">
       <article v-for="record in gallery" :key="record.id" class="gallery-card">
-        <button
+        <component
+          :is="canPreviewGalleryRecord(record) ? 'button' : 'div'"
           class="gallery-cover"
-          type="button"
-          :aria-label="
+          :class="{ 'gallery-cover--status': !canPreviewGalleryRecord(record) }"
+          v-bind="
             canPreviewGalleryRecord(record)
-              ? `预览 ${canReuseGalleryRecord(record) ? record.prompt || '图库图片' : galleryRecordMode(record)}`
-              : `${galleryRecordStatusLabel(record)} ${
-                  canReuseGalleryRecord(record) ? record.prompt || '生成任务' : galleryRecordMode(record)
-                }`
+              ? {
+                  type: 'button',
+                  'aria-label': `预览 ${
+                    canReuseGalleryRecord(record) ? record.prompt || '图库图片' : galleryRecordMode(record)
+                  }`,
+                }
+              : {
+                  role: 'img',
+                  'aria-label': `${galleryRecordStatusLabel(record)} ${
+                    canReuseGalleryRecord(record) ? record.prompt || '生成任务' : galleryRecordMode(record)
+                  }`,
+                }
           "
-          :disabled="!canPreviewGalleryRecord(record)"
-          @click="openGalleryImage(record)"
+          @click="canPreviewGalleryRecord(record) ? openGalleryImage(record) : null"
         >
           <img
             v-if="canPreviewGalleryRecord(record)"
@@ -118,7 +128,7 @@ const {
               模型：{{ galleryRecordModelLabel(record) }}
             </span>
           </span>
-        </button>
+        </component>
         <div class="gallery-card-body">
           <div class="gallery-card-meta">
             <span>{{ formatGalleryDate(record.createdAt) }}</span>
@@ -130,6 +140,16 @@ const {
           </p>
           <div class="gallery-actions">
             <button
+              v-if="canRetryGalleryRecord(record)"
+              class="btn btn-soft"
+              type="button"
+              :disabled="gallerySyncing"
+              @click="retryGalleryRecord(record)"
+            >
+              <RefreshCw aria-hidden="true" />
+              重试
+            </button>
+            <button
               v-if="canReuseGalleryRecord(record)"
               class="btn btn-soft"
               type="button"
@@ -139,19 +159,10 @@ const {
               复用
             </button>
             <button
-              class="icon-button"
-              type="button"
-              aria-label="预览图片"
-              :disabled="!canPreviewGalleryRecord(record)"
-              @click="openGalleryImage(record)"
-            >
-              <Eye aria-hidden="true" />
-            </button>
-            <button
+              v-if="canPreviewGalleryRecord(record)"
               class="icon-button"
               type="button"
               aria-label="下载该批图片"
-              :disabled="!canPreviewGalleryRecord(record)"
               @click="downloadGalleryRecord(record)"
             >
               <Download aria-hidden="true" />

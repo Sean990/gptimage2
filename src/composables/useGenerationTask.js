@@ -12,7 +12,12 @@ import { useGenerationForm } from './useGenerationForm'
 import { useGenerationLoading } from './useGenerationLoading'
 import { isGenerationTaskSuccessful, useGenerationPolling } from './useGenerationPolling'
 import { useGenerationUI } from './useGenerationUI'
-import { compactPayload, mapRecordImages, normalizeGenerationRecord } from './useGenerationPayload'
+import {
+  canReuseGenerationRecord,
+  compactPayload,
+  mapRecordImages,
+  normalizeGenerationRecord,
+} from './useGenerationPayload'
 import { useImageDownload } from './useImageDownload'
 import { useImagePreview } from './useImagePreview'
 import { useModelPicker } from './useModelPicker'
@@ -68,10 +73,17 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
   const initialLoadingStage = loadingStage.value
   const queuePosition = ref(null)
   const lastGenerationNotice = ref('')
+  const lastGenerationCanRetry = ref(false)
+  const lastGenerationRetryRecord = ref(null)
   const generationAbortController = ref(null)
   const generationRunId = ref(0)
   const activeTaskId = ref('')
   const isAuthenticated = computed(() => auth.isAuthenticated.value)
+  const defaultLayerSplitTypes = [
+    { type: 'subject', label: '主体' },
+    { type: 'text', label: '文字' },
+    { type: 'background', label: '背景' },
+  ]
 
   const referenceApi = useReferenceImages({
     api,
@@ -90,6 +102,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     hasUnreadyUpload,
     maskCount,
     referenceCount,
+    setReferenceUrls,
     showReferenceSection,
     trimReferencesForMode,
   } = referenceApi
@@ -271,6 +284,12 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     setLastGenerationNotice: (message) => {
       lastGenerationNotice.value = message
     },
+    setLastGenerationRetryRecord: (record) => {
+      lastGenerationRetryRecord.value = record ? normalizeGenerationRecord(record) : null
+    },
+    setLastGenerationRetryAvailable: (available) => {
+      lastGenerationCanRetry.value = Boolean(available)
+    },
     showNotice,
     showReferenceSection,
     userCredits,
@@ -304,11 +323,218 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     generationUI.handleWindowKeydown(event)
   }
 
+  function getReusableReferenceUrls(record = {}) {
+    const imageReferences = (record.images || []).flatMap((image) => [
+      ...(image.sourceImages || image.source_images || image.references || []),
+      image.originalSrc || image.original_src || '',
+    ])
+    return Array.from(
+      new Set(
+        [
+          ...(record.sourceImages || record.source_images || record.references || []),
+          record.originalSrc || record.original_src || '',
+          ...imageReferences,
+        ].filter(Boolean),
+      ),
+    )
+  }
+
+  function canRetryGalleryRecord(record = {}) {
+    if (!record.id) return false
+    if (!canReuseGenerationRecord(record)) return false
+    const status = String(record.status || '').toLowerCase()
+    return (
+      ['failed', 'canceled', 'partial_completed', 'completed_with_errors'].includes(status) ||
+      Number(record.failedCount || 0) > 0
+    )
+  }
+
   function useGalleryRecord(record) {
     const normalizedRecord = normalizeGenerationRecord(record)
     const used = galleryActions.useGalleryRecord(normalizedRecord, formState)
-    if (used) onGalleryRecordUsed?.(normalizedRecord)
+    if (used) {
+      setReferenceUrls(getReusableReferenceUrls(normalizedRecord), {
+        maskUrl: normalizedRecord.mask || normalizedRecord.maskUrl || normalizedRecord.mask_url || '',
+        silent: true,
+      })
+      onGalleryRecordUsed?.(normalizedRecord)
+    }
     return used
+  }
+
+  function getRetryImageCount(record = {}) {
+    const successCount = record.images?.length || 0
+    const failedCount = Number(record.failedCount || 0)
+    const requestedCount = Number(record.requestedCount || 0)
+    if (failedCount > 0 && successCount > 0) return failedCount
+    return requestedCount || failedCount || 1
+  }
+
+  function shouldRetryFailedImagesOnly(record = {}) {
+    return Number(record.failedCount || 0) > 0 && (record.images?.length || 0) > 0
+  }
+
+  function buildTaskRetryPayload(record = {}) {
+    const retryFailedOnly = shouldRetryFailedImagesOnly(record)
+    return compactPayload({
+      n: getRetryImageCount(record),
+      failed_only: retryFailedOnly || undefined,
+    })
+  }
+
+  function normalizeTaskRetryResult(record, defaults = {}) {
+    const normalizedRecord = normalizeGenerationRecord(record, defaults)
+    const requestedCount = Number(normalizedRecord.requestedCount || defaults.requestedCount || 0)
+    if (requestedCount > 0 && normalizedRecord.images.length >= requestedCount && normalizedRecord.failedCount > 0) {
+      return {
+        ...normalizedRecord,
+        failedCount: 0,
+        partialFailureMessage: '',
+      }
+    }
+    return normalizedRecord
+  }
+
+  function replaceGalleryRecord(record) {
+    gallery.value = mergeGalleryRecords(
+      [record],
+      gallery.value.filter((item) => item.id !== record.id),
+    )
+    persistLocalGallery()
+    window.dispatchEvent(new CustomEvent('imgsgen:gallery-updated', { detail: { record } }))
+  }
+
+  async function retryGalleryRecord(record) {
+    const normalizedRecord = normalizeGenerationRecord(record)
+    if (!canRetryGalleryRecord(normalizedRecord)) return false
+    if (loading.value || outputLoading.value) {
+      showNotice('当前已有生成任务在进行，请完成后再重试')
+      return false
+    }
+
+    if (!isAuthenticated.value) {
+      if (auth.token.value && !auth.initialized.value) {
+        await auth.refreshMe().catch(() => {})
+      }
+      if (!isAuthenticated.value) {
+        showNotice('请先登录后重试生成任务')
+        openLoginFromGenerate()
+        return false
+      }
+    }
+
+    const runId = generationRunId.value + 1
+    generationRunId.value = runId
+    const isCurrentRun = () => generationRunId.value === runId
+    const retryPayload = buildTaskRetryPayload(normalizedRecord)
+    const retryFailedOnly = shouldRetryFailedImagesOnly(normalizedRecord)
+    const retryingRecord = normalizeGenerationRecord(
+      {
+        ...normalizedRecord,
+        status: 'queued',
+        updatedAt: new Date().toISOString(),
+      },
+      normalizedRecord,
+    )
+
+    closeGallery()
+    loading.value = true
+    outputLoading.value = true
+    activeTaskId.value = normalizedRecord.id
+    output.value = normalizedRecord.images?.length ? mapRecordImages(normalizedRecord) : []
+    loadingStage.value = retryFailedOnly ? '正在重新生成失败图片' : '正在重试生成任务'
+    lastGenerationCanRetry.value = false
+    lastGenerationRetryRecord.value = null
+    lastGenerationNotice.value = constants.generationSubmittedTip
+    replaceGalleryRecord(retryingRecord)
+    showNotice(retryFailedOnly ? '正在补生成失败图片' : '正在重试原任务')
+
+    try {
+      const retryTaskPayload = await api.retryGenerationTask(normalizedRecord.id, retryPayload)
+      if (!isCurrentRun()) return false
+
+      const retryTask = normalizeTaskRetryResult(
+        {
+          ...retryTaskPayload,
+          id: normalizedRecord.id,
+        },
+        {
+          ...normalizedRecord,
+          ...retryPayload,
+          createdAt: normalizedRecord.createdAt || new Date().toISOString(),
+        },
+      )
+      replaceGalleryRecord(retryTask)
+      void auth.refreshMe().catch(() => {})
+
+      if (isGenerationTaskSuccessful(retryTask)) {
+        output.value = mapRecordImages(retryTask)
+        outputLoading.value = false
+        activeTaskId.value = ''
+        loadingStage.value = initialLoadingStage
+        const completionMessage =
+          retryTask.partialFailureMessage || (retryFailedOnly ? '失败图片已重新生成' : '生成任务重试完成')
+        showNotice(completionMessage)
+        window.dispatchEvent(
+          new CustomEvent('imgsgen:generation-completed', {
+            detail: { message: completionMessage, record: retryTask },
+          }),
+        )
+        return true
+      }
+
+      const result = await waitForGenerationTask(normalizedRecord.id)
+      if (!isCurrentRun()) return false
+      const normalizedResult = normalizeTaskRetryResult(result, {
+        ...normalizedRecord,
+        ...retryPayload,
+        createdAt: normalizedRecord.createdAt || new Date().toISOString(),
+      })
+      replaceGalleryRecord(normalizedResult)
+      output.value = mapRecordImages(normalizedResult)
+      outputLoading.value = false
+      activeTaskId.value = ''
+      loadingStage.value = initialLoadingStage
+      const completionMessage =
+        normalizedResult.partialFailureMessage || (retryFailedOnly ? '失败图片已重新生成' : '生成任务重试完成')
+      showNotice(completionMessage)
+      window.dispatchEvent(
+        new CustomEvent('imgsgen:generation-completed', {
+          detail: { message: completionMessage, record: normalizedResult },
+        }),
+      )
+    } catch (error) {
+      if (!isCurrentRun()) return false
+      outputLoading.value = false
+      activeTaskId.value = ''
+      loadingStage.value = initialLoadingStage
+      lastGenerationNotice.value = error.message || '任务重试失败，请稍后再试'
+      lastGenerationRetryRecord.value = normalizedRecord
+      lastGenerationCanRetry.value = true
+      showNotice(lastGenerationNotice.value)
+      replaceGalleryRecord({
+        ...normalizedRecord,
+        status: 'failed',
+        errorMessage: lastGenerationNotice.value,
+      })
+      return false
+    } finally {
+      if (isCurrentRun()) loading.value = false
+      void auth.refreshMe().catch(() => {})
+    }
+
+    return true
+  }
+
+  async function retryLastGeneration() {
+    if (!lastGenerationCanRetry.value || loading.value || outputLoading.value) return false
+    lastGenerationCanRetry.value = false
+    if (lastGenerationRetryRecord.value?.id) {
+      return retryGalleryRecord(lastGenerationRetryRecord.value)
+    }
+    showNotice('正在重试上一次生成')
+    await generate()
+    return true
   }
 
   async function ensureOutputActionReady() {
@@ -374,35 +600,157 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     queuePosition.value = null
     output.value = []
     lastGenerationNotice.value = ''
+    lastGenerationCanRetry.value = false
     loadingStage.value = initialLoadingStage
     cancelOutputAction()
     closeImagePreview()
   }
 
-  async function resolveOutputActionRecord(taskPayload, requestPayload, { runId } = {}) {
+  async function resolveOutputActionRecord(taskPayload, requestPayload, { runId, persistToGallery = true } = {}) {
     const submittedRecord = normalizeGenerationRecord(taskPayload, requestPayload)
     outputActionRecordId.value = submittedRecord.id || taskPayload?.id || ''
     if (runId && !isCurrentOutputActionRun(runId)) return null
 
-    gallery.value = mergeGalleryRecords([submittedRecord], gallery.value)
-    persistLocalGallery()
+    if (persistToGallery) {
+      gallery.value = mergeGalleryRecords([submittedRecord], gallery.value)
+      persistLocalGallery()
+    }
 
     if (isGenerationTaskSuccessful(taskPayload)) return submittedRecord
 
-    const result = await waitForGenerationTask(taskPayload.id)
+    const result = await waitForGenerationTask(taskPayload.id, { syncGallery: persistToGallery })
     if (runId && !isCurrentOutputActionRun(runId)) return null
 
     const normalizedResult = normalizeGenerationRecord(result, {
       ...requestPayload,
       createdAt: submittedRecord.createdAt || new Date().toISOString(),
     })
-    gallery.value = mergeGalleryRecords([normalizedResult], gallery.value)
-    persistLocalGallery()
+    if (persistToGallery) {
+      gallery.value = mergeGalleryRecords([normalizedResult], gallery.value)
+      persistLocalGallery()
+    }
     return normalizedResult
   }
 
   function replaceOutputItem(index, nextItem) {
     output.value = output.value.map((item, itemIndex) => (itemIndex === index ? nextItem : item))
+  }
+
+  function getLayerSplitTypeLabel(type, index = 0) {
+    return defaultLayerSplitTypes.find((item) => item.type === type)?.label || `图层 ${index + 1}`
+  }
+
+  function normalizeLayerSplitTypes(types = []) {
+    const normalizedTypes = (Array.isArray(types) ? types : [types])
+      .map((type) => String(type || '').trim())
+      .filter(Boolean)
+    return normalizedTypes.length
+      ? Array.from(new Set(normalizedTypes))
+      : defaultLayerSplitTypes.map((item) => item.type)
+  }
+
+  function sortLayerSplitEntries(entries = []) {
+    const order = new Map(defaultLayerSplitTypes.map((item, index) => [item.type, index]))
+    return [...entries].sort((a, b) => {
+      const aOrder = order.has(a.type) ? order.get(a.type) : Number.MAX_SAFE_INTEGER
+      const bOrder = order.has(b.type) ? order.get(b.type) : Number.MAX_SAFE_INTEGER
+      if (aOrder !== bOrder) return aOrder - bOrder
+      return String(a.label || '').localeCompare(String(b.label || ''), 'zh-CN')
+    })
+  }
+
+  function mapLayerSplitRecordLayers(record = {}, requestedTypes = []) {
+    const layerTypes = normalizeLayerSplitTypes(requestedTypes)
+    return mapRecordImages(record)
+      .filter((image) => image.src)
+      .map((image, layerIndex) => {
+        const type = image.layerType || layerTypes[layerIndex] || `layer-${layerIndex + 1}`
+        const label = image.layerLabel || image.title || getLayerSplitTypeLabel(type, layerIndex)
+        return {
+          id: image.id || `${type}-${layerIndex}`,
+          type,
+          label,
+          title: image.title || label,
+          src: image.src,
+          visible: image.visible !== false,
+          outputFormat: image.outputFormat || 'png',
+          createdAt: image.createdAt,
+        }
+      })
+  }
+
+  function getLayerSplitFailedSlots(record = {}, requestedTypes = [], layers = []) {
+    const layerTypes = normalizeLayerSplitTypes(requestedTypes)
+    const successfulTypes = new Set(layers.map((layer) => layer.type).filter(Boolean))
+    const missingTypes = layerTypes.filter((type) => !successfulTypes.has(type))
+    const failedCount = Number(record.failedCount || 0)
+    const requestedCount = Number(record.requestedCount || layerTypes.length || 0)
+    const impliedMissingCount = Math.max(0, Math.min(layerTypes.length, requestedCount) - layers.length)
+    const status = String(record.status || '').toLowerCase()
+    const missingCount = failedCount || impliedMissingCount || (status === 'failed' ? missingTypes.length : 0)
+
+    return missingTypes.slice(0, missingCount).map((type, index) => ({
+      id: `${type}-failed`,
+      type,
+      label: getLayerSplitTypeLabel(type, index),
+      errorMessage: record.errorMessage || record.partialFailureMessage || '该图层生成失败',
+    }))
+  }
+
+  function buildLayerSplitState(item = {}, record = {}, requestedTypes = []) {
+    const normalizedRecord = normalizeGenerationRecord(record)
+    const layerTypes = normalizeLayerSplitTypes(requestedTypes)
+    const incomingLayers = mapLayerSplitRecordLayers(normalizedRecord, layerTypes)
+    const replaceTypes = new Set(layerTypes)
+    const layersByType = new Map()
+
+    ;(item.layers || [])
+      .filter((layer) => !replaceTypes.has(layer.type))
+      .forEach((layer) => layersByType.set(layer.type || layer.id || layer.src, layer))
+    incomingLayers.forEach((layer) => layersByType.set(layer.type || layer.id || layer.src, layer))
+
+    const previousFailedSlots = Array.isArray(item.layerSplitFailedSlots) ? item.layerSplitFailedSlots : []
+    const nextFailedSlots = [
+      ...previousFailedSlots.filter((slot) => !replaceTypes.has(slot.type)),
+      ...getLayerSplitFailedSlots(normalizedRecord, layerTypes, incomingLayers),
+    ]
+
+    return {
+      layers: sortLayerSplitEntries(Array.from(layersByType.values())),
+      layerSplitRecord: normalizedRecord,
+      layerSplitFailedSlots: sortLayerSplitEntries(nextFailedSlots),
+      layerSplitRequestedTypes: normalizeLayerSplitTypes([
+        ...(item.layerSplitRequestedTypes || defaultLayerSplitTypes.map((entry) => entry.type)),
+        ...layerTypes,
+      ]),
+      layerSplitError: nextFailedSlots.length
+        ? normalizedRecord.errorMessage || normalizedRecord.partialFailureMessage
+        : '',
+    }
+  }
+
+  function buildLayerSplitErrorState(item = {}, requestedTypes = [], message = '') {
+    const layerTypes = normalizeLayerSplitTypes(requestedTypes)
+    const replaceTypes = new Set(layerTypes)
+    const previousFailedSlots = Array.isArray(item.layerSplitFailedSlots) ? item.layerSplitFailedSlots : []
+    const nextFailedSlots = [
+      ...previousFailedSlots.filter((slot) => !replaceTypes.has(slot.type)),
+      ...layerTypes.map((type, index) => ({
+        id: `${type}-failed`,
+        type,
+        label: getLayerSplitTypeLabel(type, index),
+        errorMessage: message || '该图层生成失败',
+      })),
+    ]
+
+    return {
+      layerSplitFailedSlots: sortLayerSplitEntries(nextFailedSlots),
+      layerSplitRequestedTypes: normalizeLayerSplitTypes([
+        ...(item.layerSplitRequestedTypes || defaultLayerSplitTypes.map((entry) => entry.type)),
+        ...layerTypes,
+      ]),
+      layerSplitError: message || '智能分层失败，请稍后重试',
+    }
   }
 
   function buildOutputActionPayload(item, action, payload = {}) {
@@ -415,10 +763,10 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
       tool: action,
       ratio: item.ratio || formState.aspectRatio.value,
       resolution: item.resolution || formState.resolution.value || '4K',
-      n: action === 'layer-split' ? 3 : 1,
+      n: payload.n || (action === 'layer-split' ? 3 : 1),
       quality: 'high',
       output_format: 'png',
-      background: action === 'layer-split' ? 'transparent' : 'auto',
+      background: action === 'layer-split' ? undefined : 'auto',
       references: [item.src],
       mask: payload.mask,
       tool_params: payload.toolParams,
@@ -495,52 +843,55 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     }
   }
 
-  async function submitOutputLayerSplit(item, index) {
+  async function submitOutputLayerSplit(item, index, options = {}) {
     if (!(await ensureOutputActionReady())) return null
 
     const runId = startOutputAction(item, index, 'layer-split')
+    const requestedTypes = normalizeLayerSplitTypes(options.layerType ? [options.layerType] : options.layerTypes)
 
     try {
       const requestPayload = buildOutputActionPayload(item, 'layer-split', {
         prompt: '将当前图片分离为主体、文字和背景三个独立图层。',
+        n: requestedTypes.length,
         toolParams: {
           source_image: item.src,
-          layer_types: ['subject', 'text', 'background'],
+          layer_types: requestedTypes,
         },
       })
       const taskPayload = await api.generateImages(requestPayload)
       if (!isCurrentOutputActionRun(runId)) return null
 
-      const record = await resolveOutputActionRecord(taskPayload, requestPayload, { runId })
+      const record = await resolveOutputActionRecord(taskPayload, requestPayload, { runId, persistToGallery: false })
       if (!record || !isCurrentOutputActionRun(runId)) return null
 
-      const layers = mapRecordImages(record)
-        .filter((image) => image.src)
-        .map((image, layerIndex) => ({
-          id: image.id || `layer-${layerIndex}`,
-          type: image.layerType || ['subject', 'text', 'background'][layerIndex] || `layer-${layerIndex + 1}`,
-          label: image.layerLabel || image.title || `图层 ${layerIndex + 1}`,
-          title: image.title || image.layerLabel || `图层 ${layerIndex + 1}`,
-          src: image.src,
-          visible: image.visible !== false,
-          outputFormat: image.outputFormat || 'png',
-          createdAt: image.createdAt,
-        }))
-
-      if (!layers.length) throw new Error('智能分层未返回图层图片')
+      const layerSplitState = buildLayerSplitState(item, record, requestedTypes)
+      if (!layerSplitState.layers.length && !layerSplitState.layerSplitFailedSlots.length) {
+        throw new Error('智能分层未返回图层图片')
+      }
 
       replaceOutputItem(index, {
         ...item,
         originalSrc: item.originalSrc || item.src,
         sourceImages: Array.from(new Set([...(item.sourceImages || []), item.src])),
-        layers,
+        ...layerSplitState,
       })
-      showNotice('智能分层完成')
+      if (layerSplitState.layerSplitFailedSlots.length) {
+        showNotice(record.partialFailureMessage || '部分图层生成失败，可单独重新生成')
+      } else {
+        showNotice(options.layerType ? `${getLayerSplitTypeLabel(options.layerType)}图层已重新生成` : '智能分层完成')
+      }
       void auth.refreshMe().catch(() => {})
       return record
     } catch (error) {
       if (!isCurrentOutputActionRun(runId)) return null
-      showNotice(error.message || '智能分层失败，请稍后重试')
+      const message = error.message || '智能分层失败，请稍后重试'
+      replaceOutputItem(index, {
+        ...item,
+        originalSrc: item.originalSrc || item.src,
+        sourceImages: Array.from(new Set([...(item.sourceImages || []), item.src])),
+        ...buildLayerSplitErrorState(item, requestedTypes, message),
+      })
+      showNotice(message)
       return null
     } finally {
       finishOutputAction(runId)
@@ -550,6 +901,10 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
   function handleUseGalleryRecord(event) {
     const record = event.detail?.record || event.detail
     if (!record) return
+    if (event.detail?.retry) {
+      void retryGalleryRecord(record)
+      return
+    }
     useGalleryRecord(record)
   }
 
@@ -633,6 +988,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     outputActionType,
     loadingStage,
     lastGenerationNotice,
+    lastGenerationCanRetry,
     queuePosition,
     notice,
     output,
@@ -647,6 +1003,9 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     openGalleryImage: (record) => galleryActions.openGalleryImage(record, openImagePreview),
     removeGalleryRecord: galleryActions.removeGalleryRecord,
     saveCurrentOutputToGallery: () => galleryActions.saveCurrentOutputToGallery(formState),
+    canRetryGalleryRecord,
+    retryGalleryRecord,
+    retryLastGeneration,
     useGalleryRecord,
     // Polling / queue
     ...pollingApi,

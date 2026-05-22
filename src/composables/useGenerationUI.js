@@ -41,9 +41,9 @@ export function useGenerationUI({
     return classes.join(' ')
   })
 
-  const outputAspectStyle = computed(() => ({
-    '--output-ratio': aspectRatio.value === 'auto' ? '1 / 1' : aspectRatio.value.replace(':', ' / '),
-  }))
+  const outputAspectStyle = computed(() =>
+    aspectRatio.value === 'auto' ? {} : { '--output-ratio': aspectRatio.value.replace(':', ' / ') },
+  )
 
   const outputPlaceholders = computed(() => [1])
 

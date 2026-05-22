@@ -70,8 +70,9 @@ export function useGenerationPolling({
     }
   }
 
-  async function waitForGenerationTask(taskId) {
+  async function waitForGenerationTask(taskId, options = {}) {
     clearTaskPollTimer(taskId)
+    const syncGallery = options.syncGallery !== false
     let pollInterval = 1500
     let consecutiveFailures = 0
     const MAX_FAILURES = 5
@@ -81,8 +82,10 @@ export function useGenerationPolling({
       const poll = async () => {
         try {
           const task = await api.getGenerationTask(taskId)
-          gallery.value = mergeGalleryRecords([normalizeGenerationRecord(task, task)], gallery.value)
-          persistLocalGallery()
+          if (syncGallery) {
+            gallery.value = mergeGalleryRecords([normalizeGenerationRecord(task, task)], gallery.value)
+            persistLocalGallery()
+          }
 
           consecutiveFailures = 0
           pollInterval = 1500
@@ -109,14 +112,14 @@ export function useGenerationPolling({
           if (isGenerationTaskSuccessful(task)) {
             clearTaskPollTimer(taskId)
             if (queuePosition && activeTaskId.value === taskId) queuePosition.value = null
-            if (galleryOpen.value) syncCloudGallery({ silent: true })
+            if (galleryOpen.value && syncGallery) syncCloudGallery({ silent: true })
             resolve(task)
             return
           }
           if (['failed', 'canceled'].includes(task.status)) {
             clearTaskPollTimer(taskId)
             if (queuePosition && activeTaskId.value === taskId) queuePosition.value = null
-            persistLocalGallery()
+            if (syncGallery) persistLocalGallery()
             reject(
               new Error(
                 sanitizeErrorMessage(

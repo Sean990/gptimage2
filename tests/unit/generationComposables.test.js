@@ -41,6 +41,7 @@ describe('生成页拆分 composables', () => {
 
   it('2 张和 4 张结果使用多图布局样式', () => {
     const normalizedImageCount = ref(2)
+    const aspectRatio = ref('1:1')
     const ui = useGenerationUI({
       batchMode: ref(false),
       galleryOpen: ref(false),
@@ -50,7 +51,7 @@ describe('生成页拆分 composables', () => {
       mode: ref('generate'),
       normalizedImageCount,
       output: ref([]),
-      aspectRatio: ref('1:1'),
+      aspectRatio,
       closeGallery: vi.fn(),
       closeImagePreview: vi.fn(),
       showNextPreviewImage: vi.fn(),
@@ -64,6 +65,10 @@ describe('生成页拆分 composables', () => {
 
     normalizedImageCount.value = 3
     expect(ui.outputGridClass.value).toBe('output-grid--three')
+
+    expect(ui.outputAspectStyle.value).toEqual({ '--output-ratio': '1 / 1' })
+    aspectRatio.value = 'auto'
+    expect(ui.outputAspectStyle.value).toEqual({})
   })
 
   it('识别尚未上传完成的本地引用图', () => {
@@ -164,6 +169,31 @@ describe('生成页拆分 composables', () => {
     expect(isGenerationTaskSuccessful(record)).toBe(true)
   })
 
+  it('图库不把智能分层当成独立任务展示', () => {
+    const layerRecord = {
+      id: 'task-layer-split',
+      tool: 'layer-split',
+      status: 'partial_completed',
+      requestedCount: 3,
+      failedCount: 2,
+      images: [{ url: '/uploads/subject.png' }],
+    }
+    const upscaleRecord = {
+      id: 'task-upscale',
+      tool: 'upscale',
+      status: 'completed',
+      images: [{ url: '/uploads/upscale.png' }],
+    }
+    const { mergeGalleryRecords } = useGallery({
+      normalizeGenerationRecord,
+    })
+
+    expect(filterVisibleGalleryRecords([layerRecord, upscaleRecord]).map((record) => record.id)).toEqual([
+      'task-upscale',
+    ])
+    expect(mergeGalleryRecords([layerRecord, upscaleRecord]).map((record) => record.id)).toEqual(['task-upscale'])
+  })
+
   it('复用多图图库记录时同步生成张数', () => {
     const output = ref([])
     const formState = {
@@ -176,13 +206,7 @@ describe('生成页拆分 composables', () => {
       background: ref('auto'),
       batchMode: ref(false),
       batchCount: ref(2),
-      batchCountOptions: [
-        { value: 2 },
-        { value: 4 },
-        { value: 6 },
-        { value: 8 },
-        { value: 10 },
-      ],
+      batchCountOptions: [{ value: 2 }, { value: 4 }, { value: 6 }, { value: 8 }, { value: 10 }],
     }
     const actions = useGalleryActions({
       api: {},
@@ -222,6 +246,52 @@ describe('生成页拆分 composables', () => {
     expect(formState.batchMode.value).toBe(true)
     expect(formState.batchCount.value).toBe(4)
     expect(output.value).toHaveLength(4)
+  })
+
+  it('复用图生图记录时也会同步生成张数', () => {
+    const formState = {
+      prompt: ref(''),
+      mode: ref('generate'),
+      aspectRatio: ref('3:4'),
+      resolution: ref('1K'),
+      quality: ref('auto'),
+      outputFormat: ref('png'),
+      background: ref('auto'),
+      batchMode: ref(true),
+      batchCount: ref(4),
+      batchCountOptions: [{ value: 2 }, { value: 4 }, { value: 6 }],
+    }
+    const actions = useGalleryActions({
+      api: {},
+      gallery: ref([]),
+      galleryOpen: ref(true),
+      gallerySyncMessage: ref(''),
+      isAuthenticated: ref(false),
+      markGalleryRecordsDeleted: vi.fn(),
+      mergeGalleryRecords: vi.fn((records, current = []) => [...records, ...current]),
+      model: ref('gpt-image-2'),
+      modelOptions: ref([]),
+      output: ref([]),
+      persistLocalGallery: vi.fn(),
+      selectedModelAvailable: ref(true),
+      showNotice: vi.fn(),
+    })
+
+    actions.useGalleryRecord(
+      normalizeGenerationRecord({
+        id: 'task-image-reuse',
+        prompt: '参考图改图',
+        mode: 'image',
+        ratio: 'auto',
+        requestedCount: 4,
+        images: [{ url: '/uploads/image-1.png' }, { url: '/uploads/image-2.png' }],
+      }),
+      formState,
+    )
+
+    expect(formState.mode.value).toBe('image')
+    expect(formState.batchMode.value).toBe(true)
+    expect(formState.batchCount.value).toBe(4)
   })
 
   it('专用图片工具提交时合并结构化工具参数', async () => {
@@ -401,7 +471,7 @@ describe('生成页拆分 composables', () => {
     expect(outputLoading.value).toBe(true)
     expect(activeTaskId.value).toBe('task-running')
     expect(setLastGenerationNotice).toHaveBeenCalledWith(
-      '任务已提交，结果区会持续显示进度；你也可以继续生成或处理下一张图片。',
+      '任务已提交，预计1~3分钟完成。结果区会显示生成动画，你也可以继续生成或处理下一张图片，进度可在我的图库查看。',
     )
 
     resolveGenerationTask({
@@ -419,6 +489,82 @@ describe('生成页拆分 composables', () => {
     expect(output.value[0].src).toContain('/uploads/result.png')
     expect(showNotice).toHaveBeenLastCalledWith('图像生成完成')
     expect(persistLocalGallery).toHaveBeenCalled()
+  })
+
+  it('生成任务失败后会开放前端重试入口', async () => {
+    const loading = ref(false)
+    const outputLoading = ref(false)
+    const output = ref([])
+    const gallery = ref([])
+    const activeTaskId = ref('')
+    const setLastGenerationNotice = vi.fn()
+    const setLastGenerationRetryAvailable = vi.fn()
+    const action = useGenerateAction({
+      api: {
+        generateImages: vi.fn().mockResolvedValue({
+          id: 'task-failed',
+          status: 'running',
+          images: [],
+        }),
+      },
+      auth: {
+        token: ref('token'),
+        initialized: ref(true),
+        refreshMe: vi.fn().mockResolvedValue(),
+      },
+      activeTaskId,
+      creditCost: ref(3),
+      formState: {
+        prompt: ref('生成一张蓝色产品海报'),
+        mode: ref('generate'),
+        size: ref('auto'),
+        aspectRatio: ref('1:1'),
+        resolution: ref('1K'),
+        normalizedImageCount: ref(1),
+        quality: ref('auto'),
+        outputFormat: ref('png'),
+        background: ref('auto'),
+        moderation: ref('auto'),
+        outputCompression: ref(100),
+        requiresReference: ref(false),
+        batchMode: ref(false),
+        supportsOutputCompression: () => false,
+      },
+      gallery,
+      generationAbortController: ref(null),
+      getMaskReference: vi.fn(),
+      getReferences: vi.fn(() => []),
+      hasUnreadyUpload: vi.fn(() => false),
+      hasUsageCostConfig: ref(true),
+      isAuthenticated: ref(true),
+      loadSiteData: vi.fn(),
+      loading,
+      loadingStage: ref('准备提交生成任务'),
+      mergeGalleryRecords: vi.fn((records, current = []) => [...records, ...current]),
+      model: ref('gpt-image-2'),
+      modelOptions: ref([]),
+      openLoginFromGenerate: vi.fn(),
+      output,
+      outputLoading,
+      persistLocalGallery: vi.fn(),
+      referenceCount: ref(0),
+      selectedModelAvailable: ref(true),
+      setLastGenerationNotice,
+      setLastGenerationRetryAvailable,
+      showNotice: vi.fn(),
+      showReferenceSection: ref(false),
+      userCredits: ref(30),
+      waitForGenerationTask: vi.fn().mockRejectedValue(new Error('生成失败，请稍后重试')),
+    })
+
+    await action.generate()
+
+    await vi.waitFor(() => {
+      expect(setLastGenerationRetryAvailable).toHaveBeenLastCalledWith(true)
+    })
+    expect(setLastGenerationNotice).toHaveBeenLastCalledWith('生成失败，请稍后重试')
+    expect(outputLoading.value).toBe(false)
+    expect(activeTaskId.value).toBe('')
   })
 
   it('删除图库记录后，云端同步返回同一记录不会重新显示', () => {
@@ -648,5 +794,51 @@ describe('生成页拆分 composables', () => {
     await expect(firstTask).resolves.toMatchObject({ id: 'task-a', status: 'completed' })
     expect(callCounts.get('task-a')).toBe(2)
     clearTaskPollTimer()
+  })
+
+  it('分层类派生任务轮询时可以不写入图库', async () => {
+    const gallery = ref([])
+    const mergeGalleryRecords = vi.fn((records, current = []) => [...records, ...current])
+    const persistLocalGallery = vi.fn()
+    const api = {
+      getGenerationTask: vi.fn().mockResolvedValue({
+        id: 'task-layer-split',
+        status: 'completed',
+        tool: 'layer-split',
+        images: [{ url: '/uploads/subject.png' }],
+      }),
+      getQueuePosition: vi.fn(),
+    }
+    const { waitForGenerationTask } = useGenerationPolling({
+      activeTaskId: ref('task-layer-split'),
+      api,
+      clearGalleryClearedBefore: vi.fn(),
+      gallery,
+      galleryLastSyncedAt: ref(''),
+      galleryOpen: ref(false),
+      gallerySyncError: ref(''),
+      gallerySyncing: ref(false),
+      gallerySyncMessage: ref(''),
+      generationAbortController: ref(null),
+      hasPendingGalleryRecords: ref(false),
+      isAuthenticated: ref(true),
+      isGalleryRecordPending: () => false,
+      loadLocalGallery: () => [],
+      loading: ref(false),
+      loadingStage: ref(''),
+      mergeGalleryRecords,
+      normalizeGenerationRecord,
+      persistLocalGallery,
+      queuePosition: ref(null),
+      setGallerySyncMessage: vi.fn(),
+      showNotice: vi.fn(),
+    })
+
+    await expect(waitForGenerationTask('task-layer-split', { syncGallery: false })).resolves.toMatchObject({
+      id: 'task-layer-split',
+    })
+    expect(gallery.value).toEqual([])
+    expect(mergeGalleryRecords).not.toHaveBeenCalled()
+    expect(persistLocalGallery).not.toHaveBeenCalled()
   })
 })

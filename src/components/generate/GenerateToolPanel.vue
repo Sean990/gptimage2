@@ -3,7 +3,6 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import {
   Check,
   ChevronDown,
-  GalleryHorizontal,
   Gem,
   ImagePlus,
   Link as LinkIcon,
@@ -45,13 +44,9 @@ const {
   closeSelectMenu,
   creditCost,
   generate,
-  generationCostText,
-  generationIdleTip,
-  generationSubmittedTip,
   getMaskPreviewImages,
   getReferencePreviewImages,
   imageUrl,
-  lastGenerationNotice,
   loading,
   maskCount,
   maskImageUrl,
@@ -69,14 +64,12 @@ const {
   normalizedImageCount,
   onFileChange,
   onMaskFileChange,
-  openGallery,
   openImagePreview,
   optimizeCurrentPrompt,
   optimizing,
   outputCompression,
   outputFormat,
   outputFormats,
-  outputLoading,
   processMaskFiles,
   processReferenceFiles,
   prompt,
@@ -225,7 +218,6 @@ async function onMaskDrop(event) {
   if (!files || !files.length) return
   await processMaskFiles(files)
 }
-
 </script>
 
 <template>
@@ -333,7 +325,7 @@ async function onMaskDrop(event) {
         >{{ referenceLabel }}
         <span v-if="requiresReference">({{ referenceCount }}/{{ maxReferenceCount }})</span></label
       >
-      <div class="field">
+      <div v-if="canAddReference" class="field">
         <label for="image-url">{{ referenceInputLabel }}</label>
         <div class="control-row">
           <input
@@ -358,6 +350,7 @@ async function onMaskDrop(event) {
         </div>
       </div>
       <label
+        v-if="!referenceCount"
         class="upload-zone"
         :class="{ 'drag-over': referenceDragActive }"
         @dragenter="onReferenceDragEnter"
@@ -378,10 +371,10 @@ async function onMaskDrop(event) {
           @change="onFileChange"
         />
       </label>
-      <p class="compliance-hint">
+      <p v-if="canAddReference" class="compliance-hint">
         请仅上传本人或已获授权的图片。包含人脸、证件、未成年人、商标、作品或隐私信息的素材，需先确认授权。
       </p>
-      <div v-if="referenceCount" class="reference-grid">
+      <div v-if="referenceCount" class="reference-grid" :class="{ 'reference-grid-edit': mode === 'edit' }">
         <div v-if="imageUrl" class="reference-thumb">
           <button
             class="thumb-preview"
@@ -418,8 +411,30 @@ async function onMaskDrop(event) {
             <Trash2 aria-hidden="true" />
           </button>
         </div>
+        <label
+          v-if="canAddReference"
+          class="upload-zone reference-upload-tile"
+          :class="{ 'drag-over': referenceDragActive }"
+          aria-label="继续上传参考图"
+          @dragenter="onReferenceDragEnter"
+          @dragover="onReferenceDragOver"
+          @dragleave="onReferenceDragLeave"
+          @drop="onReferenceDrop"
+        >
+          <ImagePlus aria-hidden="true" />
+          <strong>继续上传</strong>
+          <span>{{ referenceCount }}/{{ maxReferenceCount }}</span>
+          <input
+            name="reference_images"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            :multiple="mode !== 'edit'"
+            hidden
+            @change="onFileChange"
+          />
+        </label>
       </div>
-      <div v-if="requiresReference" class="reverse-box reverse-box-inline reverse-feature-card">
+      <div v-if="mode === 'image'" class="reverse-box reverse-box-inline reverse-feature-card">
         <div class="reverse-head">
           <span class="reverse-icon" aria-hidden="true">
             <Wand2 />
@@ -488,9 +503,91 @@ async function onMaskDrop(event) {
         </div>
         <small>仅根据描述长度、参考图和参数估算，不代表最终生成效果。</small>
       </div>
-      <small class="prompt-tip-line"
-        >{{ promptOptimizeCostTip }} · 不确定怎么写？参考图模式可直接使用「AI 反推提示词」。</small
+      <small class="prompt-tip-line">
+        {{ promptOptimizeCostTip }}
+        <template v-if="mode === 'image'"> · 不确定怎么写？参考图模式可直接使用「AI 反推提示词」。</template>
+      </small>
+    </div>
+
+    <div v-if="mode === 'edit'" class="mask-panel mask-panel-inline">
+      <label>蒙版 ({{ maskCount }}/1)</label>
+      <div v-if="canAddMask" class="control-row">
+        <input
+          id="mask-url"
+          name="mask_url"
+          v-model.trim="maskUrlInput"
+          type="url"
+          inputmode="url"
+          autocomplete="off"
+          placeholder="输入 PNG 蒙版 URL"
+          spellcheck="false"
+        />
+        <button
+          class="icon-button"
+          type="button"
+          aria-label="加入蒙版 URL"
+          :disabled="!maskUrlInput.trim() || (!canAddMask && !maskImageUrl)"
+          @click="addMaskUrlReference"
+        >
+          <LinkIcon aria-hidden="true" />
+        </button>
+      </div>
+      <label
+        v-if="canAddMask"
+        class="upload-zone upload-zone-compact"
+        :class="{ 'drag-over': maskDragActive }"
+        @dragenter="onMaskDragEnter"
+        @dragover="onMaskDragOver"
+        @dragleave="onMaskDragLeave"
+        @drop="onMaskDrop"
       >
+        <ImagePlus aria-hidden="true" />
+        <strong>点击上传蒙版</strong>
+        <span>或拖拽 PNG 蒙版到此区域</span>
+        <span>透明区域会被编辑</span>
+        <input name="mask_image" type="file" accept="image/png" hidden @change="onMaskFileChange" />
+      </label>
+      <p v-if="canAddMask" class="compliance-hint">
+        请勿通过蒙版编辑未获授权的人脸、身体、证件、隐私区域或可能造成误导的敏感内容。
+      </p>
+      <div v-if="maskCount" class="reference-grid reference-grid-edit mask-grid">
+        <div v-if="maskImageUrl" class="reference-thumb">
+          <button
+            class="thumb-preview"
+            type="button"
+            aria-label="预览 URL 蒙版"
+            @click="openImagePreview(getMaskPreviewImages(), 0, '蒙版')"
+          >
+            <img :src="maskImageUrl" alt="URL 蒙版" />
+          </button>
+          <button
+            class="icon-button thumb-remove"
+            type="button"
+            aria-label="移除 URL 蒙版"
+            @click="removeMaskUrlReference"
+          >
+            <X aria-hidden="true" />
+          </button>
+        </div>
+        <div v-for="(item, index) in maskUploads" :key="item.src" class="reference-thumb">
+          <button
+            class="thumb-preview"
+            type="button"
+            :aria-label="`预览 ${item.name}`"
+            @click="openImagePreview(getMaskPreviewImages(), maskImageUrl ? index + 1 : index, '蒙版')"
+          >
+            <img :src="item.src" :alt="item.name" />
+          </button>
+          <button
+            class="icon-button thumb-remove"
+            type="button"
+            :aria-label="`移除 ${item.name}`"
+            @click="removeMaskUpload(index)"
+          >
+            <Trash2 aria-hidden="true" />
+          </button>
+        </div>
+      </div>
     </div>
 
     <details class="advanced-panel" :open="advancedOpen" @toggle="advancedOpen = $event.target.open">
@@ -540,86 +637,9 @@ async function onMaskDrop(event) {
           />
         </div>
       </div>
-      <div v-if="mode === 'edit'" class="mask-panel">
-        <label>蒙版 ({{ maskCount }}/1)</label>
-        <div class="control-row">
-          <input
-            id="mask-url"
-            name="mask_url"
-            v-model.trim="maskUrlInput"
-            type="url"
-            inputmode="url"
-            autocomplete="off"
-            placeholder="输入 PNG 蒙版 URL"
-            spellcheck="false"
-          />
-          <button
-            class="icon-button"
-            type="button"
-            aria-label="加入蒙版 URL"
-            :disabled="!maskUrlInput.trim() || (!canAddMask && !maskImageUrl)"
-            @click="addMaskUrlReference"
-          >
-            <LinkIcon aria-hidden="true" />
-          </button>
-        </div>
-        <label
-          class="upload-zone upload-zone-compact"
-          :class="{ 'drag-over': maskDragActive }"
-          @dragenter="onMaskDragEnter"
-          @dragover="onMaskDragOver"
-          @dragleave="onMaskDragLeave"
-          @drop="onMaskDrop"
-        >
-          <ImagePlus aria-hidden="true" />
-          <strong>点击上传蒙版</strong>
-          <span>或拖拽 PNG 蒙版到此区域</span>
-          <span>透明区域会被编辑</span>
-          <input name="mask_image" type="file" accept="image/png" hidden @change="onMaskFileChange" />
-        </label>
-        <p class="compliance-hint">请勿通过蒙版编辑未获授权的人脸、身体、证件、隐私区域或可能造成误导的敏感内容。</p>
-        <div v-if="maskCount" class="reference-grid mask-grid">
-          <div v-if="maskImageUrl" class="reference-thumb">
-            <button
-              class="thumb-preview"
-              type="button"
-              aria-label="预览 URL 蒙版"
-              @click="openImagePreview(getMaskPreviewImages(), 0, '蒙版')"
-            >
-              <img :src="maskImageUrl" alt="URL 蒙版" />
-            </button>
-            <button
-              class="icon-button thumb-remove"
-              type="button"
-              aria-label="移除 URL 蒙版"
-              @click="removeMaskUrlReference"
-            >
-              <X aria-hidden="true" />
-            </button>
-          </div>
-          <div v-for="(item, index) in maskUploads" :key="item.src" class="reference-thumb">
-            <button
-              class="thumb-preview"
-              type="button"
-              :aria-label="`预览 ${item.name}`"
-              @click="openImagePreview(getMaskPreviewImages(), maskImageUrl ? index + 1 : index, '蒙版')"
-            >
-              <img :src="item.src" :alt="item.name" />
-            </button>
-            <button
-              class="icon-button thumb-remove"
-              type="button"
-              :aria-label="`移除 ${item.name}`"
-              @click="removeMaskUpload(index)"
-            >
-              <Trash2 aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-      </div>
     </details>
 
-    <FloatingActionBar aria-label="快捷生成操作">
+    <FloatingActionBar aria-label="快捷生成操作" :bar-class="{ 'generation-actions--loading': loading }">
       <template #default>
         <button class="btn btn-primary" type="button" :aria-busy="loading" :disabled="loading" @click="generate">
           <Sparkles v-if="!loading" aria-hidden="true" />
@@ -634,11 +654,11 @@ async function onMaskDrop(event) {
                 : '开始生成'
           }}
         </button>
-        <button v-if="loading" class="btn btn-soft" type="button" @click="stopGeneration">
+        <button v-if="loading" class="btn btn-soft generation-stop-button" type="button" @click="stopGeneration">
           <Square aria-hidden="true" />
           停止生成
         </button>
-        <div class="count-dropdown-container" @click.stop @keydown.escape.stop="closeCountDropdown">
+        <div v-if="!loading" class="count-dropdown-container" @click.stop @keydown.escape.stop="closeCountDropdown">
           <button
             class="generation-cost-pill count-dropdown-trigger"
             type="button"
@@ -671,16 +691,6 @@ async function onMaskDrop(event) {
     <div class="compliance-notice" role="note">
       <strong>提交前请确认素材来源合法，并同意平台进行内容安全审核和 AI 生成标识处理。</strong>
       <span>不得生成违法违规、侵权、虚假新闻、冒用身份、侵犯肖像隐私或危害公共利益的内容。</span>
-    </div>
-    <div class="generation-inline-notice" :class="{ active: outputLoading || lastGenerationNotice }" role="note">
-      <div>
-        <strong>{{ outputLoading ? generationSubmittedTip : lastGenerationNotice || generationIdleTip }}</strong>
-        <span>{{ generationCostText }}</span>
-      </div>
-      <button v-if="outputLoading || lastGenerationNotice" class="btn btn-ghost" type="button" @click="openGallery">
-        <GalleryHorizontal aria-hidden="true" />
-        查看图库进度
-      </button>
     </div>
   </section>
 </template>
