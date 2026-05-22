@@ -330,7 +330,6 @@ button,
   }
 
   .gallery-toolbar-actions {
-    justify-content: stretch;
     gap: 8px;
   }
 

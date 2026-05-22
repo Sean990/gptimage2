@@ -3357,7 +3357,6 @@ body.gallery-scroll-locked .generation-actions-floating {
 .output-grid--many {
   grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   align-content: start;
-  justify-content: stretch;
   max-height: 650px;
   overflow-y: auto;
 }
@@ -4898,7 +4897,6 @@ body.gallery-scroll-locked .generation-actions-floating {
 
   .generate-page .output-grid--single.output-grid--landscape {
     grid-template-columns: minmax(0, 100%);
-    justify-content: stretch;
   }
 
   .generate-page .output-grid--single.output-grid--landscape .output-item {
@@ -4911,7 +4909,6 @@ body.gallery-scroll-locked .generation-actions-floating {
   }
 
   .generate-page .output-workbench--ready:has(.output-grid--landscape) .generated-output {
-    justify-content: stretch;
   }
 
   .generate-page .output-workbench--ready .generated-output {
@@ -4936,7 +4933,6 @@ body.gallery-scroll-locked .generation-actions-floating {
 
   .generate-page .output-workbench--empty .output-grid--single.output-grid--landscape {
     grid-template-columns: minmax(0, 100%);
-    justify-content: stretch;
   }
 
   .generate-page .output-workbench--empty .output-grid--single.output-grid--landscape .empty-output-slot {
@@ -5068,7 +5064,6 @@ body.gallery-scroll-locked .generation-actions-floating {
 
   .generate-page .output-grid--single.output-grid--landscape {
     grid-template-columns: minmax(0, 100%);
-    justify-content: stretch;
   }
 
   .image-processing-layout {
@@ -5633,7 +5628,6 @@ body.gallery-scroll-locked .generation-actions-floating {
       "main"
       "thumbs";
     grid-template-columns: minmax(0, 1fr);
-    justify-content: stretch;
   }
 
   .generate-page .output-grid--thumbs-left::after {
