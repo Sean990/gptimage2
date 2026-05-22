@@ -61,7 +61,7 @@ export function cancelHaptic() {
   try {
     navigator.vibrate(0)
     return true
-  } catch (error) {
+  } catch {
     return false
   }
 }
