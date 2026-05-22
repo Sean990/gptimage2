@@ -17,7 +17,7 @@ import {
   Split,
   WandSparkles,
 } from 'lucide-vue-next'
-import { getThumbnailUrl } from '../../utils/imageOptimizer'
+import { getThumbnailUrl, getLargeImageUrl } from '../../utils/imageOptimizer'
 
 const props = defineProps({
   task: {
@@ -955,7 +955,7 @@ onBeforeUnmount(() => {
                 <span class="output-compare-badge output-compare-badge-before">原图</span>
                 <span class="output-compare-badge output-compare-badge-after">结果</span>
               </template>
-              <img v-else :src="item.src" :alt="item.title" draggable="false" />
+              <img v-else :src="getLargeImageUrl(item.src)" :alt="item.title" draggable="false" />
 
               <span v-if="shouldShowEditGuide(item, index)" class="output-edit-guide" aria-hidden="true">
                 <span class="output-edit-guide-box"></span>
@@ -1128,7 +1128,7 @@ onBeforeUnmount(() => {
               :aria-label="`查看第 ${entry.index + 1} 张生成结果`"
               @click="selectOutputEntry(entry.index)"
             >
-              <img :src="entry.item.src" :alt="entry.item.title" />
+              <img :src="getThumbnailUrl(entry.item.src)" :alt="entry.item.title" />
               <span>{{ entry.index + 1 }} / {{ outputEntries.length }}</span>
             </button>
           </div>
