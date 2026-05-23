@@ -1545,61 +1545,8 @@
   cursor: pointer;
 }
 
-.image-tool-source-preview {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
-  border: 1px solid rgba(203, 213, 225, 0.82);
-  border-radius: 8px;
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.image-tool-source-preview > button:not(.image-tool-clear) {
-  position: relative;
-  overflow: hidden;
-  flex: 0 0 58px;
-  width: 58px;
-  height: 58px;
-  border: 1px solid rgba(203, 213, 225, 0.88);
-  border-radius: 8px;
-  padding: 0;
-  background: #f8fafc;
-}
-
-.image-tool-source-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.image-tool-source-preview button:not(.image-tool-clear) svg {
-  position: absolute;
-  right: 4px;
-  bottom: 4px;
-  width: 17px;
-  height: 17px;
-  border-radius: 999px;
-  color: #ffffff;
-  background: var(--tool-accent);
-}
-
-.image-tool-clear {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 0;
-  color: var(--muted);
-  background: transparent;
-  font-size: 12px;
-  font-weight: 850;
-  cursor: pointer;
-}
-
-.image-tool-clear svg {
-  width: 14px;
-  height: 14px;
+.image-tool-source-grid {
+  margin-top: 0;
 }
 
 .image-tool-submit {
@@ -3133,8 +3080,7 @@ body.gallery-scroll-locked .generation-actions-floating {
 }
 
 :root[data-theme='dark'] .image-tool-upload,
-:root[data-theme='dark'] .image-tool-source-preview,
-:root[data-theme='dark'] .image-tool-source-preview > button:not(.image-tool-clear) {
+:root[data-theme='dark'] .image-tool-source-grid .reference-thumb {
   background: rgba(2, 6, 23, 0.42);
 }
 
@@ -4828,6 +4774,18 @@ body.gallery-scroll-locked .generation-actions-floating {
     padding-bottom: 20px;
   }
 
+  .generate-page .output-panel:has(.recent-task-strip) .output-workbench--empty {
+    min-height: min(500px, calc(100dvh - 470px));
+  }
+
+  .generate-page .output-panel:has(.recent-task-strip) .output-workbench--empty .empty-output {
+    min-height: min(460px, calc(100dvh - 510px));
+  }
+
+  .generate-page .output-panel:has(.recent-task-strip) .output-workbench--empty .empty-output-slot {
+    max-height: min(460px, calc(100dvh - 520px));
+  }
+
   .generate-page .tool-panel h2 {
     font-size: 18px;
     line-height: 1.2;
@@ -5032,7 +4990,7 @@ body.gallery-scroll-locked .generation-actions-floating {
 
   .generate-page .generation-actions-slot {
     position: sticky;
-    bottom: -1px;
+    bottom: 0;
     z-index: 12;
     margin: 18px -6px 0;
     padding: 10px 6px 0;

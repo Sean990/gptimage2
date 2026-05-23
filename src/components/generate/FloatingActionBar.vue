@@ -18,6 +18,10 @@ const props = defineProps({
     type: Number,
     default: 16,
   },
+  floatingEnabled: {
+    type: Boolean,
+    default: true,
+  },
 })
 
 const slotRef = ref(null)
@@ -55,6 +59,10 @@ function updateStickiness() {
 
   const slotRect = updateRect()
   if (!slotRect || !barRef.value) return
+  if (!props.floatingEnabled) {
+    stuck.value = false
+    return
+  }
 
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight
   const viewportBottom = viewportHeight - props.viewportMargin
@@ -71,6 +79,7 @@ function observeSlot() {
   if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return false
   const slot = slotRef.value
   if (!slot) return false
+  if (!props.floatingEnabled) return false
 
   observer = new IntersectionObserver(
     ([entry]) => {
@@ -119,7 +128,7 @@ onUnmounted(() => {
   </div>
   <Teleport to="body">
     <div
-      v-if="stuck"
+      v-if="floatingEnabled && stuck"
       class="generation-actions generation-actions-floating"
       :class="barClass"
       :style="floatingStyle"

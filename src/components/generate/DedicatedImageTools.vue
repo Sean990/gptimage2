@@ -1,7 +1,6 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import {
-  CheckCircle2,
   Eraser,
   Expand,
   Gem,
@@ -428,7 +427,7 @@ async function handleToolFiles(tool, event) {
     clearReferences({ silent: true })
     activeSourceToolKey.value = tool.key
     applyToolSettings(tool)
-    await processReferenceFiles(files)
+    await processReferenceFiles(Array.from(files).slice(0, 1))
   } finally {
     event.target.value = ''
   }
@@ -509,7 +508,7 @@ async function onDrop(tool, event) {
   clearReferences({ silent: true })
   activeSourceToolKey.value = tool.key
   applyToolSettings(tool)
-  await processReferenceFiles(files)
+  await processReferenceFiles(Array.from(files).slice(0, 1))
 }
 </script>
 
@@ -575,6 +574,7 @@ async function onDrop(tool, event) {
             </div>
           </div>
           <label
+            v-if="!getToolSources(tool).length"
             class="upload-zone"
             :class="{ 'drag-over': dragActive === tool.key }"
             :for="`image-tool-upload-${tool.key}`"
@@ -596,21 +596,29 @@ async function onDrop(tool, event) {
               @change="handleToolFiles(tool, $event)"
             />
           </label>
-          <div v-if="getToolSources(tool).length" class="image-tool-source-preview">
-            <button
+          <div v-if="getToolSources(tool).length" class="reference-grid reference-grid-edit image-tool-source-grid">
+            <div
               v-for="(image, index) in getToolSources(tool)"
               :key="`${tool.key}-${image.src}`"
-              type="button"
-              :aria-label="`预览${tool.title}素材 ${image.title}`"
-              @click="openImagePreview(getToolSources(tool), index, `${tool.title}素材`)"
+              class="reference-thumb"
             >
-              <img :src="image.src" :alt="image.title" />
-              <CheckCircle2 aria-hidden="true" />
-            </button>
-            <button class="image-tool-clear" type="button" @click="clearToolSources(tool)">
-              <Trash2 aria-hidden="true" />
-              清空素材
-            </button>
+              <button
+                class="thumb-preview"
+                type="button"
+                :aria-label="`预览${tool.title}素材 ${image.title}`"
+                @click="openImagePreview(getToolSources(tool), index, `${tool.title}素材`)"
+              >
+                <img :src="image.src" :alt="image.title" />
+              </button>
+              <button
+                class="icon-button thumb-remove"
+                type="button"
+                :aria-label="`移除${tool.title}素材 ${image.title}`"
+                @click="clearToolSources(tool)"
+              >
+                <Trash2 aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -660,6 +668,7 @@ async function onDrop(tool, event) {
         <FloatingActionBar
           slot-class="image-tool-actions-slot"
           bar-class="image-tool-actions"
+          :floating-enabled="false"
           :aria-label="`${tool.title}快捷生成操作`"
         >
           <template #default>
