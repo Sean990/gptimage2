@@ -14,6 +14,7 @@ import {
 } from 'lucide-vue-next'
 import FloatingActionBar from './FloatingActionBar.vue'
 import { isSupportedImageUrl } from '../../composables/useReferenceImages'
+import '../../assets/generate-image-tools.css'
 
 const props = defineProps({
   task: {
@@ -46,6 +47,7 @@ const {
   referenceCount,
   resolution,
   showNotice,
+  sourceToolHandoffKey,
   urlInput,
 } = props.task
 
@@ -408,9 +410,13 @@ function applyToolSettings(tool) {
 }
 
 watch(
-  activeToolConfig,
-  (tool) => {
-    if (tool) applyToolSettings(tool)
+  [activeToolConfig, sourceToolHandoffKey],
+  ([tool]) => {
+    if (!tool) return
+    applyToolSettings(tool)
+    if (sourceToolHandoffKey?.value === tool.key && referenceCount.value) {
+      activeSourceToolKey.value = tool.key
+    }
   },
   { immediate: true },
 )
@@ -425,6 +431,7 @@ async function handleToolFiles(tool, event) {
     const files = event.target.files
     if (!files?.length) return
     clearReferences({ silent: true })
+    sourceToolHandoffKey.value = ''
     activeSourceToolKey.value = tool.key
     applyToolSettings(tool)
     await processReferenceFiles(Array.from(files).slice(0, 1))
@@ -446,6 +453,7 @@ function addToolUrl(tool) {
   }
 
   clearReferences({ silent: true })
+  sourceToolHandoffKey.value = ''
   activeSourceToolKey.value = tool.key
   applyToolSettings(tool)
   urlInput.value = nextUrl
@@ -456,6 +464,7 @@ function addToolUrl(tool) {
 function clearToolSources(tool) {
   if (activeSourceToolKey.value !== tool.key) return
   clearReferences({ silent: false })
+  if (sourceToolHandoffKey.value === tool.key) sourceToolHandoffKey.value = ''
   activeSourceToolKey.value = ''
 }
 
@@ -506,6 +515,7 @@ async function onDrop(tool, event) {
   const files = event.dataTransfer?.files
   if (!files?.length) return
   clearReferences({ silent: true })
+  sourceToolHandoffKey.value = ''
   activeSourceToolKey.value = tool.key
   applyToolSettings(tool)
   await processReferenceFiles(Array.from(files).slice(0, 1))
@@ -668,7 +678,7 @@ async function onDrop(tool, event) {
         <FloatingActionBar
           slot-class="image-tool-actions-slot"
           bar-class="image-tool-actions"
-          :floating-enabled="false"
+          :floating-enabled="Boolean(props.activeToolKey)"
           :aria-label="`${tool.title}快捷生成操作`"
         >
           <template #default>

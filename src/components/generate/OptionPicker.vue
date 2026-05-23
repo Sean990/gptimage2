@@ -70,13 +70,7 @@ onBeforeUnmount(() => {
         </span>
         <ChevronDown class="model-picker-arrow" :class="{ open }" aria-hidden="true" />
       </button>
-      <div
-        v-if="open"
-        :id="`${id}-menu`"
-        class="model-menu select-menu"
-        role="listbox"
-        :aria-labelledby="id"
-      >
+      <div v-if="open" :id="`${id}-menu`" class="model-menu select-menu" role="listbox" :aria-labelledby="id">
         <button
           v-for="item in options"
           :key="item.value"

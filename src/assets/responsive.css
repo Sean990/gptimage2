@@ -115,28 +115,6 @@
     padding-top: 36px;
   }
 
-  .generate-hero {
-    margin-bottom: 42px;
-  }
-
-  .generate-hero-copy h1,
-  .generate-page .section-title h1 {
-    font-size: clamp(40px, 10vw, 58px);
-  }
-
-  .generate-hero-copy p {
-    max-width: 340px;
-    font-size: 18px;
-  }
-
-  .tool-toolbar-row {
-    gap: 10px;
-  }
-
-  .hero-credit-group {
-    gap: 8px;
-  }
-
   .generate-page .tool-panel,
   .generate-page .output-panel {
     padding: 22px;
@@ -311,38 +289,6 @@
     grid-template-columns: 1fr;
   }
 
-  .generate-page .tool-toolbar .btn {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    min-height: 44px;
-    white-space: normal;
-  }
-
-  .generate-page .tool-toolbar {
-    display: grid;
-    margin: 22px 0 0;
-  }
-
-  .tool-toolbar-row {
-    display: grid;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .generate-hero-copy h1 {
-    max-width: 360px;
-  }
-
-  .toolbar-credit {
-    width: 100%;
-  }
-
-  .hero-credit-group {
-    display: grid;
-    width: 100%;
-  }
-
   .account-hero {
     padding: 18px;
   }
@@ -369,14 +315,6 @@
 
   .profile-overview {
     align-items: flex-start;
-  }
-
-  .batch-count-card {
-    grid-template-columns: 1fr;
-  }
-
-  .batch-count-picker {
-    width: 100%;
   }
 
   .generate-page .mode-tabs {

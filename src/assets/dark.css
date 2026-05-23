@@ -14,35 +14,11 @@
   color: #94a3b8;
 }
 
-:root[data-theme='dark'] .generate-hero-copy h1 {
-  color: transparent;
-}
-
-:root[data-theme='dark'] .generate-page.batch-mode-page .generate-hero-copy h1,
 :root[data-theme='dark'] .generate-page.batch-mode-page .section-title h1 {
   color: transparent;
   background: linear-gradient(120deg, #f0abfc 0%, #a78bfa 46%, #60a5fa 100%);
   -webkit-background-clip: text;
   background-clip: text;
-}
-
-:root[data-theme='dark'] .generate-hero-copy p {
-  color: #cbd5e1;
-}
-
-:root[data-theme='dark'] .workflow-stat {
-  border-color: rgba(148, 163, 184, 0.13);
-  background: rgba(15, 23, 42, 0.72);
-  box-shadow: 0 18px 42px rgba(2, 6, 23, 0.11);
-}
-
-:root[data-theme='dark'] .workflow-stat span,
-:root[data-theme='dark'] .toolbar-credit {
-  color: #94a3b8;
-}
-
-:root[data-theme='dark'] .workflow-stat strong {
-  color: #f8fafc;
 }
 
 :root[data-theme='dark'] .generate-page .tool-panel,
@@ -117,215 +93,10 @@
   color: #7b8aa1;
 }
 
-:root[data-theme='dark'] .generate-page .tool-toolbar .btn {
-  color: #f8fafc;
-  border-color: rgba(148, 163, 184, 0.18);
-  background: rgba(9, 17, 31, 0.76);
-}
-
-:root[data-theme='dark'] .generate-page .tool-toolbar .btn:hover {
-  color: #ffffff;
-  border-color: rgba(129, 140, 248, 0.33);
-  background: rgba(15, 23, 42, 0.92);
-}
-
-:root[data-theme='dark'] .generate-page .tool-toolbar .hero-login-button {
-  color: #e0f2fe;
-  border-color: rgba(56, 189, 248, 0.2);
-  background: linear-gradient(180deg, rgba(8, 47, 73, 0.94) 0%, rgba(7, 30, 53, 0.96) 100%), #082f49;
-  box-shadow:
-    inset 0 1px 0 rgba(186, 230, 253, 0.12),
-    0 10px 24px rgba(8, 47, 73, 0.34);
-}
-
-:root[data-theme='dark'] .generate-page .tool-toolbar .hero-gallery-button {
-  color: #ffffff;
-  border: none;
-  background: linear-gradient(135deg, #6d28d9 0%, #2f66f5 60%, #0ea5e9 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 12px 26px rgba(47, 102, 245, 0.36);
-}
-
-:root[data-theme='dark'] .generate-page .tool-toolbar .hero-gallery-button:hover {
-  color: #ffffff;
-  border: none;
-  background: linear-gradient(135deg, #7c3aed 0%, #3b82f6 55%, #38bdf8 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 16px 32px rgba(47, 102, 245, 0.44);
-}
-
-:root[data-theme='dark'] .generate-page .tool-toolbar .hero-gallery-button svg {
-  color: #ffffff;
-}
-
-:root[data-theme='dark'] .hero-gallery-count {
-  background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-}
-:root[data-theme='dark'] .generate-page .tool-toolbar .hero-login-button:hover {
-  color: #f0f9ff;
-  border-color: rgba(125, 211, 252, 0.31);
-  background: linear-gradient(180deg, rgba(12, 74, 110, 0.98) 0%, rgba(8, 47, 73, 0.98) 100%), #0c4a6e;
-  box-shadow:
-    inset 0 1px 0 rgba(224, 242, 254, 0.16),
-    0 12px 28px rgba(14, 116, 144, 0.28);
-}
-
-:root[data-theme='dark'] .generate-page .tool-toolbar span.btn {
-  color: #10b981;
-  border-color: rgba(16, 185, 129, 0.16);
-  background: rgba(6, 95, 70, 0.18);
-}
-
-:root[data-theme='dark'] .hero-credit-group {
-  border-color: rgba(148, 163, 184, 0.17);
-  background: rgba(2, 6, 23, 0.82);
-}
-
-:root[data-theme='dark'] .toolbar-credit {
-  color: #86efac;
-  border-color: rgba(74, 222, 128, 0.18);
-  background: rgba(22, 163, 74, 0.14);
-}
-
-:root[data-theme='dark'] .toolbar-credit.hero-balance-pill {
-  color: #f8fafc;
-  border-color: rgba(56, 189, 248, 0.16);
-  background: rgba(8, 47, 73, 0.72);
-}
-
-:root[data-theme='dark'] .toolbar-credit.hero-balance-pill svg {
-  color: #38bdf8;
-}
-
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-hero-badge {
-  color: #f5d0fe;
-  border-color: rgba(216, 180, 254, 0.2);
-  background: linear-gradient(135deg, rgba(88, 28, 135, 0.72), rgba(30, 64, 175, 0.38)), rgba(15, 23, 42, 0.68);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 14px 32px rgba(88, 28, 135, 0.3);
-}
-
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-hero-badge svg {
-  color: #f0abfc;
-}
-
 :root[data-theme='dark'] .generate-page.batch-mode-page .settings-section-head span {
   color: #f0abfc;
   border-color: rgba(216, 180, 254, 0.18);
   background: rgba(126, 34, 206, 0.22);
-}
-
-:root[data-theme='dark']
-  .generate-page:not(.batch-mode-page)
-  .tool-toolbar-row-primary
-  .hero-utility-button:first-child {
-  color: #f5d0fe;
-  border-color: rgba(216, 180, 254, 0.2);
-  background: linear-gradient(135deg, rgba(88, 28, 135, 0.46), rgba(30, 64, 175, 0.2)), rgba(15, 23, 42, 0.8);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 14px 32px rgba(88, 28, 135, 0.24);
-}
-
-:root[data-theme='dark']
-  .generate-page:not(.batch-mode-page)
-  .tool-toolbar-row-primary
-  .hero-utility-button:first-child:hover {
-  color: #ffffff;
-  border-color: rgba(240, 171, 252, 0.31);
-  background: linear-gradient(135deg, rgba(126, 34, 206, 0.56), rgba(37, 99, 235, 0.26)), rgba(15, 23, 42, 0.92);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 18px 40px rgba(126, 34, 206, 0.28);
-}
-
-:root[data-theme='dark']
-  .generate-page:not(.batch-mode-page)
-  .tool-toolbar-row-primary
-  .hero-utility-button:first-child
-  svg {
-  color: #f0abfc;
-}
-
-:root[data-theme='dark'] .generate-page.batch-mode-page .tool-toolbar .btn-soft {
-  color: #ddd6fe;
-  border-color: rgba(167, 139, 250, 0.18);
-  background: rgba(109, 40, 217, 0.22);
-}
-
-:root[data-theme='dark'] .batch-count-card {
-  border-color: rgba(216, 180, 254, 0.19);
-  background: linear-gradient(135deg, rgba(88, 28, 135, 0.38), rgba(30, 64, 175, 0.2)), rgba(15, 23, 42, 0.76);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 18px 42px rgba(88, 28, 135, 0.22);
-}
-
-:root[data-theme='dark'] .batch-count-card::before {
-  background:
-    linear-gradient(90deg, rgba(217, 70, 239, 0.16), transparent 36%),
-    radial-gradient(circle at 96% 0%, rgba(96, 165, 250, 0.2), transparent 34%);
-}
-
-:root[data-theme='dark'] .batch-count-card strong {
-  color: transparent;
-  background: linear-gradient(120deg, #f0abfc 0%, #c4b5fd 48%, #93c5fd 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-:root[data-theme='dark'] .batch-count-card span,
-:root[data-theme='dark'] .batch-count-card small {
-  color: #ddd6fe;
-}
-
-:root[data-theme='dark'] .batch-count-card small {
-  color: #f5d0fe;
-  border-color: rgba(216, 180, 254, 0.14);
-  background: rgba(88, 28, 135, 0.24);
-}
-
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-picker .select-picker-button {
-  color: #f8fafc;
-  border-color: rgba(217, 70, 239, 0.19);
-  background: linear-gradient(180deg, rgba(88, 28, 135, 0.28), rgba(2, 6, 23, 0.58)), #020617;
-}
-
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-picker .model-preview-head strong {
-  color: #f5d0fe;
-}
-
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-picker .model-menu {
-  border-color: rgba(216, 180, 254, 0.17);
-  background: #09071a;
-  box-shadow: 0 22px 54px rgba(88, 28, 135, 0.15);
-}
-
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-picker .select-picker-button:hover,
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-picker .select-picker-button:focus-visible {
-  border-color: rgba(244, 114, 182, 0.29);
-  box-shadow: 0 0 0 4px rgba(217, 70, 239, 0.07);
-}
-
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-option em {
-  color: #f9a8d4;
-  background: rgba(236, 72, 153, 0.18);
-}
-
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-option:hover,
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-option.active {
-  color: #f9a8d4;
-  border-color: rgba(244, 114, 182, 0.2);
-  background: rgba(217, 70, 239, 0.14);
-}
-
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-option:hover svg,
-:root[data-theme='dark'] .generate-page.batch-mode-page .batch-count-option.active svg {
-  color: #f0abfc;
 }
 
 :root[data-theme='dark'] .generate-page.batch-mode-page .generation-actions {
@@ -371,25 +142,6 @@
 
 :root[data-theme='dark'] .generate-page.batch-mode-page .generate-footer-tip svg {
   color: #c084fc;
-}
-
-:root[data-theme='dark'] .gallery-toolbar,
-:root[data-theme='dark'] .gallery-card {
-  color: var(--muted);
-  border-color: var(--line);
-  background: var(--surface);
-}
-
-:root[data-theme='dark'] .gallery-card-body p {
-  color: var(--text-strong);
-}
-
-:root[data-theme='dark'] .gallery-card-meta {
-  color: var(--subtle);
-}
-
-:root[data-theme='dark'] .gallery-cover {
-  background: var(--surface-sunk);
 }
 
 :root[data-theme='dark'] .generate-page .mode-tabs button,
@@ -594,60 +346,6 @@
 :root[data-theme='dark'] .footer-region-notice svg,
 :root[data-theme='dark'] .region-notice-icon {
   color: #fbbf24;
-}
-
-:root[data-theme='dark'] .image-preview-stage {
-  border-color: rgba(148, 163, 184, 0.14);
-  background:
-    linear-gradient(45deg, rgba(148, 163, 184, 0.08) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(148, 163, 184, 0.08) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, 0.08) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, 0.08) 75%), #020617;
-  background-position:
-    0 0,
-    0 12px,
-    12px -12px,
-    -12px 0;
-  background-size: 24px 24px;
-}
-
-:root[data-theme='dark'] .image-preview-prompt {
-  color: #94a3b8;
-}
-
-:root[data-theme='dark'] .image-preview-model {
-  color: #bfdbfe;
-  border-color: rgba(96, 165, 250, 0.24);
-  background: rgba(37, 99, 235, 0.18);
-}
-
-:root[data-theme='dark'] .image-preview-actions {
-  border-top-color: rgba(51, 65, 85, 0.86);
-}
-
-:root[data-theme='dark'] .image-preview-actions .image-preview-action-reuse {
-  color: #93c5fd;
-  border-color: rgba(96, 165, 250, 0.24);
-  background: rgba(37, 99, 235, 0.18);
-}
-
-:root[data-theme='dark'] .image-preview-actions .image-preview-action-copy,
-:root[data-theme='dark'] .image-preview-actions .image-preview-action-download,
-:root[data-theme='dark'] .image-preview-actions .image-preview-action-compare,
-:root[data-theme='dark'] .image-preview-actions .image-preview-action-delete {
-  color: var(--text);
-  border-color: var(--line);
-  background: var(--surface);
-}
-
-:root[data-theme='dark'] .image-preview-actions .image-preview-action-compare.active {
-  color: #93c5fd;
-  border-color: rgba(96, 165, 250, 0.28);
-  background: rgba(37, 99, 235, 0.2);
-}
-
-:root[data-theme='dark'] .image-preview-thumb {
-  background: #0f172a;
 }
 
 :root[data-theme='dark'] .model-picker-button {

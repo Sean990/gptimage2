@@ -1,7 +1,9 @@
 <script setup>
-import { Copy, Download, ImagePlus, Loader2, RefreshCw, Save, Trash2, X } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { Copy, Download, ImagePlus, Loader2, RefreshCw, Save, Search, Square, Trash2, X } from 'lucide-vue-next'
 import EmptyState from '../EmptyState.vue'
 import ModalDialog from '../ModalDialog.vue'
+import '../../assets/gallery-drawer.css'
 
 const props = defineProps({
   task: {
@@ -12,6 +14,7 @@ const props = defineProps({
 
 const {
   canPreviewGalleryRecord,
+  canCancelGalleryRecord = () => false,
   canRetryGalleryRecord = () => false,
   canReuseGalleryRecord,
   clearGallery,
@@ -21,7 +24,10 @@ const {
   formatGalleryDate,
   gallery,
   galleryCloudStatusText,
+  galleryHasMore = ref(false),
   galleryOpen,
+  galleryPage = ref(1),
+  galleryPageSize = 9,
   galleryRecordCover,
   galleryRecordMeta,
   galleryRecordModelLabel = () => '',
@@ -33,15 +39,91 @@ const {
   gallerySyncError,
   gallerySyncing,
   gallerySyncMessage,
+  galleryTotal = ref(0),
   isAuthenticated,
   isGalleryRecordPending,
   maxLocalGalleryRecords,
   openGalleryImage,
   removeGalleryRecord,
+  cancelGalleryRecord = () => false,
   retryGalleryRecord = () => false,
   syncCloudGallery,
   useGalleryRecord,
 } = props.task
+
+const gallerySearch = ref('')
+const galleryStatusFilter = ref('all')
+const loadingMoreGallery = ref(false)
+const galleryStatusFilterOptions = [
+  { value: 'all', label: '全部' },
+  { value: 'completed', label: '已完成' },
+  { value: 'pending', label: '生成中' },
+  { value: 'failed', label: '异常' },
+]
+
+const normalizedGallerySearch = computed(() => gallerySearch.value.trim().toLowerCase())
+const currentGalleryPage = computed(() => Math.max(1, Number(galleryPage?.value || 1)))
+const resolvedGalleryPageSize = computed(() => Math.max(1, Number(galleryPageSize?.value || galleryPageSize || 9)))
+const hasGalleryFilters = computed(() => Boolean(normalizedGallerySearch.value) || galleryStatusFilter.value !== 'all')
+const filteredGallery = computed(() => {
+  const records = Array.isArray(gallery?.value) ? gallery.value : []
+  const keyword = normalizedGallerySearch.value
+
+  return records.filter((record) => {
+    if (galleryStatusFilter.value !== 'all' && getGalleryStatusGroup(record) !== galleryStatusFilter.value) {
+      return false
+    }
+
+    if (!keyword) return true
+
+    return [
+      record.prompt,
+      galleryRecordMode(record),
+      galleryRecordMeta(record),
+      galleryRecordStatusLabel(record),
+      galleryRecordModelLabel(record),
+      formatGalleryDate(record.createdAt),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+      .includes(keyword)
+  })
+})
+const galleryKnownTotal = computed(() => Math.max(Number(galleryTotal?.value || 0), filteredGallery.value.length))
+const canLoadMoreGallery = computed(
+  () => !gallerySyncing?.value && !loadingMoreGallery.value && Boolean(galleryHasMore?.value),
+)
+
+function getGalleryStatusGroup(record = {}) {
+  const status = String(record.status || '').toLowerCase()
+  if (isGalleryRecordPending(record)) return 'pending'
+  if (['failed', 'canceled'].includes(status)) return 'failed'
+  if (canPreviewGalleryRecord(record)) return 'completed'
+  return 'failed'
+}
+
+function clearGalleryFilters() {
+  gallerySearch.value = ''
+  galleryStatusFilter.value = 'all'
+}
+
+async function loadMoreGalleryRecords() {
+  if (!canLoadMoreGallery.value) return
+  loadingMoreGallery.value = true
+  try {
+    await syncCloudGallery({ page: currentGalleryPage.value + 1, silent: true })
+  } finally {
+    loadingMoreGallery.value = false
+  }
+}
+
+function onGalleryScroll(event) {
+  const target = event.currentTarget
+  if (!target) return
+  const remaining = target.scrollHeight - target.scrollTop - target.clientHeight
+  if (remaining <= 220) loadMoreGalleryRecords()
+}
 </script>
 
 <template>
@@ -64,7 +146,9 @@ const {
         </span>
         <div>
           <strong>{{ gallerySyncMessage || galleryCloudStatusText }}</strong>
-          <small>本地保留最近 {{ maxLocalGalleryRecords }} 组记录，云端结果以账户图库为准。</small>
+          <small>
+            每页加载 {{ resolvedGalleryPageSize }} 组，最多本地缓存最近 {{ maxLocalGalleryRecords }} 组记录。
+          </small>
         </div>
       </div>
       <div class="gallery-toolbar-actions">
@@ -72,7 +156,7 @@ const {
           class="btn btn-soft"
           type="button"
           :disabled="gallerySyncing || !isAuthenticated"
-          @click="syncCloudGallery({ silent: false })"
+          @click="syncCloudGallery({ page: 1, silent: false })"
         >
           <RefreshCw :class="{ spinner: gallerySyncing }" aria-hidden="true" />
           同步云端
@@ -84,8 +168,30 @@ const {
       </div>
     </div>
 
-    <div v-if="gallery.length" class="gallery-grid">
-      <article v-for="record in gallery" :key="record.id" class="gallery-card">
+    <div v-if="gallery.length" class="gallery-filterbar">
+      <label class="gallery-search">
+        <Search aria-hidden="true" />
+        <input v-model="gallerySearch" type="search" placeholder="搜索提示词、模式、状态" aria-label="搜索图库记录" />
+      </label>
+      <div class="gallery-status-tabs" aria-label="筛选图库状态">
+        <button
+          v-for="option in galleryStatusFilterOptions"
+          :key="option.value"
+          type="button"
+          :class="{ active: galleryStatusFilter === option.value }"
+          @click="galleryStatusFilter = option.value"
+        >
+          {{ option.label }}
+        </button>
+      </div>
+      <div class="gallery-filter-summary">
+        <span>已显示 {{ filteredGallery.length }} / {{ galleryKnownTotal || filteredGallery.length }} 组</span>
+        <button v-if="hasGalleryFilters" type="button" @click="clearGalleryFilters">清除筛选</button>
+      </div>
+    </div>
+
+    <div v-if="filteredGallery.length" class="gallery-grid" @scroll.passive="onGalleryScroll">
+      <article v-for="record in filteredGallery" :key="record.id" class="gallery-card">
         <component
           :is="canPreviewGalleryRecord(record) ? 'button' : 'div'"
           class="gallery-cover"
@@ -140,6 +246,16 @@ const {
           </p>
           <div class="gallery-actions">
             <button
+              v-if="canCancelGalleryRecord(record)"
+              class="btn btn-soft"
+              type="button"
+              :disabled="gallerySyncing"
+              @click="cancelGalleryRecord(record)"
+            >
+              <Square aria-hidden="true" />
+              取消
+            </button>
+            <button
               v-if="canRetryGalleryRecord(record)"
               class="btn btn-soft"
               type="button"
@@ -182,7 +298,21 @@ const {
           </div>
         </div>
       </article>
+      <div v-if="galleryHasMore || gallerySyncing || loadingMoreGallery" class="gallery-load-more" aria-live="polite">
+        <Loader2 v-if="gallerySyncing || loadingMoreGallery" class="spinner" aria-hidden="true" />
+        <span>{{ gallerySyncing || loadingMoreGallery ? '正在加载更多记录' : '继续下滑加载更多' }}</span>
+      </div>
     </div>
+    <EmptyState
+      v-else-if="gallery.length"
+      title="没有匹配的图库记录"
+      description="换一个关键词或状态筛选，可以继续查看已同步的历史记录。"
+    >
+      <template #icon>
+        <Search aria-hidden="true" />
+      </template>
+    </EmptyState>
+
     <EmptyState
       v-else
       :title="isAuthenticated ? '云端图库暂无记录' : '本地暂无生成记录'"

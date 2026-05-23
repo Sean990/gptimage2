@@ -34,10 +34,7 @@ export function useImagePreview() {
     const sourceImages = normalizePreviewSourceImages(image)
     const record = image?.record || null
     const model = image?.model || record?.model || ''
-    const metaParts = [
-      image?.resolution || record?.resolution,
-      image?.ratio || record?.ratio,
-    ].filter(Boolean)
+    const metaParts = [image?.resolution || record?.resolution, image?.ratio || record?.ratio].filter(Boolean)
     return {
       src,
       title: image?.title || image?.name || `${fallbackTitle} ${index + 1}`,
@@ -48,9 +45,16 @@ export function useImagePreview() {
       outputFormat: image?.outputFormat || image?.output_format || record?.outputFormat || record?.output_format || '',
       mode: image?.mode || record?.mode || '',
       apiMode: image?.apiMode || image?.api_mode || record?.apiMode || record?.api_mode || '',
-      originalSrc: image?.originalSrc || image?.original_src || record?.originalSrc || record?.original_src || sourceImages[0] || '',
+      originalSrc:
+        image?.originalSrc ||
+        image?.original_src ||
+        record?.originalSrc ||
+        record?.original_src ||
+        sourceImages[0] ||
+        '',
       sourceImages,
-      tool: image?.tool || image?.toolKey || image?.tool_key || record?.tool || record?.toolKey || record?.tool_key || '',
+      tool:
+        image?.tool || image?.toolKey || image?.tool_key || record?.tool || record?.toolKey || record?.tool_key || '',
       action: image?.action || record?.action || '',
       record,
     }

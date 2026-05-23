@@ -1,17 +1,29 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Lightbulb } from 'lucide-vue-next'
+import AsyncBlockFallback from '../components/AsyncBlockFallback.vue'
 import Toast from '../components/Toast.vue'
-import GalleryDrawer from '../components/generate/GalleryDrawer.vue'
-import DedicatedImageTools from '../components/generate/DedicatedImageTools.vue'
-import GenerateToolboxNav from '../components/generate/GenerateToolboxNav.vue'
-import GenerateSideRail from '../components/generate/GenerateSideRail.vue'
-import GenerateOutputGrid from '../components/generate/GenerateOutputGrid.vue'
-import GenerateToolPanel from '../components/generate/GenerateToolPanel.vue'
-import GenerateMobileShell from '../components/generate/GenerateMobileShell.vue'
-import ImagePreviewModal from '../components/generate/ImagePreviewModal.vue'
 import { useGenerationTask } from '../composables/useGenerationTask'
 import '../assets/generate.css'
+
+function asyncWorkbenchComponent(loader) {
+  return defineAsyncComponent({
+    loader,
+    loadingComponent: AsyncBlockFallback,
+    errorComponent: AsyncBlockFallback,
+    delay: 160,
+    timeout: 12000,
+  })
+}
+
+const GalleryDrawer = asyncWorkbenchComponent(() => import('../components/generate/GalleryDrawer.vue'))
+const DedicatedImageTools = asyncWorkbenchComponent(() => import('../components/generate/DedicatedImageTools.vue'))
+const GenerateToolboxNav = asyncWorkbenchComponent(() => import('../components/generate/GenerateToolboxNav.vue'))
+const GenerateSideRail = asyncWorkbenchComponent(() => import('../components/generate/GenerateSideRail.vue'))
+const GenerateOutputGrid = asyncWorkbenchComponent(() => import('../components/generate/GenerateOutputGrid.vue'))
+const GenerateToolPanel = asyncWorkbenchComponent(() => import('../components/generate/GenerateToolPanel.vue'))
+const GenerateMobileShell = asyncWorkbenchComponent(() => import('../components/generate/GenerateMobileShell.vue'))
+const ImagePreviewModal = asyncWorkbenchComponent(() => import('../components/generate/ImagePreviewModal.vue'))
 
 const outputPanelRef = ref(null)
 const activeTool = ref('generate')
@@ -21,7 +33,7 @@ let mobileMediaQuery = null
 
 const task = useGenerationTask({ onGalleryRecordUsed: handleGalleryRecordUsed })
 
-const { batchMode, footerTipText, notice, output, resetGenerationOutput } = task
+const { batchMode, footerTipText, notice, output } = task
 
 const isGenerateWorkspace = computed(() => activeTool.value === 'generate')
 const outputSignature = computed(() => output.value.map((item) => item.src || item.url || item.title || '').join('|'))
@@ -67,13 +79,19 @@ function handleGalleryRecordUsed() {
   scrollOutputIntoView()
 }
 
-function selectTool(toolKey) {
+function selectTool(toolKey, { preserveGenerateDraft = false } = {}) {
   if (!toolKey || activeTool.value === toolKey) return
-  if (activeTool.value === 'generate') captureGenerateWorkspaceDraft()
-  resetGenerationOutput()
+  if (activeTool.value === 'generate' && !preserveGenerateDraft) captureGenerateWorkspaceDraft()
   if (toolKey === 'generate') restoreGenerateWorkspaceDraft()
   else task.batchMode.value = false
   activeTool.value = toolKey
+}
+
+function useOutputAsTool({ toolKey, image } = {}) {
+  const shouldPreserveGenerateDraft = activeTool.value === 'generate'
+  if (shouldPreserveGenerateDraft) captureGenerateWorkspaceDraft()
+  if (!toolKey || !task.handoffOutputToTool?.(toolKey, image)) return
+  selectTool(toolKey, { preserveGenerateDraft: shouldPreserveGenerateDraft })
 }
 
 function scrollOutputIntoView() {
@@ -106,8 +124,15 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="page generate-page" :class="{ 'batch-mode-page': batchMode, 'mobile-mode': isMobile }">
+    <h1 v-if="!isMobile" class="sr-only">AI 图片生成与编辑工作台</h1>
+
     <template v-if="isMobile">
-      <GenerateMobileShell :task="task" :active-tool="activeTool" @update:active-tool="selectTool" />
+      <GenerateMobileShell
+        :task="task"
+        :active-tool="activeTool"
+        @update:active-tool="selectTool"
+        @use-output-as-tool="useOutputAsTool"
+      />
     </template>
 
     <template v-else>
@@ -129,7 +154,7 @@ onBeforeUnmount(() => {
               <GenerateToolPanel v-if="isGenerateWorkspace" :task="task" />
               <DedicatedImageTools v-else :task="task" :active-tool-key="activeTool" />
 
-              <GenerateOutputGrid ref="outputPanelRef" :task="task" />
+              <GenerateOutputGrid ref="outputPanelRef" :task="task" @use-as-tool="useOutputAsTool" />
             </div>
           </div>
 

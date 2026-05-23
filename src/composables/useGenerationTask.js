@@ -69,6 +69,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
   const outputActionRecordId = ref('')
   const outputActionType = ref('')
   const outputActionRunId = ref(0)
+  const sourceToolHandoffKey = ref('')
   const loadingStage = ref('准备提交生成任务')
   const initialLoadingStage = loadingStage.value
   const queuePosition = ref(null)
@@ -115,19 +116,23 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     showNotice,
   })
   const {
+    applyGalleryPagePayload,
     clearGalleryClearedBefore,
     gallery,
+    galleryPage,
     galleryLastSyncedAt,
     galleryOpen,
     gallerySyncError,
     gallerySyncing,
     gallerySyncMessage,
     hasPendingGalleryRecords,
+    getGalleryPageParams,
     isGalleryRecordPending,
     loadLocalGallery,
     markGalleryRecordsDeleted,
     mergeGalleryRecords,
     persistLocalGallery,
+    setGalleryPage,
     setGallerySyncMessage,
   } = galleryApi
 
@@ -144,8 +149,10 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
   const pollingApi = useGenerationPolling({
     activeTaskId,
     api,
+    applyGalleryPagePayload,
     clearGalleryClearedBefore,
     gallery,
+    galleryPage,
     galleryLastSyncedAt,
     galleryOpen,
     gallerySyncError,
@@ -153,6 +160,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     gallerySyncMessage,
     generationAbortController,
     hasPendingGalleryRecords,
+    getGalleryPageParams,
     isAuthenticated,
     isGalleryRecordPending,
     loadLocalGallery,
@@ -162,6 +170,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     normalizeGenerationRecord,
     persistLocalGallery,
     queuePosition,
+    setGalleryPage,
     setGallerySyncMessage,
     showNotice,
   })
@@ -349,6 +358,12 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     )
   }
 
+  function canCancelGalleryRecord(record = {}) {
+    if (!record.id) return false
+    const status = String(record.status || '').toLowerCase()
+    return ['queued', 'running', 'saving'].includes(status)
+  }
+
   function useGalleryRecord(record) {
     const normalizedRecord = normalizeGenerationRecord(record)
     const used = galleryActions.useGalleryRecord(normalizedRecord, formState)
@@ -402,6 +417,43 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     )
     persistLocalGallery()
     window.dispatchEvent(new CustomEvent('imgsgen:gallery-updated', { detail: { record } }))
+  }
+
+  async function cancelGalleryRecord(record) {
+    const normalizedRecord = normalizeGenerationRecord(record)
+    if (!canCancelGalleryRecord(normalizedRecord)) return false
+
+    const cancelingRecord = normalizeGenerationRecord(
+      {
+        ...normalizedRecord,
+        status: 'cancel_requested',
+        updatedAt: new Date().toISOString(),
+        errorMessage: normalizedRecord.errorMessage || '用户请求取消生成',
+      },
+      normalizedRecord,
+    )
+
+    replaceGalleryRecord(cancelingRecord)
+    if (activeTaskId.value === normalizedRecord.id) loadingStage.value = '正在取消任务'
+
+    try {
+      const canceledPayload = await api.cancelGenerationTask(normalizedRecord.id)
+      const canceledRecord = normalizeGenerationRecord(
+        {
+          ...canceledPayload,
+          id: normalizedRecord.id,
+        },
+        cancelingRecord,
+      )
+      replaceGalleryRecord(canceledRecord)
+      showNotice('已请求取消生成')
+      void auth.refreshMe().catch(() => {})
+      return true
+    } catch (error) {
+      replaceGalleryRecord(normalizedRecord)
+      showNotice(error.message || '取消失败，请稍后重试')
+      return false
+    }
   }
 
   async function retryGalleryRecord(record) {
@@ -606,6 +658,26 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     closeImagePreview()
   }
 
+  function handoffOutputToTool(toolKey, image = {}) {
+    const source = image.src || image.url || ''
+    if (!source) {
+      showNotice('当前结果图无法继续处理')
+      return false
+    }
+
+    const toolLabels = {
+      upscale: '高清放大',
+      outpaint: '自由扩图',
+      cutout: '智能抠图',
+      erase: '一键消除',
+    }
+    formState.mode.value = toolKey === 'outpaint' || toolKey === 'erase' ? 'edit' : 'image'
+    setReferenceUrls([source], { silent: true })
+    sourceToolHandoffKey.value = toolKey
+    showNotice(`已将当前结果带入${toolLabels[toolKey] || '图片处理'}工具`)
+    return true
+  }
+
   async function resolveOutputActionRecord(taskPayload, requestPayload, { runId, persistToGallery = true } = {}) {
     const submittedRecord = normalizeGenerationRecord(taskPayload, requestPayload)
     outputActionRecordId.value = submittedRecord.id || taskPayload?.id || ''
@@ -644,9 +716,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     const normalizedTypes = (Array.isArray(types) ? types : [types])
       .map((type) => String(type || '').trim())
       .filter(Boolean)
-    return normalizedTypes.length
-      ? Array.from(new Set(normalizedTypes))
-      : defaultLayerSplitTypes.map((item) => item.type)
+    return normalizedTypes.length ? Array.from(new Set(normalizedTypes)) : []
   }
 
   function sortLayerSplitEntries(entries = []) {
@@ -681,6 +751,19 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
 
   function getLayerSplitFailedSlots(record = {}, requestedTypes = [], layers = []) {
     const layerTypes = normalizeLayerSplitTypes(requestedTypes)
+    if (!layerTypes.length) {
+      const status = String(record.status || '').toLowerCase()
+      const failedCount = Number(record.failedCount || 0)
+      if (status !== 'failed' && failedCount <= 0) return []
+      return [
+        {
+          id: 'layer-split-failed',
+          type: '',
+          label: '分层',
+          errorMessage: record.errorMessage || record.partialFailureMessage || '智能分层失败',
+        },
+      ]
+    }
     const successfulTypes = new Set(layers.map((layer) => layer.type).filter(Boolean))
     const missingTypes = layerTypes.filter((type) => !successfulTypes.has(type))
     const failedCount = Number(record.failedCount || 0)
@@ -720,7 +803,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
       layerSplitRecord: normalizedRecord,
       layerSplitFailedSlots: sortLayerSplitEntries(nextFailedSlots),
       layerSplitRequestedTypes: normalizeLayerSplitTypes([
-        ...(item.layerSplitRequestedTypes || defaultLayerSplitTypes.map((entry) => entry.type)),
+        ...(item.layerSplitRequestedTypes || []),
         ...layerTypes,
       ]),
       layerSplitError: nextFailedSlots.length
@@ -731,14 +814,15 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
 
   function buildLayerSplitErrorState(item = {}, requestedTypes = [], message = '') {
     const layerTypes = normalizeLayerSplitTypes(requestedTypes)
+    const failedTypes = layerTypes.length ? layerTypes : ['']
     const replaceTypes = new Set(layerTypes)
     const previousFailedSlots = Array.isArray(item.layerSplitFailedSlots) ? item.layerSplitFailedSlots : []
     const nextFailedSlots = [
       ...previousFailedSlots.filter((slot) => !replaceTypes.has(slot.type)),
-      ...layerTypes.map((type, index) => ({
-        id: `${type}-failed`,
+      ...failedTypes.map((type, index) => ({
+        id: `${type || 'layer-split'}-failed`,
         type,
-        label: getLayerSplitTypeLabel(type, index),
+        label: type ? getLayerSplitTypeLabel(type, index) : '分层',
         errorMessage: message || '该图层生成失败',
       })),
     ]
@@ -746,7 +830,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     return {
       layerSplitFailedSlots: sortLayerSplitEntries(nextFailedSlots),
       layerSplitRequestedTypes: normalizeLayerSplitTypes([
-        ...(item.layerSplitRequestedTypes || defaultLayerSplitTypes.map((entry) => entry.type)),
+        ...(item.layerSplitRequestedTypes || []),
         ...layerTypes,
       ]),
       layerSplitError: message || '智能分层失败，请稍后重试',
@@ -763,11 +847,12 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
       tool: action,
       ratio: item.ratio || formState.aspectRatio.value,
       resolution: item.resolution || formState.resolution.value || '4K',
-      n: payload.n || (action === 'layer-split' ? 3 : 1),
+      n: payload.n || (action === 'layer-split' ? undefined : 1),
       quality: 'high',
       output_format: 'png',
       background: action === 'layer-split' ? undefined : 'auto',
       references: [item.src],
+      parent_task_id: item.recordId || item.record?.id,
       mask: payload.mask,
       tool_params: payload.toolParams,
     })
@@ -801,7 +886,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
       const taskPayload = await api.generateImages(requestPayload)
       if (!isCurrentOutputActionRun(runId)) return null
 
-      const record = await resolveOutputActionRecord(taskPayload, requestPayload, { runId })
+      const record = await resolveOutputActionRecord(taskPayload, requestPayload, { runId, persistToGallery: false })
       if (!record || !isCurrentOutputActionRun(runId)) return null
 
       const [resultImage] = mapRecordImages(record)
@@ -826,6 +911,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
       replaceOutputItem(index, {
         ...item,
         ...resultImage,
+        recordId: item.recordId || item.record?.id || resultImage.recordId,
         originalSrc: item.originalSrc || beforeSrc,
         sourceImages: Array.from(new Set([...(item.sourceImages || []), beforeSrc])),
         layers: resultImage.layers?.length ? resultImage.layers : [],
@@ -851,11 +937,12 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
 
     try {
       const requestPayload = buildOutputActionPayload(item, 'layer-split', {
-        prompt: '将当前图片分离为主体、文字和背景三个独立图层。',
-        n: requestedTypes.length,
+        prompt: '请自动把当前图片拆分为可独立使用的透明 PNG 图层，按画面内容合理决定图层数量和命名。',
+        n: requestedTypes.length || undefined,
         toolParams: {
           source_image: item.src,
-          layer_types: requestedTypes,
+          layer_types: requestedTypes.length ? requestedTypes : undefined,
+          strategy: 'auto',
         },
       })
       const taskPayload = await api.generateImages(requestPayload)
@@ -871,6 +958,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
 
       replaceOutputItem(index, {
         ...item,
+        recordId: item.recordId || item.record?.id,
         originalSrc: item.originalSrc || item.src,
         sourceImages: Array.from(new Set([...(item.sourceImages || []), item.src])),
         ...layerSplitState,
@@ -986,6 +1074,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     outputActionTargetId,
     outputActionRecordId,
     outputActionType,
+    sourceToolHandoffKey,
     loadingStage,
     lastGenerationNotice,
     lastGenerationCanRetry,
@@ -1004,6 +1093,8 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     removeGalleryRecord: galleryActions.removeGalleryRecord,
     saveCurrentOutputToGallery: () => galleryActions.saveCurrentOutputToGallery(formState),
     canRetryGalleryRecord,
+    canCancelGalleryRecord,
+    cancelGalleryRecord,
     retryGalleryRecord,
     retryLastGeneration,
     useGalleryRecord,
@@ -1040,6 +1131,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     sizeMatrix: constants.sizeMatrix,
     // Actions
     generate,
+    handoffOutputToTool,
     submitOutputRegionEdit,
     submitOutputLayerSplit,
     enableBatchMode,

@@ -207,12 +207,7 @@ defineProps({
 :root[data-theme='dark'] .skeleton-text,
 :root[data-theme='dark'] .skeleton-avatar,
 :root[data-theme='dark'] .skeleton-button {
-  background: linear-gradient(
-    90deg,
-    rgba(30, 41, 59, 0.6) 0%,
-    rgba(51, 65, 85, 0.6) 50%,
-    rgba(30, 41, 59, 0.6) 100%
-  );
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.6) 0%, rgba(51, 65, 85, 0.6) 50%, rgba(30, 41, 59, 0.6) 100%);
   background-size: 200% 100%;
 }
 

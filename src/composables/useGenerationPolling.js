@@ -24,12 +24,15 @@ export function isGenerationTaskSuccessful(task = {}) {
 export function useGenerationPolling({
   activeTaskId,
   api,
+  applyGalleryPagePayload,
   clearGalleryClearedBefore,
   gallery,
+  galleryPage,
   galleryLastSyncedAt,
   galleryOpen,
   gallerySyncError,
   gallerySyncing,
+  getGalleryPageParams,
   generationAbortController,
   hasPendingGalleryRecords,
   isAuthenticated,
@@ -41,6 +44,7 @@ export function useGenerationPolling({
   normalizeGenerationRecord,
   persistLocalGallery,
   queuePosition,
+  setGalleryPage,
   setGallerySyncMessage,
   showNotice,
 }) {
@@ -172,8 +176,9 @@ export function useGenerationPolling({
     clearGalleryRefreshTimer()
     if (!galleryOpen.value || !isAuthenticated.value || !hasPendingGalleryRecords.value) return
 
-    galleryRefreshTimer = window.setTimeout(() => {
-      syncCloudGallery({ silent: true })
+    galleryRefreshTimer = window.setTimeout(async () => {
+      await refreshPendingGalleryRecords()
+      scheduleGalleryRefresh()
     }, 3000)
   }
 
@@ -193,12 +198,21 @@ export function useGenerationPolling({
     }
   }
 
-  async function syncCloudGallery({ silent = false } = {}) {
+  async function syncCloudGallery({ page = galleryPage?.value || 1, silent = false } = {}) {
+    const nextPage = Math.max(1, Number(page) || 1)
     if (!silent) clearGalleryClearedBefore?.()
-    gallery.value = mergeGalleryRecords(gallery.value, loadLocalGallery())
+    const retainedPendingRecords = gallery.value.filter((record) => isGalleryRecordPending(record))
+    const shouldResetLoadedPages = nextPage === 1 && !silent
+    gallery.value = shouldResetLoadedPages
+      ? mergeGalleryRecords(
+          retainedPendingRecords,
+          loadLocalGallery().filter((record) => isGalleryRecordPending(record)),
+        )
+      : mergeGalleryRecords(gallery.value, loadLocalGallery())
     gallerySyncError.value = ''
 
     if (!isAuthenticated.value) {
+      setGalleryPage?.(nextPage)
       if (!silent) showNotice('登录后可查看云端图库和生成进度')
       return
     }
@@ -208,11 +222,20 @@ export function useGenerationPolling({
 
     try {
       await refreshPendingGalleryRecords()
-      const records = await api.getGallery()
-      gallery.value = mergeGalleryRecords(gallery.value, Array.isArray(records) ? records : [])
+      const payload = await api.getGallery(
+        getGalleryPageParams ? getGalleryPageParams(nextPage) : { limit: 9, page: nextPage },
+      )
+      const records = applyGalleryPagePayload
+        ? applyGalleryPagePayload(payload, nextPage)
+        : Array.isArray(payload)
+          ? payload
+          : []
+      gallery.value = shouldResetLoadedPages
+        ? mergeGalleryRecords(records, retainedPendingRecords)
+        : mergeGalleryRecords(gallery.value, records)
       galleryLastSyncedAt.value = new Date().toISOString()
       persistLocalGallery()
-      if (!silent) setGallerySyncMessage('云端图库已同步')
+      if (!silent) setGallerySyncMessage(`云端图库第 ${nextPage} 页已同步`)
     } catch (error) {
       logger.warn('云端图库同步失败', error)
       gallerySyncError.value = error.message || '云端图库同步失败'
@@ -225,7 +248,7 @@ export function useGenerationPolling({
 
   async function openGallery() {
     galleryOpen.value = true
-    await syncCloudGallery({ silent: false })
+    await syncCloudGallery({ page: 1, silent: false })
   }
 
   function closeGallery() {

@@ -133,17 +133,6 @@ body {
   font-weight: var(--fw-semibold);
 }
 
-.workflow-stat span,
-.optimizer-counter,
-.gallery-card-meta,
-.optimizer-history-list small,
-.field-note,
-.field small,
-.side-nav a,
-.side-nav button {
-  font-weight: var(--fw-medium);
-}
-
 .docs-content .doc-section h2 {
   font-size: 22px;
 }

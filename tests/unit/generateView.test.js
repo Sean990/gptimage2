@@ -13,6 +13,7 @@ vi.mock('../../src/composables/useGenerationTask', () => ({
 
 function createTask() {
   const output = ref([{ src: '/old-result.png', title: '旧结果' }])
+  const references = ref([])
   const resetGenerationOutput = vi.fn(() => {
     output.value = []
   })
@@ -31,9 +32,14 @@ function createTask() {
     prompt: ref(''),
     footerTipText: ref('提示'),
     getMaskReference: vi.fn(() => ''),
-    getReferences: vi.fn(() => []),
+    getReferences: vi.fn(() => references.value),
     notice: ref(''),
     output,
+    handoffOutputToTool: vi.fn(() => {
+      references.value = ['/old-result.png']
+      return true
+    }),
+    references,
     resetGenerationOutput,
     setReferenceUrls: vi.fn(),
   }
@@ -52,7 +58,11 @@ function mountGenerateView() {
         },
         GalleryDrawer: { template: '<div />' },
         GenerateMobileShell: { template: '<div />' },
-        GenerateOutputGrid: { template: '<aside data-test="output-grid" />' },
+        GenerateOutputGrid: {
+          emits: ['use-as-tool'],
+          template:
+            '<aside data-test="output-grid"><button data-test="continue-upscale" @click="$emit(\'use-as-tool\', { toolKey: \'upscale\', image: { src: \'/old-result.png\' } })">续作</button></aside>',
+        },
         GenerateSideRail: {
           emits: ['update:activeTool'],
           props: ['activeTool'],
@@ -82,15 +92,15 @@ describe('GenerateView', () => {
     mockState.task = createTask()
   })
 
-  it('切换到其他图片工具时会重置结果区域', async () => {
+  it('切换到其他图片工具时保留当前结果区上下文', async () => {
     const wrapper = mountGenerateView()
 
     expect(mockState.task.output.value).toHaveLength(1)
 
     await wrapper.get('[data-test="side-upscale"]').trigger('click')
 
-    expect(mockState.task.resetGenerationOutput).toHaveBeenCalledTimes(1)
-    expect(mockState.task.output.value).toEqual([])
+    expect(mockState.task.resetGenerationOutput).not.toHaveBeenCalled()
+    expect(mockState.task.output.value).toHaveLength(1)
     expect(wrapper.get('[data-test="dedicated-tools"]').text()).toBe('upscale')
   })
 
@@ -116,5 +126,29 @@ describe('GenerateView', () => {
 
     expect(mockState.task.resetGenerationOutput).not.toHaveBeenCalled()
     expect(mockState.task.output.value).toHaveLength(1)
+  })
+
+  it('从结果图进入续作工具时保留当前结果上下文', async () => {
+    const wrapper = mountGenerateView()
+
+    await wrapper.get('[data-test="continue-upscale"]').trigger('click')
+
+    expect(mockState.task.handoffOutputToTool).toHaveBeenCalledWith('upscale', { src: '/old-result.png' })
+    expect(mockState.task.resetGenerationOutput).not.toHaveBeenCalled()
+    expect(mockState.task.output.value).toHaveLength(1)
+    expect(wrapper.get('[data-test="dedicated-tools"]').text()).toBe('upscale')
+  })
+
+  it('从生成结果继续处理时不会把续作源图写入创作草稿', async () => {
+    mockState.task.references.value = ['/original-reference.png']
+    const wrapper = mountGenerateView()
+
+    await wrapper.get('[data-test="continue-upscale"]').trigger('click')
+    await wrapper.get('[data-test="toolbox-generate"]').trigger('click')
+
+    expect(mockState.task.setReferenceUrls).toHaveBeenLastCalledWith(['/original-reference.png'], {
+      maskUrl: '',
+      silent: true,
+    })
   })
 })

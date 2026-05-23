@@ -75,7 +75,7 @@ const pullToRefresh = useAutoPullToRefresh(containerRef, {
       :pull-distance="pullToRefresh.pullDistance.value"
       :can-refresh="pullToRefresh.canRefresh.value"
     />
-    
+
     <!-- 内容 -->
     <div class="content">
       <!-- ... -->
@@ -146,25 +146,25 @@ async function loadData() {
 <template>
   <!-- 卡片骨架屏 -->
   <SkeletonLoader variant="card" :count="3" />
-  
+
   <!-- 列表骨架屏 -->
   <SkeletonLoader variant="list" :count="5" />
-  
+
   <!-- 图片骨架屏 -->
   <SkeletonLoader variant="image" />
-  
+
   <!-- 图库骨架屏 -->
   <SkeletonLoader variant="gallery" />
-  
+
   <!-- 文本骨架屏 -->
   <SkeletonLoader variant="text" :count="3" />
-  
+
   <!-- 头像骨架屏 -->
   <SkeletonLoader variant="avatar" />
-  
+
   <!-- 按钮骨架屏 -->
   <SkeletonLoader variant="button" />
-  
+
   <!-- 禁用动画 -->
   <SkeletonLoader variant="card" :animated="false" />
 </template>
@@ -192,8 +192,10 @@ const { isLoading, withLoading } = useSkeletonLoader()
 async function fetchImages() {
   await withLoading(async () => {
     // 模拟 API 调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    images.value = [/* ... */]
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    images.value = [
+      /* ... */
+    ]
   })
 }
 
@@ -224,16 +226,11 @@ onMounted(() => {
       :pull-distance="pullToRefresh.pullDistance.value"
       :can-refresh="pullToRefresh.canRefresh.value"
     />
-    
+
     <SkeletonLoader v-if="isLoading" variant="gallery" :count="2" />
-    
+
     <div v-else class="gallery-grid">
-      <div
-        v-for="image in images"
-        :key="image.id"
-        class="gallery-item"
-        @click="handleImageClick(image)"
-      >
+      <div v-for="image in images" :key="image.id" class="gallery-item" @click="handleImageClick(image)">
         <img :src="image.url" :alt="image.title" />
       </div>
     </div>
@@ -244,16 +241,19 @@ onMounted(() => {
 ## 5. 最佳实践
 
 ### 触觉反馈
+
 - 不要过度使用，避免用户疲劳
 - 为重要操作提供反馈
 - 尊重用户的系统设置（某些用户可能禁用震动）
 
 ### 下拉刷新
+
 - 只在列表/内容页面使用
 - 确保刷新逻辑快速响应
 - 提供清晰的视觉反馈
 
 ### 骨架屏
+
 - 设置合理的最小加载时间，避免闪烁
 - 骨架屏布局应与实际内容相似
 - 支持无障碍访问（aria-label）

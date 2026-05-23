@@ -169,7 +169,7 @@ describe('生成页拆分 composables', () => {
     expect(isGenerationTaskSuccessful(record)).toBe(true)
   })
 
-  it('图库不把智能分层当成独立任务展示', () => {
+  it('图库只展示主任务，不把分层操作当成独立卡片', () => {
     const layerRecord = {
       id: 'task-layer-split',
       tool: 'layer-split',
@@ -192,6 +192,106 @@ describe('生成页拆分 composables', () => {
       'task-upscale',
     ])
     expect(mergeGalleryRecords([layerRecord, upscaleRecord]).map((record) => record.id)).toEqual(['task-upscale'])
+  })
+
+  it('图库取消中的状态会覆盖正在生成的旧记录', () => {
+    const { mergeGalleryRecords } = useGallery({
+      normalizeGenerationRecord,
+    })
+    const runningRecord = {
+      id: 'task-cancelable',
+      prompt: '排队后取消的任务',
+      status: 'running',
+      createdAt: '2026-05-13T08:00:00.000Z',
+      updatedAt: '2026-05-13T08:01:00.000Z',
+      images: [],
+    }
+    const cancelingRecord = {
+      ...runningRecord,
+      status: 'cancel_requested',
+      updatedAt: '2026-05-13T08:02:00.000Z',
+      errorMessage: '用户请求取消生成',
+    }
+
+    expect(mergeGalleryRecords([cancelingRecord], [runningRecord])[0]).toMatchObject({
+      id: 'task-cancelable',
+      status: 'cancel_requested',
+      errorMessage: '用户请求取消生成',
+    })
+  })
+
+  it('图库本地缓存保留 100 条，但云端分页每页只请求 9 条', () => {
+    const {
+      applyGalleryPagePayload,
+      galleryHasMore,
+      galleryPage,
+      galleryPageSize,
+      galleryTotal,
+      getGalleryPageParams,
+      loadLocalGallery,
+      maxLocalGalleryRecords,
+      mergeGalleryRecords,
+      persistLocalGallery,
+    } = useGallery({
+      normalizeGenerationRecord,
+    })
+    const records = Array.from({ length: 25 }, (_, index) => ({
+      id: `task-gallery-${index}`,
+      prompt: `图库记录 ${index}`,
+      status: 'completed',
+      createdAt: new Date(Date.UTC(2026, 4, 13, 8, index)).toISOString(),
+      images: [{ url: `/uploads/gallery-${index}.png` }],
+    }))
+
+    const mergedRecords = mergeGalleryRecords(records)
+    persistLocalGallery(mergedRecords)
+
+    expect(maxLocalGalleryRecords).toBe(100)
+    expect(galleryPageSize).toBe(9)
+    expect(getGalleryPageParams(3)).toEqual({ limit: 9, offset: 18, page: 3, pageSize: 9 })
+    expect(mergedRecords).toHaveLength(25)
+    expect(loadLocalGallery()).toHaveLength(25)
+
+    const pageRecords = applyGalleryPagePayload(
+      {
+        records: records.slice(0, 9),
+        total: 25,
+      },
+      1,
+    )
+    expect(pageRecords).toHaveLength(9)
+    expect(galleryPage.value).toBe(1)
+    expect(galleryTotal.value).toBe(25)
+    expect(galleryHasMore.value).toBe(true)
+  })
+
+  it('兼容云端图库嵌套分页响应', () => {
+    const { applyGalleryPagePayload, galleryHasMore, galleryTotal } = useGallery({
+      normalizeGenerationRecord,
+    })
+
+    const pageRecords = applyGalleryPagePayload(
+      {
+        data: {
+          records: [
+            {
+              id: 'task-nested-gallery',
+              prompt: '嵌套分页记录',
+              status: 'completed',
+              images: [{ url: '/uploads/nested-gallery.png' }],
+            },
+          ],
+          total: 12,
+          hasMore: true,
+        },
+      },
+      1,
+    )
+
+    expect(pageRecords).toHaveLength(1)
+    expect(pageRecords[0].id).toBe('task-nested-gallery')
+    expect(galleryTotal.value).toBe(12)
+    expect(galleryHasMore.value).toBe(true)
   })
 
   it('复用多图图库记录时同步生成张数', () => {
@@ -674,11 +774,15 @@ describe('生成页拆分 composables', () => {
     const {
       clearGalleryClearedBefore,
       gallery,
+      galleryPage,
+      applyGalleryPagePayload,
+      getGalleryPageParams,
       loadLocalGallery,
       markGalleryClearedBefore,
       markGalleryRecordsDeleted,
       mergeGalleryRecords,
       persistLocalGallery,
+      setGalleryPage,
     } = useGallery({
       normalizeGenerationRecord,
     })
@@ -696,6 +800,13 @@ describe('生成页拆分 composables', () => {
       createdAt: '2026-05-13T10:00:00.000Z',
       images: [{ url: '/uploads/task-deleted-single.png' }],
     }
+    const staleLoadedRecord = {
+      id: 'task-stale-loaded',
+      prompt: '上一轮分页残留记录',
+      status: 'completed',
+      createdAt: '2026-05-13T11:00:00.000Z',
+      images: [{ url: '/uploads/task-stale-loaded.png' }],
+    }
     const api = {
       getGallery: vi.fn().mockResolvedValue([restoredRecord, deletedRecord]),
       getGenerationTask: vi.fn(),
@@ -703,8 +814,10 @@ describe('生成页拆分 composables', () => {
     const { syncCloudGallery } = useGenerationPolling({
       activeTaskId: ref(''),
       api,
+      applyGalleryPagePayload,
       clearGalleryClearedBefore,
       gallery,
+      galleryPage,
       galleryLastSyncedAt: ref(''),
       galleryOpen: ref(false),
       gallerySyncError: ref(''),
@@ -712,6 +825,7 @@ describe('生成页拆分 composables', () => {
       gallerySyncMessage: ref(''),
       generationAbortController: ref(null),
       hasPendingGalleryRecords: ref(false),
+      getGalleryPageParams,
       isAuthenticated: ref(true),
       isGalleryRecordPending: () => false,
       loadLocalGallery,
@@ -720,17 +834,21 @@ describe('生成页拆分 composables', () => {
       mergeGalleryRecords,
       normalizeGenerationRecord,
       persistLocalGallery,
+      setGalleryPage,
       setGallerySyncMessage: vi.fn(),
       showNotice: vi.fn(),
     })
 
     markGalleryClearedBefore('2026-05-13T09:00:00.000Z')
     markGalleryRecordsDeleted(['task-deleted-single'])
+    gallery.value = mergeGalleryRecords([staleLoadedRecord])
+    persistLocalGallery()
     expect(mergeGalleryRecords([], [restoredRecord, deletedRecord])).toEqual([])
 
     await syncCloudGallery({ silent: false })
 
     expect(api.getGallery).toHaveBeenCalledTimes(1)
+    expect(api.getGallery).toHaveBeenCalledWith({ limit: 9, offset: 0, page: 1, pageSize: 9 })
     expect(localStorage.getItem('gptImage2GalleryClearedBefore')).toBeNull()
     expect(localStorage.getItem('gptImage2DeletedGalleryIds')).toContain('id:task-deleted-single')
     expect(gallery.value.map((record) => record.id)).toEqual(['task-cleared-before'])

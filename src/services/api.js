@@ -362,7 +362,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
-  getGallery: () => request('/gallery'),
+  getGallery: (params = {}) => {
+    const query = new URLSearchParams(params)
+    return request(`/gallery${query.toString() ? `?${query}` : ''}`)
+  },
   deleteGalleryRecord: (id) =>
     request(`/gallery/${encodeURIComponent(id)}`, {
       method: 'DELETE',

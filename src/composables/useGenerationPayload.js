@@ -101,6 +101,7 @@ export function normalizeGeneratedImage(item = {}, index = 0, defaults = {}) {
   )
   return {
     id: item.id || `generated-${index}`,
+    recordId: item.recordId || item.record_id || defaults.recordId || defaults.record_id || defaults.id,
     title: item.title || item.filename || `ImgsGen 生成图 ${index + 1}`,
     url: resolveApiUrl(imageUrl),
     prompt: item.prompt || defaults.prompt,
@@ -213,6 +214,7 @@ export function normalizeGenerationRecord(record = {}, defaults = {}) {
 export function mapRecordImages(record = {}) {
   return (record.images || []).map((item) => ({
     id: item.id,
+    recordId: item.recordId || record.id,
     title: item.title,
     src: item.url,
     prompt: item.prompt,

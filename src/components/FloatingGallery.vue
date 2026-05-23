@@ -1,9 +1,8 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { CheckCircle2, GalleryHorizontal, Loader2 } from 'lucide-vue-next'
-import GalleryDrawer from './generate/GalleryDrawer.vue'
-import ImagePreviewModal from './generate/ImagePreviewModal.vue'
+import AsyncBlockFallback from './AsyncBlockFallback.vue'
 import Toast from './Toast.vue'
 import { api } from '../services/api'
 import { useAuthStore } from '../services/authStore'
@@ -13,6 +12,20 @@ import { emitGalleryChanged, galleryChangedEventName, useGallery } from '../comp
 import { useImageDownload } from '../composables/useImageDownload'
 import { useImagePreview } from '../composables/useImagePreview'
 import { mapRecordImages, normalizeGenerationRecord } from '../composables/useGenerationPayload'
+import '../assets/floating-gallery.css'
+
+function asyncGalleryComponent(loader) {
+  return defineAsyncComponent({
+    loader,
+    loadingComponent: AsyncBlockFallback,
+    errorComponent: AsyncBlockFallback,
+    delay: 160,
+    timeout: 12000,
+  })
+}
+
+const GalleryDrawer = asyncGalleryComponent(() => import('./generate/GalleryDrawer.vue'))
+const ImagePreviewModal = asyncGalleryComponent(() => import('./generate/ImagePreviewModal.vue'))
 
 const galleryEventName = 'imgsgen:gallery-updated'
 const generationStartedEventName = 'imgsgen:generation-started'
@@ -56,9 +69,12 @@ const {
   clearGalleryClearedBefore,
   formatGalleryDate,
   gallery,
+  galleryHasMore,
   galleryCloudStatusText,
   galleryLastSyncedAt,
   galleryOpen,
+  galleryPage,
+  galleryPageSize,
   galleryRecordCover,
   galleryRecordMeta,
   galleryRecordModelLabel,
@@ -70,6 +86,9 @@ const {
   gallerySyncError,
   gallerySyncing,
   gallerySyncMessage,
+  galleryTotal,
+  applyGalleryPagePayload,
+  getGalleryPageParams,
   hasPendingGalleryRecords,
   isGalleryRecordPending,
   loadLocalGallery,
@@ -77,6 +96,7 @@ const {
   maxLocalGalleryRecords,
   mergeGalleryRecords,
   persistLocalGallery,
+  setGalleryPage,
   setGallerySyncMessage,
 } = galleryApi
 
@@ -116,12 +136,21 @@ function triggerCompletion(message = '任务已完成') {
   }, 3000)
 }
 
-async function syncCloudGallery({ silent = false } = {}) {
+async function syncCloudGallery({ page = galleryPage.value, silent = false } = {}) {
+  const nextPage = Math.max(1, Number(page) || 1)
   if (!silent) clearGalleryClearedBefore()
-  gallery.value = mergeGalleryRecords(gallery.value, loadLocalGallery())
+  const retainedPendingRecords = gallery.value.filter((record) => isGalleryRecordPending(record))
+  const shouldResetLoadedPages = nextPage === 1 && !silent
+  gallery.value = shouldResetLoadedPages
+    ? mergeGalleryRecords(
+        retainedPendingRecords,
+        loadLocalGallery().filter((record) => isGalleryRecordPending(record)),
+      )
+    : mergeGalleryRecords(gallery.value, loadLocalGallery())
   gallerySyncError.value = ''
 
   if (!isAuthenticated.value) {
+    setGalleryPage(nextPage)
     if (!silent) showNotice('登录后可查看云端图库和生成进度')
     return
   }
@@ -130,11 +159,14 @@ async function syncCloudGallery({ silent = false } = {}) {
   gallerySyncing.value = true
   try {
     await refreshPendingRecords()
-    const records = await api.getGallery()
-    gallery.value = mergeGalleryRecords(gallery.value, Array.isArray(records) ? records : [])
+    const payload = await api.getGallery(getGalleryPageParams(nextPage))
+    const records = applyGalleryPagePayload(payload, nextPage)
+    gallery.value = shouldResetLoadedPages
+      ? mergeGalleryRecords(records, retainedPendingRecords)
+      : mergeGalleryRecords(gallery.value, records)
     galleryLastSyncedAt.value = new Date().toISOString()
     persistLocalGallery()
-    if (!silent) setGallerySyncMessage('云端图库已同步')
+    if (!silent) setGallerySyncMessage(`云端图库第 ${galleryPage.value} 页已同步`)
   } catch (error) {
     logger.warn('全站图库同步失败', error)
     gallerySyncError.value = error.message || '云端图库同步失败'
@@ -189,7 +221,7 @@ function schedulePendingRefresh() {
 
 async function openGallery() {
   galleryOpen.value = true
-  await syncCloudGallery({ silent: false })
+  await syncCloudGallery({ page: 1, silent: false })
 }
 
 function closeGallery() {
@@ -239,6 +271,12 @@ function canRetryGalleryRecord(record = {}) {
     ['failed', 'canceled', 'partial_completed', 'completed_with_errors'].includes(status) ||
     Number(record.failedCount || 0) > 0
   )
+}
+
+function canCancelGalleryRecord(record = {}) {
+  if (!record.id) return false
+  const status = String(record.status || '').toLowerCase()
+  return ['queued', 'running', 'saving'].includes(status)
 }
 
 async function removeGalleryRecord(recordId) {
@@ -300,6 +338,47 @@ async function retryGalleryRecord(record) {
   return true
 }
 
+async function cancelGalleryRecord(record) {
+  const normalizedRecord = normalizeGenerationRecord(record)
+  if (!canCancelGalleryRecord(normalizedRecord)) return false
+
+  const cancelingRecord = normalizeGenerationRecord(
+    {
+      ...normalizedRecord,
+      status: 'cancel_requested',
+      updatedAt: new Date().toISOString(),
+      errorMessage: normalizedRecord.errorMessage || '用户请求取消生成',
+    },
+    normalizedRecord,
+  )
+  gallery.value = mergeGalleryRecords([cancelingRecord], gallery.value)
+  persistLocalGallery()
+  emitGalleryChanged({ type: 'cancel', record: cancelingRecord })
+
+  try {
+    const canceledPayload = await api.cancelGenerationTask(normalizedRecord.id)
+    const canceledRecord = normalizeGenerationRecord(
+      {
+        ...canceledPayload,
+        id: normalizedRecord.id,
+      },
+      cancelingRecord,
+    )
+    gallery.value = mergeGalleryRecords([canceledRecord], gallery.value)
+    persistLocalGallery()
+    emitGalleryChanged({ type: 'cancel', record: canceledRecord })
+    showNotice('已请求取消生成')
+    schedulePendingRefresh()
+    return true
+  } catch (error) {
+    gallery.value = mergeGalleryRecords([normalizedRecord], gallery.value)
+    persistLocalGallery()
+    emitGalleryChanged({ type: 'cancel', record: normalizedRecord })
+    showNotice(error.message || '取消失败，请稍后重试')
+    return false
+  }
+}
+
 function onGalleryUpdated(event) {
   submitting.value = false
   const record = normalizeGenerationRecord(event.detail?.record || event.detail || {})
@@ -346,6 +425,7 @@ function onGalleryChanged(event) {
 
 const drawerTask = {
   canPreviewGalleryRecord,
+  canCancelGalleryRecord,
   canRetryGalleryRecord,
   canReuseGalleryRecord,
   clearGallery,
@@ -364,15 +444,21 @@ const drawerTask = {
   galleryRecordProgressText,
   galleryRecordStatusLabel,
   gallerySummary,
+  galleryHasMore,
   gallerySyncError,
   gallerySyncing,
   gallerySyncMessage,
+  galleryPage,
+  galleryPageSize,
+  galleryTotal,
   isAuthenticated,
   isGalleryRecordPending,
   maxLocalGalleryRecords,
   openGalleryImage,
   removeGalleryRecord,
+  cancelGalleryRecord,
   retryGalleryRecord,
+  setGalleryPage,
   syncCloudGallery,
   useGalleryRecord,
 }
@@ -441,7 +527,7 @@ onBeforeUnmount(() => {
     </button>
   </div>
 
-  <GalleryDrawer :task="drawerTask" />
-  <ImagePreviewModal :task="previewTask" />
+  <GalleryDrawer v-if="galleryOpen" :task="drawerTask" />
+  <ImagePreviewModal v-if="imagePreview" :task="previewTask" />
   <Toast :message="completionMessage || notice" :type="completionMessage ? 'success' : 'info'" />
 </template>

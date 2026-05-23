@@ -1,13 +1,21 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
 import { ShieldAlert } from 'lucide-vue-next'
 import AppFooter from './components/AppFooter.vue'
 import AppHeader from './components/AppHeader.vue'
+import AsyncBlockFallback from './components/AsyncBlockFallback.vue'
 import BackToTop from './components/BackToTop.vue'
-import FloatingGallery from './components/FloatingGallery.vue'
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE } from './seo/constants.js'
+
+const FloatingGallery = defineAsyncComponent({
+  loader: () => import('./components/FloatingGallery.vue'),
+  loadingComponent: AsyncBlockFallback,
+  errorComponent: AsyncBlockFallback,
+  delay: 180,
+  timeout: 12000,
+})
 
 const SITE_URL = (import.meta.env.VITE_SITE_URL || '').replace(/\/+$/, '')
 const REGION_NOTICE_STORAGE_KEY = 'imgsgen-region-notice-accepted-v1'
@@ -261,7 +269,9 @@ onBeforeUnmount(() => {
   </div>
   <AppFooter />
   <BackToTop />
-  <FloatingGallery />
+  <div class="floating-gallery-async-slot">
+    <FloatingGallery />
+  </div>
 
   <Teleport to="body">
     <div

@@ -4,6 +4,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import ModalDialog from '../ModalDialog.vue'
 import { getGenerationRecordToolKey } from '../../composables/useGenerationPayload'
 import { formatGenerationModelLabel } from '../../composables/useModelPicker'
+import '../../assets/image-preview-modal.css'
 
 const props = defineProps({
   task: {
@@ -56,16 +57,20 @@ const canDeleteCurrentPreview = computed(() => Boolean(currentPreviewRecord.valu
 const compareToolKeys = new Set(['upscale', 'outpaint', 'cutout', 'erase'])
 const compareModeKeys = new Set(['image', 'edit'])
 const currentPreviewToolKey = computed(
-  () => getGenerationRecordToolKey(currentPreviewImage.value || {}) || getGenerationRecordToolKey(currentPreviewRecord.value || {}),
+  () =>
+    getGenerationRecordToolKey(currentPreviewImage.value || {}) ||
+    getGenerationRecordToolKey(currentPreviewRecord.value || {}),
 )
-const currentPreviewModeKey = computed(() => String(currentPreviewImage.value?.mode || currentPreviewRecord.value?.mode || '').trim())
+const currentPreviewModeKey = computed(() =>
+  String(currentPreviewImage.value?.mode || currentPreviewRecord.value?.mode || '').trim(),
+)
 const canCompareCurrentPreview = computed(() => {
   const image = currentPreviewImage.value
   return Boolean(
     image?.src &&
-      image?.originalSrc &&
-      image.originalSrc !== image.src &&
-      (compareToolKeys.has(currentPreviewToolKey.value) || compareModeKeys.has(currentPreviewModeKey.value)),
+    image?.originalSrc &&
+    image.originalSrc !== image.src &&
+    (compareToolKeys.has(currentPreviewToolKey.value) || compareModeKeys.has(currentPreviewModeKey.value)),
   )
 })
 

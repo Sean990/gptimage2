@@ -1,0 +1,372 @@
+/* 专用图片处理工具样式随 DedicatedImageTools 异步加载。 */
+.image-tools-section {
+  display: grid;
+  gap: 16px;
+  margin-top: 30px;
+}
+
+.image-tools-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.image-tools-head > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.image-tools-head span,
+.image-tool-panel-head span {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.image-tools-head h2 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: var(--fw-bold);
+  line-height: 1.15;
+}
+
+.image-tools-head p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.7;
+  text-align: right;
+}
+
+.image-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.image-tools-section-single {
+  margin-top: 0;
+}
+
+.image-tools-section-single .image-tool-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.image-tools-section-single .image-tool-panel {
+  min-height: 620px;
+}
+
+.image-tool-panel {
+  --tool-accent: #2563eb;
+  --tool-accent-soft: rgba(37, 99, 235, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  border: 1px solid rgba(203, 213, 225, 0.92);
+  border-radius: 8px;
+  padding: 20px;
+  background:
+    linear-gradient(140deg, var(--tool-accent-soft), rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.94));
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.04);
+}
+
+.image-tool-outpaint {
+  --tool-accent: #0f766e;
+  --tool-accent-soft: rgba(15, 118, 110, 0.1);
+}
+
+.image-tool-cutout {
+  --tool-accent: #b45309;
+  --tool-accent-soft: rgba(180, 83, 9, 0.1);
+}
+
+.image-tool-generate {
+  --tool-accent: #7c3aed;
+  --tool-accent-soft: rgba(124, 58, 237, 0.08);
+}
+
+.image-tool-panel-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(203, 213, 225, 0.78);
+  padding-bottom: 14px;
+}
+
+.image-tool-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--tool-accent), color-mix(in srgb, var(--tool-accent) 70%, #0f172a));
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--tool-accent) 22%, transparent);
+}
+
+.image-tool-icon svg {
+  width: 21px;
+  height: 21px;
+  color: #ffffff;
+  stroke: #ffffff;
+}
+
+.image-tool-panel-head h2,
+.image-tool-panel-head h3 {
+  margin: 3px 0 0;
+  color: var(--text-strong);
+  font-size: 22px;
+  font-weight: 950;
+  line-height: 1.18;
+}
+
+.image-tool-meta {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.image-tool-meta em {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: var(--radius-pill);
+  padding: 5px 9px;
+  color: color-mix(in srgb, var(--tool-accent) 75%, #0f172a);
+  background: rgba(255, 255, 255, 0.76);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.image-tool-body {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.image-tool-url-box {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.image-tool-field {
+  display: grid;
+  gap: 7px;
+}
+
+.image-tool-field > span {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.image-tool-source-field {
+  gap: 8px;
+}
+
+.image-tool-source-field > span {
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.image-tool-source-field > label {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.image-tool-url-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  gap: 8px;
+}
+
+.image-tool-url-row input,
+.image-tool-note textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(203, 213, 225, 0.96);
+  border-radius: 8px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.94);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition:
+    border-color var(--dur-2) var(--ease-standard),
+    box-shadow var(--dur-2) var(--ease-standard);
+}
+
+.image-tool-url-row input {
+  height: 42px;
+  padding: 0 12px;
+}
+
+.image-tool-note textarea {
+  min-height: 82px;
+  max-height: 180px;
+  padding: 11px 12px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.image-tool-url-row input:focus,
+.image-tool-note textarea:focus {
+  border-color: color-mix(in srgb, var(--tool-accent) 70%, white);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--tool-accent) 16%, transparent);
+}
+
+.image-tool-upload {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 142px;
+  border: 1px dashed color-mix(in srgb, var(--tool-accent) 42%, #cbd5e1);
+  border-radius: 8px;
+  padding: 16px;
+  color: var(--tool-accent);
+  background:
+    radial-gradient(circle at 50% 12%, color-mix(in srgb, var(--tool-accent) 13%, transparent), transparent 42%),
+    rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    border-color var(--dur-2) var(--ease-standard),
+    background-color var(--dur-2) var(--ease-standard),
+    box-shadow var(--dur-2) var(--ease-standard);
+}
+
+.image-tool-upload svg {
+  width: 28px;
+  height: 28px;
+}
+
+.image-tool-upload span {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.image-tool-upload small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.image-tool-upload:hover,
+.image-tool-upload:focus-within {
+  border-color: color-mix(in srgb, var(--tool-accent) 64%, #cbd5e1);
+  background:
+    radial-gradient(circle at 50% 12%, color-mix(in srgb, var(--tool-accent) 18%, transparent), transparent 42%),
+    rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--tool-accent) 12%, transparent);
+}
+
+.image-tool-upload input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.image-tool-source-grid {
+  margin-top: 0;
+}
+
+.image-tool-submit {
+  min-width: 190px;
+  justify-content: center;
+  border-color: transparent;
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  box-shadow: 0 14px 30px rgba(249, 115, 22, 0.13);
+}
+
+.image-tool-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+  box-shadow: 0 16px 34px rgba(249, 115, 22, 0.17);
+}
+
+.image-tool-submit svg:last-child {
+  width: 16px;
+  height: 16px;
+}
+
+.image-tool-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: auto;
+  border-top: 1px solid rgba(203, 213, 225, 0.76);
+  padding-top: 14px;
+}
+
+.image-tool-footer > span {
+  color: color-mix(in srgb, var(--tool-accent) 72%, #334155);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.image-tool-panel .upload-zone {
+  min-height: 152px;
+  border-style: dashed;
+}
+
+:root[data-theme='dark'] .image-tool-panel {
+  border-color: rgba(51, 65, 85, 0.82);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--tool-accent) 18%, transparent), transparent 45%),
+    rgba(15, 23, 42, 0.82);
+  box-shadow: 0 18px 44px rgba(2, 6, 23, 0.12);
+}
+
+:root[data-theme='dark'] .image-tool-icon {
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--tool-accent), color-mix(in srgb, var(--tool-accent) 68%, #020617));
+}
+
+:root[data-theme='dark'] .image-tool-panel-head,
+:root[data-theme='dark'] .image-tool-footer {
+  border-color: rgba(51, 65, 85, 0.82);
+}
+
+:root[data-theme='dark'] .image-tool-meta em,
+:root[data-theme='dark'] .image-tool-url-row input,
+:root[data-theme='dark'] .image-tool-note textarea {
+  color: var(--text-strong);
+  border-color: rgba(51, 65, 85, 0.86);
+  background: rgba(2, 6, 23, 0.58);
+}
+
+:root[data-theme='dark'] .image-tool-field > span,
+:root[data-theme='dark'] .image-tool-source-field > label,
+:root[data-theme='dark'] .image-tool-upload span {
+  color: var(--text);
+}
+
+:root[data-theme='dark'] .image-tool-upload,
+:root[data-theme='dark'] .image-tool-source-grid .reference-thumb {
+  background: rgba(2, 6, 23, 0.42);
+}
+
+:root[data-theme='dark'] .image-tool-upload small,
+:root[data-theme='dark'] .image-tool-footer > span {
+  color: var(--muted);
+}

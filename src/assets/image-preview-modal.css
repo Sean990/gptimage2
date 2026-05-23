@@ -1,0 +1,472 @@
+.gallery-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.gallery-actions .btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 32px;
+  gap: 5px;
+  padding: 6px 8px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.gallery-actions .icon-button {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+}
+
+.gallery-actions .icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.preview-backdrop {
+  z-index: 230;
+  background: rgba(2, 6, 23, 0.76);
+  backdrop-filter: blur(10px);
+}
+
+.image-preview-modal {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  gap: 14px;
+  width: min(1120px, 100%);
+  height: min(1080px, calc(100vh - 48px));
+  max-height: min(1080px, calc(100vh - 48px));
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.image-preview-head {
+  margin-bottom: 0;
+}
+
+.image-preview-head h2 {
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.image-preview-head p {
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+
+.image-preview-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.image-preview-meta p {
+  margin: 0;
+}
+
+.image-preview-model {
+  max-width: 100%;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: #1d4ed8;
+  background: rgba(37, 99, 235, 0.08);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.image-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid rgba(203, 213, 225, 0.72);
+  padding-top: 12px;
+}
+
+.image-preview-actions.gallery-actions .btn,
+.image-preview-actions.gallery-actions .icon-button {
+  flex: 0 0 112px;
+  width: 112px;
+  min-width: 112px;
+  height: 38px;
+  min-height: 38px;
+  border-radius: 999px;
+  padding: 8px 14px;
+  gap: 7px;
+  font-size: 13px;
+}
+
+.image-preview-actions.gallery-actions .btn svg,
+.image-preview-actions.gallery-actions .icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.image-preview-actions .image-preview-action-reuse {
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.2);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.image-preview-actions .image-preview-action-reuse:hover {
+  color: #1e40af;
+  border-color: rgba(37, 99, 235, 0.3);
+  background: rgba(37, 99, 235, 0.16);
+}
+
+.image-preview-actions .image-preview-action-copy,
+.image-preview-actions .image-preview-action-download,
+.image-preview-actions .image-preview-action-compare,
+.image-preview-actions .image-preview-action-delete {
+  color: #0f172a;
+  border-color: #dbe4ef;
+  background: #ffffff;
+}
+
+.image-preview-actions .image-preview-action-copy:hover,
+.image-preview-actions .image-preview-action-download:hover,
+.image-preview-actions .image-preview-action-compare:hover,
+.image-preview-actions .image-preview-action-delete:hover {
+  color: #0f172a;
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.image-preview-actions .image-preview-action-compare.active {
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.24);
+  background: rgba(37, 99, 235, 0.1);
+}
+
+.image-preview-actions:not(.gallery-actions) .btn {
+  min-height: 38px;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.image-preview-actions:not(.gallery-actions) .btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.image-preview-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(203, 213, 225, 0.78);
+  border-radius: 8px;
+  background:
+    linear-gradient(45deg, rgba(148, 163, 184, 0.12) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(148, 163, 184, 0.12) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, 0.12) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, 0.12) 75%), #f8fafc;
+  background-position:
+    0 0,
+    0 12px,
+    12px -12px,
+    -12px 0;
+  background-size: 24px 24px;
+}
+
+.image-preview-stage img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  flex: 0 1 auto;
+  object-fit: contain;
+}
+
+.image-compare-stage {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.image-compare-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.image-compare-stage .image-compare-base {
+  position: absolute;
+  inset: 0;
+  display: block;
+  flex: none;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border-radius: inherit;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.image-compare-result-pane {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.image-compare-stage .image-compare-image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  flex: none;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border-radius: inherit;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.image-compare-before {
+  filter: saturate(0.92);
+}
+
+.image-compare-divider {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border: 0;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.18),
+    0 0 18px rgba(15, 23, 42, 0.22);
+  cursor: ew-resize;
+  outline: none;
+  touch-action: none;
+  transform: translateX(-1px);
+}
+
+.image-compare-divider::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 28px;
+  content: '';
+  transform: translateX(-50%);
+}
+
+.image-compare-divider::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 58px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.24);
+  content: '';
+  transform: translate(-50%, -50%);
+}
+
+.image-compare-divider:focus-visible::after {
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.92),
+    0 0 0 6px rgba(37, 99, 235, 0.58),
+    0 8px 18px rgba(15, 23, 42, 0.24);
+}
+
+.image-compare-badge {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.66);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  backdrop-filter: blur(10px);
+}
+
+.image-compare-badge-before {
+  left: 10px;
+}
+
+.image-compare-badge-after {
+  right: 10px;
+}
+
+.image-preview-stage--compare {
+  touch-action: none;
+}
+
+.image-preview-stage--compare img {
+  transition: none;
+}
+
+.image-preview-compare-stage {
+  flex: 1 1 auto;
+  align-self: stretch;
+  border-radius: inherit;
+}
+
+.image-preview-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(15, 23, 42, 0.68);
+  transform: translateY(-50%);
+  backdrop-filter: blur(10px);
+}
+
+.image-preview-nav:hover {
+  color: #ffffff;
+  background: rgba(15, 23, 42, 0.86);
+}
+
+.image-preview-nav-prev {
+  left: 14px;
+}
+
+.image-preview-nav-next {
+  right: 14px;
+}
+
+.image-preview-strip {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 2px 0 4px;
+}
+
+.image-preview-thumb {
+  flex: 0 0 62px;
+  width: 62px;
+  height: 62px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 0;
+  background: #e2e8f0;
+  cursor: pointer;
+  opacity: 0.72;
+  transition:
+    border-color 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.image-preview-thumb:hover,
+.image-preview-thumb:focus-visible,
+.image-preview-thumb.active {
+  border-color: var(--primary);
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.image-preview-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-preview-prompt {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+:root[data-theme='dark'] .image-preview-stage {
+  border-color: rgba(148, 163, 184, 0.14);
+  background:
+    linear-gradient(45deg, rgba(148, 163, 184, 0.08) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(148, 163, 184, 0.08) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, 0.08) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, 0.08) 75%), #020617;
+  background-position:
+    0 0,
+    0 12px,
+    12px -12px,
+    -12px 0;
+  background-size: 24px 24px;
+}
+
+:root[data-theme='dark'] .image-preview-prompt {
+  color: #94a3b8;
+}
+
+:root[data-theme='dark'] .image-preview-model {
+  color: #bfdbfe;
+  border-color: rgba(96, 165, 250, 0.24);
+  background: rgba(37, 99, 235, 0.18);
+}
+
+:root[data-theme='dark'] .image-preview-actions {
+  border-top-color: rgba(51, 65, 85, 0.86);
+}
+
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-reuse {
+  color: #93c5fd;
+  border-color: rgba(96, 165, 250, 0.24);
+  background: rgba(37, 99, 235, 0.18);
+}
+
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-copy,
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-download,
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-compare,
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-delete {
+  color: var(--text);
+  border-color: var(--line);
+  background: var(--surface);
+}
+
+:root[data-theme='dark'] .image-preview-actions .image-preview-action-compare.active {
+  color: #93c5fd;
+  border-color: rgba(96, 165, 250, 0.28);
+  background: rgba(37, 99, 235, 0.2);
+}
+
+:root[data-theme='dark'] .image-preview-thumb {
+  background: #0f172a;
+}

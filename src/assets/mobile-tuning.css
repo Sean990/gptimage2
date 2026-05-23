@@ -521,99 +521,6 @@ button,
   }
 
   .generate-page .mode-tabs button {
-    min-height: 52px;
-    padding: 10px 12px;
-    line-height: 1.25;
-  }
-
-  /* 工具栏：单列网格 + 块 H 的紧凑 13px 字号 */
-  .generate-page .tool-toolbar {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    margin-top: 12px;
-  }
-
-  .generate-page .tool-toolbar-row,
-  .generate-page .tool-toolbar-row-primary,
-  .generate-page .tool-toolbar-row-secondary {
-    display: grid;
-    grid-template-columns: 1fr;
-    width: 100%;
-    max-width: 520px;
-    gap: 8px;
-  }
-
-  .generate-page .tool-toolbar-row-primary {
-    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.42fr);
-  }
-
-  .generate-page .tool-toolbar-row-secondary {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-  }
-
-  .generate-page .tool-toolbar .btn,
-  .generate-page .tool-toolbar .toolbar-credit,
-  .generate-page .tool-toolbar .hero-utility-button,
-  .generate-page .tool-toolbar .hero-gallery-button {
-    width: 100%;
-    min-height: 42px;
-    padding: 9px 12px;
-    border-radius: 13px;
-    font-size: 13px;
-    line-height: 1.2;
-    white-space: normal;
-    text-wrap: balance;
-  }
-
-  .generate-page .tool-toolbar .hero-utility-button {
-    justify-content: center;
-  }
-
-  .generate-page .tool-toolbar .hero-utility-button:first-child span {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 1;
-  }
-
-  .generate-page .tool-toolbar .hero-gallery-button {
-    min-width: 0;
-    background: linear-gradient(135deg, var(--primary) 0%, #0ea5e9 58%, #14b8a6 100%);
-  }
-
-  .generate-page .tool-toolbar .hero-gallery-button > span:first-of-type {
-    white-space: nowrap;
-  }
-
-  .generate-page .tool-toolbar-row-secondary > .toolbar-credit {
-    justify-content: flex-start;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .generate-page .tool-toolbar .hero-login-button,
-  .generate-page .tool-toolbar .hero-recharge-button,
-  .generate-page .tool-toolbar .hero-save-button {
-    width: auto;
-    min-width: 96px;
-    white-space: nowrap;
-  }
-
-  .hero-credit-group {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 8px;
-    width: 100%;
-    padding: 6px;
-    border-radius: 16px;
-  }
-
-  .hero-credit-group .toolbar-credit,
-  .hero-credit-group .hero-recharge-button {
     width: 100%;
     min-width: 0;
     justify-content: center;
@@ -634,58 +541,6 @@ button,
 
   .reference-grid,
   .mask-grid {
-    gap: 8px;
-  }
-
-  /* Generate hero 文案 */
-  .generate-page .generate-hero {
-    margin-bottom: 18px;
-    padding: 4px 0 8px;
-  }
-
-  .generate-page .generate-hero-copy {
-    gap: 0;
-  }
-
-  .generate-page .generate-hero-copy h1 {
-    font-size: clamp(30px, 8vw, 42px);
-    line-height: 1.1;
-  }
-
-  .generate-page .generate-hero-copy p {
-    display: -webkit-box;
-    max-width: 34rem;
-    margin-top: 8px;
-    overflow: hidden;
-    color: var(--muted);
-    font-size: 14px;
-    line-height: 1.48;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    text-wrap: pretty;
-  }
-
-  .hero-copy,
-  .generate-hero-copy {
-    text-align: left;
-    justify-items: start;
-  }
-
-  .hero-copy h1,
-  .generate-hero-copy h1,
-  .section-title h1,
-  .section-title h2 {
-    text-wrap: balance;
-  }
-
-  .hero-copy h1,
-  .generate-hero-copy h1 {
-    letter-spacing: 0;
-  }
-
-  .hero-copy p,
-  .generate-hero-copy p,
-  .section-title p {
     max-width: 100%;
     font-size: 16px;
     line-height: 1.65;
@@ -869,102 +724,6 @@ button,
   }
 
   .mobile-back-to-top.is-elevated {
-    bottom: calc(20px + var(--safe-bottom));
-  }
-
-  /* Hero 区滚动压缩：向下滚动超过 80px 后，标题 / 描述 / 工具栏收缩 */
-  .generate-page .generate-hero {
-    transition:
-      margin-bottom 240ms var(--ease-standard),
-      padding 240ms var(--ease-standard);
-  }
-
-  .generate-page .generate-hero.is-compact {
-    margin-bottom: 8px;
-    padding: 0;
-  }
-
-  .generate-page .generate-hero-copy h1 {
-    transition:
-      font-size 240ms var(--ease-standard),
-      margin 240ms var(--ease-standard);
-  }
-
-  .generate-page .generate-hero.is-compact .generate-hero-copy h1 {
-    font-size: clamp(24px, 6.5vw, 32px);
-    margin-bottom: 0;
-  }
-
-  .generate-page .generate-hero-copy p {
-    transition:
-      max-height 240ms var(--ease-standard),
-      margin 240ms var(--ease-standard),
-      opacity 240ms var(--ease-standard);
-    max-height: 200px;
-    overflow: hidden;
-  }
-
-  .generate-page .generate-hero.is-compact .generate-hero-copy p {
-    max-height: 0;
-    margin-top: 0;
-    opacity: 0;
-  }
-
-  .generate-page .tool-toolbar {
-    transition:
-      gap 240ms var(--ease-standard),
-      margin 240ms var(--ease-standard);
-  }
-
-  .generate-page .generate-hero.is-compact .tool-toolbar {
-    gap: 6px;
-    margin-top: 6px;
-  }
-
-  .generate-page .tool-toolbar-row {
-    transition: gap 240ms var(--ease-standard);
-  }
-
-  .generate-page .generate-hero.is-compact .tool-toolbar-row {
-    gap: 6px;
-  }
-
-  .generate-page .tool-toolbar .btn,
-  .generate-page .tool-toolbar .toolbar-credit {
-    transition:
-      min-height 240ms var(--ease-standard),
-      padding 240ms var(--ease-standard),
-      font-size 240ms var(--ease-standard);
-  }
-
-  .generate-page .generate-hero.is-compact .tool-toolbar .btn,
-  .generate-page .generate-hero.is-compact .tool-toolbar .toolbar-credit {
-    min-height: 36px;
-    padding: 6px 10px;
-    font-size: 13px;
-  }
-
-  .generate-page .tool-toolbar .btn svg,
-  .generate-page .tool-toolbar .toolbar-credit svg {
-    transition:
-      width 240ms var(--ease-standard),
-      height 240ms var(--ease-standard);
-  }
-
-  .generate-page .generate-hero.is-compact .tool-toolbar .btn svg,
-  .generate-page .generate-hero.is-compact .tool-toolbar .toolbar-credit svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  .generate-page .batch-hero-badge {
-    transition:
-      padding 240ms var(--ease-standard),
-      font-size 240ms var(--ease-standard),
-      margin 240ms var(--ease-standard);
-  }
-
-  .generate-page .generate-hero.is-compact .batch-hero-badge {
     padding: 4px 10px;
     font-size: 12px;
     margin-bottom: 4px;
@@ -1272,18 +1031,6 @@ button,
   }
 
   .hero-copy h1 {
-    font-size: clamp(31px, 9.2vw, 38px);
-    line-height: 1.14;
-  }
-
-  .generate-hero-copy h1 {
-    font-size: clamp(30px, 8.8vw, 38px);
-    line-height: 1.16;
-  }
-
-  .hero-copy p,
-  .generate-hero-copy p,
-  .section-title p {
     font-size: 15px;
     line-height: 1.62;
   }
@@ -1308,28 +1055,11 @@ button,
   }
 
   .region-notice-card p {
-    font-size: 13.5px;
-  }
-
-  /* 积分组：从强制 2 列改为可换行的 flex，避免短语挤成两行 */
-  .hero-credit-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .hero-credit-group .toolbar-credit,
-  .hero-credit-group .hero-recharge-button {
     flex: 1 1 140px;
   }
 
   /* Generate 面板更紧凑 */
   .generate-page .section-tight {
-    padding-top: 22px;
-    padding-bottom: calc(118px + var(--safe-bottom));
-  }
-
-  .generate-page .generate-hero {
     margin-bottom: 14px;
   }
 
@@ -1343,43 +1073,10 @@ button,
   }
 
   .generate-page .mode-tabs button {
-    min-height: 48px;
-  }
-
-  /* 工具栏：合并成 1 列，避免换行错位 */
-  .generate-page .tool-toolbar-row-primary {
-    grid-template-columns: minmax(0, 1fr) minmax(102px, 0.4fr);
-  }
-
-  .generate-page .tool-toolbar .btn,
-  .generate-page .tool-toolbar .toolbar-credit {
-    min-height: 40px;
-    padding: 8px 10px;
-  }
-
-  .generate-page .tool-toolbar-row-secondary {
-    grid-template-columns: minmax(0, 1fr) minmax(104px, 0.4fr);
-  }
-
-  .generate-page .tool-toolbar-row-secondary > .toolbar-credit {
-    min-height: 32px;
-    padding-block: 6px;
-    font-size: 12px;
-  }
-
-  .generate-page .tool-toolbar .hero-login-button,
-  .generate-page .tool-toolbar .hero-recharge-button,
-  .generate-page .tool-toolbar .hero-save-button {
     width: 100%;
   }
 
   .settings-section-head span {
-    white-space: normal;
-  }
-
-  .batch-count-card small,
-  .toolbar-credit,
-  .generate-page .tool-toolbar .btn {
     white-space: normal;
   }
 
@@ -1403,29 +1100,27 @@ button,
   }
 
   .gallery-card {
-    display: grid;
-    grid-template-columns: 120px minmax(0, 1fr);
+    display: block;
   }
 
   .gallery-cover {
     aspect-ratio: 1 / 1;
-    border-radius: 13px 0 0 13px;
+    border-radius: 13px 13px 0 0;
   }
 
   .gallery-cover img {
-    border-radius: 13px 0 0 13px;
+    border-radius: 13px 13px 0 0;
   }
 
   .gallery-card-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    display: grid;
     gap: 6px;
     padding: 10px 12px;
   }
 
   .gallery-card-body p {
     min-height: 0;
+    overflow-wrap: anywhere;
     -webkit-line-clamp: 2;
   }
 
@@ -1472,15 +1167,6 @@ button,
    ================================================================ */
 @media (max-width: 360px) {
   .generate-page .field textarea {
-    min-height: 124px;
-  }
-
-  .hero-copy h1,
-  .generate-hero-copy h1,
-  .section-title h1,
-  .section-title h2,
-  .btn,
-  .toolbar-credit {
     overflow-wrap: anywhere;
   }
 

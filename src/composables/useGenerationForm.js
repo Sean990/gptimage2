@@ -1,6 +1,11 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { resolveOutputSize } from './useGenerationPayload'
 import * as constants from './generationConstants'
+
+function normalizeRoutePrompt(value) {
+  if (Array.isArray(value)) return value[0] || ''
+  return value || ''
+}
 
 export function useGenerationForm({ route }) {
   const mode = ref('generate')
@@ -14,8 +19,17 @@ export function useGenerationForm({ route }) {
   const moderation = ref('auto')
   const outputCompression = ref(0)
   const advancedOpen = ref(true)
-  const prompt = ref(Array.isArray(route.query.prompt) ? route.query.prompt[0] || '' : route.query.prompt || '')
+  const prompt = ref(normalizeRoutePrompt(route.query.prompt))
   const selectMenuOpen = ref('')
+
+  watch(
+    () => route.query.prompt,
+    (nextPrompt) => {
+      if (!Object.prototype.hasOwnProperty.call(route.query, 'prompt')) return
+      const normalizedPrompt = normalizeRoutePrompt(nextPrompt)
+      if (normalizedPrompt !== prompt.value) prompt.value = normalizedPrompt
+    },
+  )
 
   const batchCountOptions = [
     { label: '2 张图片', value: 2 },

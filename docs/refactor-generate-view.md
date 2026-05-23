@@ -1,145 +1,105 @@
-# GenerateView 完整重构规划
+# GenerateView 工作台重构说明
 
-> 目标：把 `/generate` 从"长表单 + 横向工具卡"重构成 **PC 端三栏 Studio + 移动端 App 式外壳** 两套布局，提升信息密度、缩短"配置 → 看到结果"的视觉路径。
+本文档记录当前 `/generate` 工作台的真实实现状态，作为后续维护和上线验收依据。
 
-## 1. 现状问题
+## 当前目标
 
-| 维度 | 现状 | 痛点 |
-| --- | --- | --- |
-| 工具切换 | `GenerateToolboxNav` 横排五张大卡 | 桌面端吃 ~150px 垂直空间，每次切换"撞一下页面" |
-| 主体布局 | `generator-layout` / `image-processing-layout` 两套并存的 2 列 grid | 工具切换时 grid 列宽抖动；列宽差异（0.88/1.12 vs 0.9/1.1）无意义 |
-| 输出区 | 桌面 sticky、移动随表单滚动 | 移动端用户被迫先滚穿表单才能看到结果，"App 感"缺失 |
-| 操作入口 | `mobile-generate-dock` 已是底部条雏形，但工具配置仍在主流上方 | 移动端形态卡在"网页 + 浮条"之间，没真正变成 App |
-| 跨页面跳转 | `FloatingGallery` 通过 `imgsgen:use-gallery-record` 事件唤醒 GenerateView | 路径正确，重构需保留 |
+生成工作台已经从单页长表单升级为桌面 Studio + 移动工作台双形态：
 
-## 2. 设计目标
+- 桌面端：左侧工具 rail，中间参数区，右侧结果工作台。
+- 移动端：顶部工作台信息、横向工具切换、参数面板、结果区和底部悬浮提交栏。
+- 结果区常驻：切换高清放大、自由扩图、智能抠图、一键消除时，不清空当前结果。
+- 结果续作：可从生成结果直接带入后续工具，保留当前结果上下文。
 
-1. **PC（≥1280px）**：参考 Midjourney / Ideogram / Krea 的 Studio 形态 —— 左 rail（工具切换）+ 中工作台（配置）+ 右画布（输出，sticky）。
-2. **平板（820–1279px）**：保留两栏，rail 折叠为顶部 segmented tabs（替换现有大卡）。
-3. **移动（<820px）**：App 式外壳 —— 顶部画布常驻、底部 BottomTabBar 切工具、点"配置/参考图/历史"弹 BottomSheet、生成 CTA 锁底部。
-4. **数据流**：`useGenerationTask` composable 不动，仅对 UI 容器解耦；`activeTool` 提升为视图状态由 GenerateView 管。
+## 核心结构
 
-## 3. 总体方案
+### 页面容器
 
-### 3.1 PC 三栏 Studio
+- `src/views/GenerateView.vue`
+  - 持有 `activeTool`。
+  - 根据 `matchMedia('(max-width: 820px)')` 分流桌面端和移动端。
+  - 在离开 AI 生图工作台时保存草稿，回到 AI 生图时恢复草稿。
+  - 通过 `useOutputAsTool` 将当前结果交给图片处理工具。
 
+### 桌面端
+
+- `GenerateSideRail.vue`：桌面工具切换入口。
+- `GenerateToolboxNav.vue`：保留为非桌面窄布局的顶部工具入口。
+- `GenerateToolPanel.vue`：AI 生图参数区。
+- `DedicatedImageTools.vue`：高清放大、自由扩图、智能抠图、一键消除。
+- `GenerateOutputGrid.vue`：结果区、最近任务、精看、总览、局部改图、智能分层。
+
+### 移动端
+
+- `GenerateMobileShell.vue`：移动端外壳。
+- `GenerateToolPanel.vue` 和 `DedicatedImageTools.vue` 在移动端复用同一套参数能力。
+- `GenerateOutputGrid.vue` 通过 `compact` 模式压缩操作区，并提供紧凑续作菜单。
+- 底部提交操作由 `FloatingActionBar.vue` 承载。
+
+当前移动端不再使用旧的 `BottomSheet.vue`、`BottomTabBar.vue`、`PromptSummaryCard.vue` 方案。
+
+## 结果区能力
+
+`GenerateOutputGrid.vue` 负责生成结果的主要交互：
+
+- 单图结果展示和下载。
+- 批量结果总览。
+- 批量结果精看和缩略图切换。
+- 图片预览弹窗。
+- 原图对比。
+- 局部改图选区。
+- 智能分层、图层下载、失败图层重试。
+- 最近任务预览、复用、下载、复制提示词和重试。
+- 结果续作到高清放大、自由扩图、智能抠图、一键消除。
+
+## 数据流
+
+- `useGenerationTask()` 是生成工作台的业务编排入口。
+- `useGenerationForm()` 维护参数状态。
+- `useGenerationPayload()` 统一生成请求 payload。
+- `useGenerationPolling()` 负责任务轮询和图库同步。
+- `useGallery()` 与 `useGalleryActions()` 负责本地图库、云端图库和记录复用。
+- `useImagePreview()` 负责预览弹窗状态、索引切换和当前图片元信息。
+
+关键不变量：
+
+- 工具切换不清空结果。
+- 从结果续作时必须保留源图，并把工具模式写入 `sourceToolHandoffKey`。
+- 图库复用必须恢复 prompt、模式、参考图、蒙版和输出配置。
+- 批量精看状态在误触工具切换后仍保留当前选中结果。
+
+## 已清理的旧实现
+
+以下旧组件和组合函数已经删除，源码和测试中不应再引用：
+
+- `src/components/generate/BottomSheet.vue`
+- `src/components/generate/BottomTabBar.vue`
+- `src/components/generate/OutputEditPopover.vue`
+- `src/components/generate/OutputImageItem.vue`
+- `src/components/generate/OutputLayerPanel.vue`
+- `src/components/generate/PromptSummaryCard.vue`
+- `src/composables/useOutputActions.js`
+- `src/composables/useOutputPerformance.js`
+
+## 验收证据
+
+当前上线验收以自动化测试和浏览器 QA 双重验证：
+
+- `pnpm test:e2e`
+  - 覆盖生成页布局、移动端、图库、预览弹窗、失败重试、部分失败重试、结果续作和无障碍。
+- `pnpm check`
+  - 覆盖 lint、格式、单测、生产构建和 bundle 门禁。
+- 浏览器人工 QA
+  - 桌面端 `/generate` 无横向溢出，参数区和结果区稳定。
+  - 移动端 AI 生图和图片处理工具无横向溢出，底部悬浮操作栏在视口内。
+
+## 维护建议
+
+- 新增功能优先接入 `useGenerationTask()` 暴露的既有状态和动作，不单独复制生成请求逻辑。
+- 新增结果操作应优先落在 `OutputActionBar.vue` 或 `GenerateOutputGrid.vue` 的现有续作体系里。
+- 新增移动端交互必须同时跑 `e2e/generate-layout.spec.js` 和 `e2e/generation-loading.spec.js`。
+- 删除或移动组件后，需要同步运行遗留引用搜索：
+
+```powershell
+rg -n "BottomSheet|BottomTabBar|OutputImageItem|useOutputActions|useOutputPerformance|/api/image/generate" src tests e2e docs
 ```
-┌─────┬───────────────────────────┬───────────────────────────┐
-│     │                           │                           │
-│ S   │   GenerateToolPanel       │   GenerateOutputGrid      │
-│ I   │   / DedicatedImageTools   │   (sticky, top: 88px)     │
-│ D   │                           │                           │
-│ E   │   - Prompt                │   - 画布                  │
-│     │   - Settings              │   - Recent strip          │
-│ R   │   - Reference             │                           │
-│ A   │   - Advanced              │                           │
-│ I   │                           │                           │
-│ L   │   ── Floating CTA bar ──  │                           │
-└─────┴───────────────────────────┴───────────────────────────┘
-  72px         minmax(440px, 1fr)        minmax(480px, 1.05fr)
-```
-
-- **SideRail**：64–72px 窄列，仅图标 + tooltip + 文字 caption；sticky 跟随滚动。
-- **中列**：现有 `GenerateToolPanel` / `DedicatedImageTools`（v-if 切换，但不影响右侧）。
-- **右列**：`GenerateOutputGrid` 不变，sticky `top: 88px` 已有。
-
-### 3.2 移动端 App 式
-
-```
-┌─────────────────────────────┐
-│    顶部画布（OutputGrid）    │  ← 常驻，骨架屏 / 占位 / 结果
-│      45–55dvh，可下滑        │
-├─────────────────────────────┤
-│                             │
-│   prompt 摘要 + 快捷操作     │  ← collapsed 卡片，点开 → 全屏 sheet
-│                             │
-├─────────────────────────────┤
-│  [ 创作 ] [生图] [✨ 生成 ]  │  ← BottomTabBar，中间 CTA 凸起
-│  [ 工具 ] [图库] [ 我的 ]    │
-└─────────────────────────────┘
-```
-
-- **顶部画布**：`OutputGrid` 提到滚动容器顶部，固定 `position: sticky; top: 0`，未生成时显示空态 + Hero 引导。
-- **配置区**：默认折叠为一张"Prompt 卡片"展示当前提示词、模式、张数；点卡片或底栏「创作」按钮，弹起 `BottomSheet` 全屏覆盖配置面板（带顶部抓手 / 关闭手势）。
-- **底部 Tab**：5 项 —— 创作（默认）/ 工具（高清/扩图/抠图/消除）/ 生成（CTA，凸起）/ 图库 / 我的；中间 CTA 直接调 `task.generate()`，无需先开 sheet。
-- **保留**：`FloatingGallery`、`Toast`、`ImagePreviewModal`，`mobile-generate-dock` 删除。
-
-## 4. 模块拆分
-
-### 4.1 新增组件
-
-| 组件 | 路径 | 职责 |
-| --- | --- | --- |
-| `GenerateSideRail.vue` | `src/components/generate/GenerateSideRail.vue` | PC ≥1280px 显示，竖向工具列表，复用现有 5 项 |
-| `GenerateMobileShell.vue` | `src/components/generate/GenerateMobileShell.vue` | 移动端外壳，组合 OutputGrid + Sheet + TabBar |
-| `BottomSheet.vue` | `src/components/generate/BottomSheet.vue` | 通用底部抽屉（带抓手、遮罩、ESC、滑动关闭） |
-| `BottomTabBar.vue` | `src/components/generate/BottomTabBar.vue` | 5 项 tab + 中间凸起 CTA |
-| `PromptSummaryCard.vue` | `src/components/generate/PromptSummaryCard.vue` | 移动端折叠卡，显示当前 prompt / 设置摘要 |
-
-### 4.2 改动组件
-
-| 组件 | 改动 |
-| --- | --- |
-| `GenerateView.vue` | 容器分流：用 `useMediaQuery` 判 `pc` / `tablet` / `mobile`，渲染对应外壳；保留 `activeTool` 状态与事件监听 |
-| `GenerateToolboxNav.vue` | 仅平板用（顶部 segmented），桌面被 SideRail 替代；移动端被 BottomTabBar 替代 |
-| `GenerateToolPanel.vue` / `DedicatedImageTools.vue` | 内容不动，外层去掉自带边框（由容器统一加 panel 样式） |
-| `GenerateOutputGrid.vue` | 移动端模式下：禁用底部 recent strip 的横滚（移到 sheet 内）；新增 `compact` prop 控制内边距 |
-
-### 4.3 删除
-
-- `mobile-generate-dock` 全套样式（`generate.css` 4 处 + `mobile-tuning.css` 多处）
-- `generator-layout` / `image-processing-layout` 的 grid 列定义（被新容器接管），保留响应式回退
-
-## 5. 数据流
-
-- `useGenerationTask()` 返回值不变；
-- `activeTool` 仍由 `GenerateView` 持有，通过 props 同时下发到 SideRail / TabBar / ToolboxNav；
-- `BottomSheet` 开关由 GenerateView 的 `sheetOpen` 控制，避开污染 composable；
-- `imgsgen:use-gallery-record` 事件链路保留（FloatingGallery → useGenerationTask + GenerateView），无需迁移到 store。
-
-## 6. 阶段拆分
-
-| 阶段 | 范围 | 可独立合入 |
-| --- | --- | --- |
-| **阶段 0** | 已完成：将 `GenerateOutputGrid` 提到 v-if 外避免销毁 | ✅ 已合 |
-| **阶段 1** | PC 三栏：新增 `GenerateSideRail`，GenerateView 改三栏 grid，桌面隐藏 ToolboxNav | 是 |
-| **阶段 2** | 移动 App 式：新增 `BottomSheet` / `BottomTabBar` / `PromptSummaryCard` / `GenerateMobileShell`，GenerateView 接入媒体分流 | 是 |
-| **阶段 3** | CSS 清理 + 回归：删除 `mobile-generate-dock` 等死样式，统一断点，跑一轮三档屏幕 + 暗色主题验证 | 是 |
-
-## 7. 文件改动清单（预估）
-
-```
-新增
-  src/components/generate/GenerateSideRail.vue
-  src/components/generate/GenerateMobileShell.vue
-  src/components/generate/BottomSheet.vue
-  src/components/generate/BottomTabBar.vue
-  src/components/generate/PromptSummaryCard.vue
-  src/composables/useMediaQuery.js          (若现仓库无)
-
-改动
-  src/views/GenerateView.vue                 (容器分流)
-  src/components/generate/GenerateToolboxNav.vue   (仅 tablet)
-  src/components/generate/GenerateOutputGrid.vue   (compact prop)
-  src/assets/generate.css                    (新增三栏 / 移动 shell 样式，删 dock)
-  src/assets/mobile-tuning.css               (删 dock 相关条目)
-```
-
-## 8. 风险与回滚
-
-| 风险 | 缓解 |
-| --- | --- |
-| BottomSheet 滑动关闭与表单 `textarea` 滚动冲突 | sheet 内部用 `overscroll-behavior: contain`，抓手区域单独绑 touchmove |
-| sticky 输出区在 iOS Safari `position: sticky` 嵌套异常 | 移动端不用 sticky，直接 `position: fixed` + 顶部 padding |
-| `useGenerationTask` 监听的 window 事件在移动端 sheet 内是否正常 | 事件挂在 window，与 DOM 树位置无关，无影响 |
-| 暗色主题样式漂移 | 阶段 3 跑一遍 dark + 三档屏幕断点 |
-| FloatingGallery 浮窗与 BottomTabBar 在移动端遮挡 | TabBar 高度固定，FloatingGallery `bottom` 改为 `calc(72px + safe-bottom)` |
-
-## 9. 验收
-
-- 桌面 ≥1280px：三栏可见，rail sticky，输出区滚动不跳；切换工具时输出区不重挂载。
-- 平板 820–1279px：顶部 segmented tabs，输出区在工具配置下方。
-- 移动 <820px：输出区 sticky 顶部 / 配置在 sheet / TabBar 锁底；键盘弹起时 TabBar 隐藏。
-- 暗色：三档断点视觉一致。
-- `imgsgen:use-gallery-record` 流程保留：`FloatingGallery` 跨页跳转 + `GalleryDrawer` 内部回填均生效。
-- `mobile-generate-dock` 选择器在三个 CSS 文件中 0 命中。

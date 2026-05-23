@@ -44,9 +44,9 @@ function createTask(overrides = {}) {
   }
 }
 
-function mountGrid(task) {
+function mountGrid(task, props = {}) {
   return mount(GenerateOutputGrid, {
-    props: { task },
+    props: { task, ...props },
     global: {
       stubs: {
         Teleport: true,
@@ -103,5 +103,143 @@ describe('GenerateOutputGrid', () => {
     expect(task.submitOutputLayerSplit).toHaveBeenCalledWith(expect.objectContaining({ id: 'output-1' }), 0, {
       layerType: 'text',
     })
+  })
+
+  it('点击结果续作按钮时会带出当前结果图和目标工具', async () => {
+    const task = createTask({
+      output: ref([
+        {
+          id: 'output-continue-1',
+          src: '/uploads/result.png',
+          title: '生成结果',
+          ratio: '1:1',
+        },
+      ]),
+    })
+    const wrapper = mountGrid(task, { compact: true })
+
+    await wrapper.get('.output-continuation-trigger').trigger('click')
+    await wrapper.findAll('.output-continuation-popover button').at(0).trigger('click')
+
+    expect(wrapper.emitted('use-as-tool')).toEqual([
+      [
+        {
+          toolKey: 'upscale',
+          image: expect.objectContaining({
+            id: 'output-continue-1',
+            src: '/uploads/result.png',
+            title: '生成结果',
+          }),
+          index: 0,
+        },
+      ],
+    ])
+  })
+
+  it('紧凑模式下使用续作菜单避免操作按钮拥挤', async () => {
+    const task = createTask({
+      output: ref([
+        {
+          id: 'output-compact-menu',
+          src: '/uploads/compact.png',
+          title: '生成结果',
+          ratio: '1:1',
+        },
+      ]),
+    })
+    const wrapper = mountGrid(task, { compact: true })
+
+    expect(wrapper.find('.output-continuation-tools').exists()).toBe(false)
+    await wrapper.get('.output-continuation-trigger').trigger('click')
+    await wrapper.findAll('.output-continuation-popover button').at(1).trigger('click')
+
+    expect(wrapper.emitted('use-as-tool')).toEqual([
+      [
+        {
+          toolKey: 'outpaint',
+          image: expect.objectContaining({
+            id: 'output-compact-menu',
+            src: '/uploads/compact.png',
+          }),
+          index: 0,
+        },
+      ],
+    ])
+    expect(wrapper.find('.output-continuation-popover').exists()).toBe(false)
+  })
+
+  it('多图总览中会把局部改图状态绑定到被点击的结果图', async () => {
+    const task = createTask({
+      output: ref([
+        { id: 'output-a', src: '/uploads/a.png', title: '结果 A', ratio: '1:1' },
+        { id: 'output-b', src: '/uploads/b.png', title: '结果 B', ratio: '1:1' },
+        { id: 'output-c', src: '/uploads/c.png', title: '结果 C', ratio: '1:1' },
+      ]),
+    })
+    const wrapper = mountGrid(task)
+
+    await wrapper.findAll('.output-view-toggle button').at(0).trigger('click')
+    await wrapper.vm.$nextTick()
+
+    await wrapper.findAll('.output-actions .icon-button').at(8).trigger('click')
+
+    const outputItems = wrapper.findAll('.output-item')
+    expect(outputItems).toHaveLength(3)
+    expect(outputItems[0].classes()).not.toContain('output-item--editing')
+    expect(outputItems[1].classes()).not.toContain('output-item--editing')
+    expect(outputItems[2].classes()).toContain('output-item--editing')
+    expect(outputItems[2].attributes('data-output-key')).toBe('output-c')
+  })
+
+  it('多图总览点击图片后进入精看并显示缩略图导航', async () => {
+    const task = createTask({
+      output: ref([
+        { id: 'overview-a', src: '/uploads/a.png', title: '结果 A', ratio: '1:1' },
+        { id: 'overview-b', src: '/uploads/b.png', title: '结果 B', ratio: '1:1' },
+        { id: 'overview-c', src: '/uploads/c.png', title: '结果 C', ratio: '1:1' },
+        { id: 'overview-d', src: '/uploads/d.png', title: '结果 D', ratio: '1:1' },
+      ]),
+    })
+    const wrapper = mountGrid(task)
+
+    await wrapper.findAll('.output-view-toggle button').at(0).trigger('click')
+    await wrapper.findAll('.output-image-stage').at(2).trigger('click')
+
+    const outputItems = wrapper.findAll('.output-item')
+    expect(outputItems).toHaveLength(1)
+    expect(outputItems[0].attributes('data-output-key')).toBe('overview-c')
+    expect(wrapper.find('.output-grid--overview').exists()).toBe(false)
+    expect(wrapper.findAll('.output-thumbnail-button')).toHaveLength(4)
+    expect(wrapper.findAll('.output-thumbnail-button').at(2).classes()).toContain('active')
+  })
+
+  it('分层浮层支持通过 Escape 关闭', async () => {
+    const task = createTask({
+      output: ref([{ id: 'output-layer-close', src: '/uploads/layer.png', title: '结果图', ratio: '1:1' }]),
+    })
+    const wrapper = mountGrid(task)
+
+    await wrapper.findAll('.output-actions .icon-button').at(1).trigger('click')
+    expect(wrapper.find('.output-layer-panel').exists()).toBe(true)
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('.output-layer-panel').exists()).toBe(false)
+  })
+
+  it('局部改图浮层提供显式关闭按钮', async () => {
+    const task = createTask({
+      output: ref([{ id: 'output-edit-close', src: '/uploads/edit.png', title: '结果图', ratio: '1:1' }]),
+    })
+    const wrapper = mountGrid(task)
+
+    await wrapper.findAll('.output-actions .icon-button').at(2).trigger('click')
+    expect(wrapper.find('.output-edit-popover').exists()).toBe(true)
+
+    await wrapper.get('.output-edit-popover .output-floating-close').trigger('click')
+
+    expect(wrapper.find('.output-edit-popover').exists()).toBe(false)
+    expect(wrapper.find('.output-item').classes()).not.toContain('output-item--editing')
   })
 })

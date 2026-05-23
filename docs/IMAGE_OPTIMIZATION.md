@@ -1,157 +1,64 @@
-# 图片加载优化方案
+# 图片加载优化说明
 
-## 问题描述
+本文档记录当前项目的图片 URL 优化策略和生成工作台中的使用位置。
 
-线上环境图片加载速度慢，影响用户体验。
+## 优化工具
 
-## 优化方案
+图片 URL 优化集中在：
 
-### 1. 图片URL优化工具 (`src/utils/imageOptimizer.js`)
+- `src/utils/imageOptimizer.js`
 
-创建了统一的图片URL优化工具，支持主流云存储服务的图片处理参数：
+主要能力：
 
-- **阿里云OSS**: `x-oss-process=image/resize,m_lfit,w_800,h_800/quality,q_75/format,webp`
-- **腾讯云COS**: `imageMogr2/thumbnail/800x800/quality/75/format/webp`
-- **七牛云**: `imageView2/2/w/800/h/800/q/75/format/webp`
+- `getThumbnailUrl()`：用于图库、最近任务、缩略图条等小图场景。
+- `getMediumImageUrl()`：用于中等尺寸展示。
+- `getLargeImageUrl()`：用于生成结果和预览等需要更高质量的场景。
+- `getResponsiveImageUrl()`：根据容器宽度选择合适尺寸。
+- `preloadImages()`：批量预加载图片，并支持并发控制。
 
-### 2. 图片尺寸预设
+## 尺寸策略
 
-| 尺寸 | 像素 | 用途 |
-|------|------|------|
-| THUMBNAIL | 200x200 | 缩略图（图库列表、最近任务） |
-| SMALL | 400x400 | 小图 |
-| MEDIUM | 800x800 | 中图（输出结果展示） |
-| LARGE | 1200x1200 | 大图 |
-| ORIGINAL | 原始尺寸 | 下载、预览 |
+| 场景   | 建议尺寸  | 典型位置                   |
+| ------ | --------- | -------------------------- |
+| 缩略图 | 200x200   | 图库、最近任务、结果缩略图 |
+| 中图   | 800x800   | 普通列表或卡片展示         |
+| 大图   | 1200x1200 | 生成结果、图片预览         |
+| 原图   | 原始尺寸  | 下载、保真预览             |
 
-### 3. 图片质量预设
+## 当前使用位置
 
-| 质量 | 值 | 用途 |
-|------|-----|------|
-| LOW | 60 | 缩略图 |
-| MEDIUM | 75 | 常规展示 |
-| HIGH | 85 | 高质量展示 |
-| ORIGINAL | 100 | 原图 |
+- `src/composables/useGallery.js`
+  - `galleryRecordCover()` 提供图库封面。
+- `src/components/FloatingGallery.vue`
+  - 全局图库浮层预览和缩略图。
+- `src/components/generate/GalleryDrawer.vue`
+  - 图库弹窗封面。
+- `src/components/generate/GenerateOutputGrid.vue`
+  - 生成结果展示、最近任务封面、批量结果缩略图。
+- `src/components/generate/ImagePreviewModal.vue`
+  - 图片预览弹窗使用当前预览图源。
 
-### 4. 已优化的组件
+旧的 `OutputImageItem.vue` 已经删除，输出结果展示由 `GenerateOutputGrid.vue` 直接负责。
 
-#### 4.1 图库封面 (`useGallery.js`)
-```javascript
-function galleryRecordCover(record) {
-  const originalUrl = record.images[0]?.url || ''
-  return getThumbnailUrl(originalUrl) // 200x200, 质量60
-}
+## 设计原则
+
+- 展示用图优先使用优化 URL，降低首屏和滚动成本。
+- 下载必须保留原始图片地址，避免损失用户资产质量。
+- 对不支持优化参数的 URL 自动降级为原始 URL。
+- 预览和对比场景优先保证清晰度，其次考虑带宽。
+
+## 验证建议
+
+图片相关改动后建议运行：
+
+```powershell
+pnpm exec vitest run tests/unit/imagePreview.test.js tests/unit/generateOutputGrid.test.js
+pnpm exec playwright test e2e/generation-loading.spec.js
+pnpm check
 ```
 
-#### 4.2 输出结果图片 (`OutputImageItem.vue`)
-```javascript
-const optimizedImageSrc = computed(() => {
-  const originalUrl = props.item.src || props.item.url
-  return getMediumImageUrl(originalUrl) // 800x800, 质量75
-})
-```
+## 后续可优化项
 
-#### 4.3 最近任务缩略图 (`GenerateOutputGrid.vue`)
-```javascript
-:src="getThumbnailUrl(galleryRecordCover(record))"
-```
-
-### 5. 优化效果
-
-假设原图为 2MB (2048x2048)：
-
-| 场景 | 原始大小 | 优化后大小 | 节省 |
-|------|----------|------------|------|
-| 图库缩略图 | 2MB | ~30KB | 98.5% |
-| 输出结果展示 | 2MB | ~150KB | 92.5% |
-| 最近任务列表 | 2MB | ~30KB | 98.5% |
-
-### 6. 响应式图片加载
-
-提供了 `getResponsiveImageUrl()` 函数，根据容器宽度和设备像素比自动选择合适的图片尺寸：
-
-```javascript
-const optimizedUrl = getResponsiveImageUrl(originalUrl, containerWidth)
-```
-
-### 7. 图片预加载
-
-提供了批量预加载功能，支持并发控制和进度回调：
-
-```javascript
-const results = await preloadImages(urls, {
-  concurrency: 3,
-  onProgress: (completed, total) => {
-    console.log(`${completed}/${total}`)
-  }
-})
-```
-
-## 使用方法
-
-### 基础用法
-
-```javascript
-import { getThumbnailUrl, getMediumImageUrl, getLargeImageUrl } from '@/utils/imageOptimizer'
-
-// 缩略图
-const thumbUrl = getThumbnailUrl(originalUrl)
-
-// 中图
-const mediumUrl = getMediumImageUrl(originalUrl)
-
-// 大图
-const largeUrl = getLargeImageUrl(originalUrl)
-```
-
-### 自定义尺寸和质量
-
-```javascript
-import { optimizeImageUrl, ImageSize, ImageQuality } from '@/utils/imageOptimizer'
-
-const customUrl = optimizeImageUrl(
-  originalUrl,
-  ImageSize.SMALL,
-  ImageQuality.HIGH
-)
-```
-
-### 响应式图片
-
-```javascript
-import { getResponsiveImageUrl } from '@/utils/imageOptimizer'
-
-const containerWidth = 600 // 容器宽度
-const optimizedUrl = getResponsiveImageUrl(originalUrl, containerWidth)
-```
-
-## 注意事项
-
-1. **原图保留**: 下载和全屏预览时仍使用原图URL，确保用户能获取完整质量的图片
-2. **自动降级**: 如果URL不是支持的云存储服务，会自动返回原始URL
-3. **WebP格式**: 优化后的图片统一转换为WebP格式，进一步减小文件大小
-4. **浏览器兼容**: 现代浏览器都支持WebP格式，旧浏览器会自动降级到原格式
-
-## 后续优化建议
-
-1. **渐进式加载**: 先加载模糊的小图，再加载清晰的大图
-2. **懒加载**: 使用 Intersection Observer API 实现可视区域外的图片延迟加载（已通过 `loading="lazy"` 实现）
-3. **CDN加速**: 配置CDN缓存策略，提升全球访问速度
-4. **图片预加载**: 在用户可能访问的页面提前加载图片
-5. **Service Worker缓存**: 利用PWA缓存机制，减少重复请求
-
-## 性能监控
-
-建议在生产环境监控以下指标：
-
-- 图片加载时间 (LCP - Largest Contentful Paint)
-- 首屏图片加载完成时间
-- 图片加载失败率
-- 带宽节省比例
-
-## 相关文件
-
-- `src/utils/imageOptimizer.js` - 图片优化工具
-- `src/composables/useGallery.js` - 图库封面优化
-- `src/components/generate/OutputImageItem.vue` - 输出结果图片优化
-- `src/components/generate/GenerateOutputGrid.vue` - 最近任务缩略图优化
+- 对预览弹窗加入更明确的预加载策略，提前加载相邻图片。
+- 对真实 CDN 域名补充更细的参数适配。
+- 接入生产监控后关注 LCP、图片失败率和预览打开耗时。

@@ -17,6 +17,7 @@ import {
 } from 'lucide-vue-next'
 import FloatingActionBar from './FloatingActionBar.vue'
 import OptionPicker from './OptionPicker.vue'
+import '../../assets/generate-tool-panel.css'
 
 const props = defineProps({
   task: {
@@ -112,6 +113,7 @@ const {
 const referenceDragActive = ref(false)
 const maskDragActive = ref(false)
 const countDropdownOpen = ref('')
+const reverseGuideOpen = ref(false)
 
 const imageCountOptions = computed(() => [
   { label: '1 张', value: 1 },
@@ -140,6 +142,10 @@ function toggleCountDropdown(key) {
 
 function closeCountDropdown() {
   countDropdownOpen.value = ''
+}
+
+function getFooterCountDropdownKey(floating) {
+  return floating ? 'footer-floating' : 'footer'
 }
 
 function handleSelectImageCount(count) {
@@ -371,9 +377,10 @@ async function onMaskDrop(event) {
           @change="onFileChange"
         />
       </label>
-      <p v-if="canAddReference" class="compliance-hint">
-        请仅上传本人或已获授权的图片。包含人脸、证件、未成年人、商标、作品或隐私信息的素材，需先确认授权。
-      </p>
+      <details v-if="canAddReference" class="compliance-hint compliance-disclosure">
+        <summary>素材需本人或已获授权</summary>
+        <p>包含人脸、证件、未成年人、商标、作品或隐私信息的素材，需先确认授权。</p>
+      </details>
       <div v-if="referenceCount" class="reference-grid" :class="{ 'reference-grid-edit': mode === 'edit' }">
         <div v-if="imageUrl" class="reference-thumb">
           <button
@@ -446,9 +453,12 @@ async function onMaskDrop(event) {
             </h3>
             <span>把参考图解析成可继续编辑的结构化 Prompt 草稿</span>
           </div>
+          <button class="text-button reverse-guide-toggle" type="button" @click="reverseGuideOpen = !reverseGuideOpen">
+            {{ reverseGuideOpen ? '收起' : '说明' }}
+          </button>
         </div>
-        <div class="reverse-feature-body">
-          <p>上传已授权图片后，系统会整理主体、服装、光线、镜头和氛围描述，并自动写入提示词输入框。</p>
+        <div v-if="reverseGuideOpen || canReverse" class="reverse-feature-body">
+          <p>系统会整理主体、服装、光线、镜头和氛围描述，并自动写入提示词输入框。</p>
           <div class="reverse-feature-tags" aria-label="反推内容范围">
             <span>主体识别</span>
             <span>服装细节</span>
@@ -547,9 +557,10 @@ async function onMaskDrop(event) {
         <span>透明区域会被编辑</span>
         <input name="mask_image" type="file" accept="image/png" hidden @change="onMaskFileChange" />
       </label>
-      <p v-if="canAddMask" class="compliance-hint">
-        请勿通过蒙版编辑未获授权的人脸、身体、证件、隐私区域或可能造成误导的敏感内容。
-      </p>
+      <details v-if="canAddMask" class="compliance-hint compliance-disclosure">
+        <summary>蒙版编辑需确认授权</summary>
+        <p>请勿通过蒙版编辑未获授权的人脸、身体、证件、隐私区域或可能造成误导的敏感内容。</p>
+      </details>
       <div v-if="maskCount" class="reference-grid reference-grid-edit mask-grid">
         <div v-if="maskImageUrl" class="reference-thumb">
           <button
@@ -640,7 +651,7 @@ async function onMaskDrop(event) {
     </details>
 
     <FloatingActionBar aria-label="快捷生成操作" :bar-class="{ 'generation-actions--loading': loading }">
-      <template #default>
+      <template #default="{ floating }">
         <button class="btn btn-primary" type="button" :aria-busy="loading" :disabled="loading" @click="generate">
           <Sparkles v-if="!loading" aria-hidden="true" />
           <Loader2 v-else class="spinner" aria-hidden="true" />
@@ -663,15 +674,23 @@ async function onMaskDrop(event) {
             class="generation-cost-pill count-dropdown-trigger"
             type="button"
             aria-haspopup="listbox"
-            :aria-expanded="isCountDropdownOpen('footer')"
+            :aria-expanded="isCountDropdownOpen(getFooterCountDropdownKey(floating))"
             aria-label="选择生成图片数量"
-            @click="toggleCountDropdown('footer')"
+            @click="toggleCountDropdown(getFooterCountDropdownKey(floating))"
           >
             <Gem aria-hidden="true" />
             消耗 {{ creditCost }} 积分
-            <ChevronDown :class="{ rotate: isCountDropdownOpen('footer') }" aria-hidden="true" />
+            <ChevronDown
+              :class="{ rotate: isCountDropdownOpen(getFooterCountDropdownKey(floating)) }"
+              aria-hidden="true"
+            />
           </button>
-          <ul v-if="isCountDropdownOpen('footer')" class="count-dropdown-menu" role="listbox" aria-label="生成图片数量">
+          <ul
+            v-if="isCountDropdownOpen(getFooterCountDropdownKey(floating))"
+            class="count-dropdown-menu"
+            role="listbox"
+            aria-label="生成图片数量"
+          >
             <li
               v-for="item in imageCountOptions"
               :key="item.value"

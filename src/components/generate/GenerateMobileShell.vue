@@ -1,9 +1,10 @@
 <script setup>
 import { computed } from 'vue'
-import { Eraser, Expand, GalleryHorizontal, ImagePlus, Maximize2, Scissors } from 'lucide-vue-next'
+import { ArrowDownToLine, Eraser, Expand, GalleryHorizontal, ImagePlus, Maximize2, Scissors } from 'lucide-vue-next'
 import GenerateOutputGrid from './GenerateOutputGrid.vue'
 import GenerateToolPanel from './GenerateToolPanel.vue'
 import DedicatedImageTools from './DedicatedImageTools.vue'
+import '../../assets/generate-mobile.css'
 
 const props = defineProps({
   task: {
@@ -16,20 +17,12 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['update:activeTool'])
+const emit = defineEmits(['update:activeTool', 'use-output-as-tool'])
 
 const isGenerateWorkspace = computed(() => props.activeTool === 'generate')
 
-const {
-  activeMode,
-  activeModelLabel,
-  creditCost,
-  gallery,
-  normalizedImageCount,
-  openGallery,
-  output,
-  outputLoading,
-} = props.task
+const { activeMode, activeModelLabel, creditCost, gallery, normalizedImageCount, openGallery, output, outputLoading } =
+  props.task
 
 const toolItems = [
   { key: 'generate', title: 'AI 生图', caption: '提示词创作与参考图生成', icon: ImagePlus },
@@ -40,6 +33,7 @@ const toolItems = [
 ]
 
 const activeToolMeta = computed(() => toolItems.find((item) => item.key === props.activeTool) || toolItems[0])
+const hasOutputActivity = computed(() => outputLoading.value || output.value.length > 0)
 const outputStatusText = computed(() => {
   if (outputLoading.value) return '任务进行中，结果完成后会自动刷新'
   if (output.value.length) return `${output.value.length} 张结果可预览和下载`
@@ -49,10 +43,23 @@ const galleryStatusText = computed(() => {
   if (!gallery.value.length) return '暂无记录'
   return `${gallery.value.length} 组记录`
 })
-const activeModeText = computed(() => (isGenerateWorkspace.value ? activeMode.value.label : activeToolMeta.value.caption))
+const activeModeText = computed(() =>
+  isGenerateWorkspace.value ? activeMode.value.label : activeToolMeta.value.caption,
+)
 
 function updateActiveTool(tool) {
   emit('update:activeTool', tool)
+}
+
+function useOutputAsTool(payload) {
+  emit('use-output-as-tool', payload)
+}
+
+function scrollToOutput() {
+  if (typeof document === 'undefined') return
+  const target = document.querySelector('.mobile-output-section')
+  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  target?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' })
 }
 </script>
 
@@ -91,9 +98,15 @@ function updateActiveTool(tool) {
 
     <section class="mobile-workbench-panel" :aria-label="`${activeToolMeta.title}参数面板`">
       <div class="mobile-panel-head">
-        <div>
-          <span>{{ activeToolMeta.title }}</span>
-          <h2>{{ activeModeText }}</h2>
+        <div class="mobile-panel-title-row">
+          <div>
+            <span>{{ activeToolMeta.title }}</span>
+            <h2>{{ activeModeText }}</h2>
+          </div>
+          <button class="mobile-panel-output-jump" type="button" @click="scrollToOutput">
+            <ArrowDownToLine aria-hidden="true" />
+            <span>{{ hasOutputActivity ? '查看结果' : '结果区' }}</span>
+          </button>
         </div>
         <dl class="mobile-panel-metrics">
           <div>
@@ -126,7 +139,7 @@ function updateActiveTool(tool) {
           图库
         </button>
       </div>
-      <GenerateOutputGrid :task="task" compact />
+      <GenerateOutputGrid :task="task" compact @use-as-tool="useOutputAsTool" />
     </section>
   </div>
 </template>

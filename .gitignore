@@ -8,6 +8,7 @@ dist
 *.log
 .vite-dev.*.log
 nano-banana-loading-check.png
+d_design_body.html
 tmp-*.png
 tmp-mobile-shots/
 playwright-report/

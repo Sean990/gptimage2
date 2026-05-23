@@ -9,14 +9,15 @@ import {
   Layers,
   Layers3,
   Loader2,
-  MousePointerClick,
   RefreshCw,
   ScissorsLineDashed,
   Save,
-  Split,
   WandSparkles,
+  X,
 } from 'lucide-vue-next'
+import OutputActionBar from './OutputActionBar.vue'
 import { getThumbnailUrl, getLargeImageUrl } from '../../utils/imageOptimizer'
+import '../../assets/generate-output.css'
 
 const props = defineProps({
   task: {
@@ -28,6 +29,8 @@ const props = defineProps({
     default: false,
   },
 })
+
+const emit = defineEmits(['use-as-tool'])
 
 const {
   activeMode,
@@ -71,6 +74,7 @@ const prefersLightweightLoading = ref(false)
 const compareItemKey = ref('')
 const layerItemKey = ref('')
 const editingItemKey = ref('')
+const outputViewMode = ref('focus')
 const selectedOutputIndex = ref(0)
 const comparePositions = ref({})
 const editPrompts = ref({})
@@ -98,7 +102,10 @@ const activeOutputIndex = computed(() => {
   return Math.min(maxIndex, Math.max(0, selectedOutputIndex.value))
 })
 const activeOutputEntry = computed(() => outputEntries.value[activeOutputIndex.value] || null)
-const displayedOutputEntries = computed(() => (activeOutputEntry.value ? [activeOutputEntry.value] : []))
+const isOverviewMode = computed(() => hasMultipleOutputs.value && outputViewMode.value === 'overview')
+const displayedOutputEntries = computed(() =>
+  isOverviewMode.value ? outputEntries.value : activeOutputEntry.value ? [activeOutputEntry.value] : [],
+)
 const selectedOutputUsesAutoRatio = computed(() => usesAutoOutputRatio(activeOutputEntry.value?.item))
 const selectedOutputRatio = computed(() => getOutputRatioNumber(activeOutputEntry.value?.item))
 const selectedOutputIsLandscape = computed(() => selectedOutputRatio.value > 1.04)
@@ -112,6 +119,7 @@ const outputRatioClass = computed(() => {
   return 'output-ratio--square'
 })
 const outputPresentationClass = computed(() => {
+  if (isOverviewMode.value) return [outputGridClass.value, 'output-grid--overview', outputRatioClass.value].join(' ')
   if (!hasMultipleOutputs.value) return [outputGridClass.value, outputRatioClass.value].filter(Boolean).join(' ')
   return [
     'output-grid--presentation',
@@ -132,7 +140,6 @@ const floatingPanelStyle = computed(() => ({
 const outputSignature = computed(() => outputEntries.value.map((entry) => entry.key).join('|'))
 const visibleRecentTasks = computed(() => recentTasks.value.slice(0, recentTaskLimit))
 const hasMoreRecentTasks = computed(() => recentTasks.value.length > recentTaskLimit)
-
 function syncLightweightLoadingPreference(event) {
   prefersLightweightLoading.value = Boolean(event.matches)
 }
@@ -261,8 +268,16 @@ function resetOutputInteractionState({ clearSelection = true } = {}) {
   layerItemKey.value = ''
 }
 
+function setOutputViewMode(mode) {
+  const nextMode = mode === 'overview' ? 'overview' : 'focus'
+  if (outputViewMode.value === nextMode) return
+  outputViewMode.value = nextMode
+  resetOutputInteractionState()
+}
+
 function selectOutputEntry(index) {
   if (index === activeOutputIndex.value) return
+  outputViewMode.value = 'focus'
   selectedOutputIndex.value = index
   resetOutputInteractionState()
 }
@@ -359,9 +374,20 @@ function isEditing(item, index) {
   return editingItemKey.value === getOutputKey(item, index)
 }
 
+function getActiveFloatingPanelKey() {
+  return editingItemKey.value || layerItemKey.value
+}
+
+function getFloatingPanelOutputItem() {
+  const activeKey = getActiveFloatingPanelKey()
+  const items = Array.from(document.querySelectorAll('.generated-output .output-item'))
+  if (!activeKey) return items[0] || null
+  return items.find((element) => element.dataset.outputKey === activeKey) || items[0] || null
+}
+
 function updateFloatingPanelPosition() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
-  const itemElement = document.querySelector('.generated-output .output-item')
+  const itemElement = getFloatingPanelOutputItem()
   const stageElement = itemElement?.querySelector('.output-image-stage')
   const actionsElement = itemElement?.querySelector('.output-actions')
   if (!stageElement) return
@@ -370,12 +396,23 @@ function updateFloatingPanelPosition() {
   const actionsRect = actionsElement?.getBoundingClientRect()
   const panelElement = document.querySelector('.output-edit-popover, .output-layer-panel')
   const panelRect = panelElement?.getBoundingClientRect()
+  const floatingActionsRect = Array.from(document.querySelectorAll('.generation-actions-floating'))
+    .map((element) => {
+      const style = window.getComputedStyle(element)
+      const rect = element.getBoundingClientRect()
+      if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0) return null
+      return rect
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.top - b.top)[0]
   const gap = 12
   const margin = 16
   const panelWidth = panelRect?.width || Math.min(250, window.innerWidth - margin * 2)
   const panelHeight = panelRect?.height || 340
+  const bottomReserved = floatingActionsRect ? Math.max(0, window.innerHeight - floatingActionsRect.top + gap) : margin
+  const availableBottom = window.innerHeight - Math.max(margin, bottomReserved)
   const maxLeft = Math.max(margin, window.innerWidth - panelWidth - margin)
-  const maxTop = Math.max(margin, window.innerHeight - panelHeight - margin)
+  const maxTop = Math.max(margin, availableBottom - panelHeight)
   const clampPosition = (value, min, max) => Math.min(Math.max(value, min), Math.max(min, max))
   const alignWithStageTop = () => clampPosition(rect.top, margin, maxTop)
 
@@ -385,7 +422,7 @@ function updateFloatingPanelPosition() {
 
   if (!fitsRight) {
     left = clampPosition(rect.right - panelWidth, margin, maxLeft)
-    top = Math.max(rect.bottom, actionsRect?.bottom || 0) + gap
+    top = clampPosition(Math.max(rect.bottom, actionsRect?.bottom || 0) + gap, margin, maxTop)
   }
 
   floatingPanelPosition.value = { left, top }
@@ -410,9 +447,11 @@ function toggleEdit(item, index) {
     editingItemKey.value = ''
     clearEditSelectionByKey(key)
   } else {
-    updateFloatingPanelPosition()
     editingItemKey.value = key
-    nextTick(scheduleFloatingPanelPosition)
+    nextTick(() => {
+      updateFloatingPanelPosition()
+      scheduleFloatingPanelPosition()
+    })
   }
   compareItemKey.value = ''
   layerItemKey.value = ''
@@ -451,6 +490,13 @@ function clearEditSelectionByKey(key) {
 
 function clearEditSelection(item, index) {
   clearEditSelectionByKey(getOutputKey(item, index))
+}
+
+function closeOutputFloatingPanel() {
+  stopEditSelectionDrag()
+  if (editingItemKey.value) clearEditSelectionByKey(editingItemKey.value)
+  editingItemKey.value = ''
+  layerItemKey.value = ''
 }
 
 function clampUnit(value) {
@@ -558,6 +604,10 @@ function openOutputPreview(index) {
 
 function handleOutputStageClick(event, item, index) {
   if (isEditing(item, index) || event.defaultPrevented) return
+  if (isOverviewMode.value) {
+    selectOutputEntry(index)
+    return
+  }
   openOutputPreview(index)
 }
 
@@ -565,6 +615,10 @@ function handleImageStageKeyboard(event, item, index) {
   if (!isEditing(item, index)) {
     if (event.key !== 'Enter' && event.key !== ' ') return
     event.preventDefault()
+    if (isOverviewMode.value) {
+      selectOutputEntry(index)
+      return
+    }
     openOutputPreview(index)
     return
   }
@@ -586,12 +640,16 @@ function handleImageStageKeyboard(event, item, index) {
 }
 
 function handleEditShortcutKeydown(event) {
-  if (event.key !== 'Escape' || !editingItemKey.value) return
-  if (!editSelections.value[editingItemKey.value] && !editDragState) return
+  if (event.key !== 'Escape') return
+  if (!editingItemKey.value && !layerItemKey.value) return
   event.preventDefault()
   event.stopPropagation()
-  stopEditSelectionDrag()
-  clearEditSelectionByKey(editingItemKey.value)
+  if (editingItemKey.value && (editSelections.value[editingItemKey.value] || editDragState)) {
+    stopEditSelectionDrag()
+    clearEditSelectionByKey(editingItemKey.value)
+    return
+  }
+  closeOutputFloatingPanel()
 }
 
 function createRegionMask(selection) {
@@ -638,9 +696,11 @@ function toggleLayerPanel(item, index) {
   if (layerItemKey.value === key) {
     layerItemKey.value = ''
   } else {
-    updateFloatingPanelPosition()
     layerItemKey.value = key
-    nextTick(scheduleFloatingPanelPosition)
+    nextTick(() => {
+      updateFloatingPanelPosition()
+      scheduleFloatingPanelPosition()
+    })
   }
 }
 
@@ -704,6 +764,11 @@ function downloadAllLayers(item) {
   })
 }
 
+function useOutputAsTool(toolKey, item, index) {
+  resetOutputInteractionState({ clearSelection: false })
+  emit('use-as-tool', { toolKey, image: normalizeOutputPreviewImage(item), index })
+}
+
 function isOutputActionBusy(item, index, type = '') {
   if (!outputActionLoading.value) return false
   if (outputActionTargetId.value !== getOutputKey(item, index)) return false
@@ -721,12 +786,21 @@ function recentTaskTagLabel(record) {
 watch(outputSignature, (nextSignature, previousSignature) => {
   if (!nextSignature) {
     selectedOutputIndex.value = 0
+    outputViewMode.value = 'focus'
     resetOutputInteractionState()
     return
   }
 
   if (selectedOutputIndex.value >= output.value.length) {
     selectedOutputIndex.value = Math.max(0, output.value.length - 1)
+  }
+
+  if (output.value.length > 1 && !previousSignature) {
+    outputViewMode.value = 'overview'
+  }
+
+  if (output.value.length <= 1) {
+    outputViewMode.value = 'focus'
   }
 
   if (!previousSignature || previousSignature === nextSignature) return
@@ -736,6 +810,7 @@ watch(outputSignature, (nextSignature, previousSignature) => {
   const keepsAnyPreviousOutput = previousKeys.some((key) => nextKeys.includes(key))
   if (!keepsAnyPreviousOutput) {
     selectedOutputIndex.value = 0
+    outputViewMode.value = output.value.length > 1 ? 'overview' : 'focus'
     resetOutputInteractionState()
   }
 })
@@ -761,7 +836,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <aside class="card output-panel" :class="{ 'output-panel--compact': compact }">
+  <section class="card output-panel" :class="{ 'output-panel--compact': compact }">
     <div class="output-panel-head">
       <div class="output-title">
         <Layers3 aria-hidden="true" />
@@ -774,6 +849,26 @@ onBeforeUnmount(() => {
         <span>{{ selectedModel.name }}</span>
         <span>{{ activeMode.label }}</span>
         <span>{{ normalizedImageCount }} 张</span>
+        <div v-if="hasMultipleOutputs" class="output-view-toggle" role="group" aria-label="结果视图">
+          <button
+            type="button"
+            :class="{ active: isOverviewMode }"
+            :aria-pressed="isOverviewMode"
+            @click="setOutputViewMode('overview')"
+          >
+            <Layers aria-hidden="true" />
+            总览
+          </button>
+          <button
+            type="button"
+            :class="{ active: !isOverviewMode }"
+            :aria-pressed="!isOverviewMode"
+            @click="setOutputViewMode('focus')"
+          >
+            <Eye aria-hidden="true" />
+            精看
+          </button>
+        </div>
       </div>
     </div>
 
@@ -862,6 +957,7 @@ onBeforeUnmount(() => {
           <figure
             v-for="{ item, index, key } in displayedOutputEntries"
             :key="key"
+            :data-output-key="key"
             class="output-item"
             :class="{
               'output-item--editing': isEditing(item, index),
@@ -944,43 +1040,20 @@ onBeforeUnmount(() => {
               <span>当前</span>
             </div>
 
-            <figcaption class="output-actions">
-              <button
-                class="icon-button"
-                type="button"
-                :aria-label="`下载 ${item.title}`"
-                @click.stop="downloadImage(item, item.title || '生成图片')"
-              >
-                <Download aria-hidden="true" />
-              </button>
-              <button
-                class="icon-button"
-                type="button"
-                :aria-label="item.layers?.length ? `查看 ${item.title} 图层` : `打开 ${item.title} 智能分层面板`"
-                :disabled="isOutputActionBusy(item, index)"
-                @click.stop="toggleLayerPanel(item, index)"
-              >
-                <Layers v-if="item.layers?.length" aria-hidden="true" />
-                <ScissorsLineDashed v-else aria-hidden="true" />
-              </button>
-              <button
-                v-if="hasOriginalImage(item)"
-                class="icon-button"
-                type="button"
-                :aria-label="`${isCompareActive(item, index) ? '关闭' : '打开'} ${item.title} 原图对比`"
-                @click.stop="toggleCompare(item, index)"
-              >
-                <Split aria-hidden="true" />
-              </button>
-              <button
-                class="icon-button"
-                type="button"
-                :aria-label="`${isEditing(item, index) ? '关闭' : '打开'} ${item.title} 局部改图`"
-                @click.stop="toggleEdit(item, index)"
-              >
-                <MousePointerClick aria-hidden="true" />
-              </button>
-            </figcaption>
+            <OutputActionBar
+              :item="item"
+              :index="index"
+              :compact="compact"
+              :has-original-image="hasOriginalImage(item)"
+              :is-compare-active="isCompareActive(item, index)"
+              :is-editing="isEditing(item, index)"
+              :is-busy="isOutputActionBusy(item, index)"
+              @download="downloadImage($event, $event.title || '生成图片')"
+              @toggle-layer-panel="toggleLayerPanel"
+              @toggle-compare="toggleCompare"
+              @toggle-edit="toggleEdit"
+              @use-as-tool="useOutputAsTool"
+            />
 
             <Teleport to="body">
               <Transition name="output-panel-slide" mode="out-in">
@@ -993,15 +1066,26 @@ onBeforeUnmount(() => {
                 >
                   <div>
                     <strong>局部改图</strong>
-                    <button
-                      v-if="getEditSelection(item, index)"
-                      class="text-button"
-                      type="button"
-                      @click="clearEditSelection(item, index)"
-                    >
-                      取消选区
-                    </button>
-                    <span v-else>拖动图片框选修改区域</span>
+                    <span v-if="!getEditSelection(item, index)">拖动图片框选修改区域</span>
+                    <span v-else>已框选修改区域</span>
+                    <span class="output-floating-panel-actions">
+                      <button
+                        v-if="getEditSelection(item, index)"
+                        class="text-button"
+                        type="button"
+                        @click="clearEditSelection(item, index)"
+                      >
+                        取消选区
+                      </button>
+                      <button
+                        class="icon-button output-floating-close"
+                        type="button"
+                        :aria-label="`关闭 ${item.title} 局部改图面板`"
+                        @click="closeOutputFloatingPanel"
+                      >
+                        <X aria-hidden="true" />
+                      </button>
+                    </span>
                   </div>
                   <textarea
                     rows="2"
@@ -1031,15 +1115,25 @@ onBeforeUnmount(() => {
                       <strong>透明 PNG 图层</strong>
                       <span>{{ getLayerPanelStatus(item) }}</span>
                     </div>
-                    <button
-                      v-if="item.layers?.length"
-                      class="icon-button"
-                      type="button"
-                      aria-label="下载全部图层"
-                      @click="downloadAllLayers(item)"
-                    >
-                      <Download aria-hidden="true" />
-                    </button>
+                    <div class="output-layer-head-actions">
+                      <button
+                        v-if="item.layers?.length"
+                        class="icon-button"
+                        type="button"
+                        aria-label="下载全部图层"
+                        @click="downloadAllLayers(item)"
+                      >
+                        <Download aria-hidden="true" />
+                      </button>
+                      <button
+                        class="icon-button output-floating-close"
+                        type="button"
+                        :aria-label="`关闭 ${item.title} 图层面板`"
+                        @click="closeOutputFloatingPanel"
+                      >
+                        <X aria-hidden="true" />
+                      </button>
+                    </div>
                   </div>
                   <p v-if="getLayerSplitNotice(item)" class="output-layer-notice">
                     {{ getLayerSplitNotice(item) }}
@@ -1050,7 +1144,7 @@ onBeforeUnmount(() => {
                       <span class="output-layer-guide-card output-layer-guide-card-mid"></span>
                       <span class="output-layer-guide-card output-layer-guide-card-front"></span>
                     </span>
-                    <span>将结果图拆成主体、文字、背景透明 PNG 图层。</span>
+                    <span>自动识别画面元素并拆成透明 PNG 图层，图层数量以实际结果为准。</span>
                     <button
                       class="btn btn-primary"
                       type="button"
@@ -1127,7 +1221,7 @@ onBeforeUnmount(() => {
             </Teleport>
           </figure>
 
-          <div v-if="hasMultipleOutputs" class="output-thumbnails" aria-label="生成结果缩略图">
+          <div v-if="hasMultipleOutputs && !isOverviewMode" class="output-thumbnails" aria-label="生成结果缩略图">
             <button
               v-for="entry in outputEntries"
               :key="entry.key"
@@ -1148,7 +1242,7 @@ onBeforeUnmount(() => {
             <ImagePlus v-if="slot === 1" aria-hidden="true" />
             <strong>{{ batchMode ? '等待批量结果' : '等待生成结果' }}</strong>
             <span>{{
-              batchMode ? '选择张数后提交，结果会在这里按批次展示。' : '左侧完成提示词和参数后，点击开始生成。'
+              batchMode ? '选择张数后提交，结果会在这里按批次展示。' : '完成提示词、素材和参数后，点击生成按钮。'
             }}</span>
           </div>
         </div>
@@ -1248,5 +1342,5 @@ onBeforeUnmount(() => {
         </article>
       </div>
     </div>
-  </aside>
+  </section>
 </template>

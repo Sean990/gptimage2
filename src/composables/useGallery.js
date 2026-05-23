@@ -11,10 +11,12 @@ const galleryStorageKey = 'gptImage2Gallery'
 const deletedGalleryStorageKey = 'gptImage2DeletedGalleryIds'
 const galleryClearedBeforeStorageKey = 'gptImage2GalleryClearedBefore'
 export const galleryChangedEventName = 'imgsgen:gallery-changed'
-const maxLocalGalleryRecords = 20
+const maxLocalGalleryRecords = 100
+const galleryPageSize = 9
 const maxDeletedGalleryIds = 500
 const galleryProgressStatuses = new Set(['queued', 'running', 'saving', 'cancel_requested'])
 const galleryRetainedEmptyStatuses = new Set([...galleryProgressStatuses, 'failed', 'canceled'])
+const embeddedOperationTools = new Set(['layer-split', 'region-edit'])
 
 const technicalErrorPattern = /upstream|上游|连接中断|connection|ECONNRE|socket|timeout|5\d{2}\s|内部错误|internal/i
 function sanitizeErrorMessage(raw, fallback) {
@@ -24,9 +26,9 @@ function sanitizeErrorMessage(raw, fallback) {
 }
 const galleryStatusRank = {
   queued: 1,
-  cancel_requested: 1,
   running: 2,
   saving: 3,
+  cancel_requested: 4,
   failed: 4,
   canceled: 4,
   partial_completed: 5,
@@ -63,6 +65,38 @@ function getGalleryRecordDeleteKeys(record = {}) {
 function parseGalleryTime(value) {
   const time = new Date(value || 0).getTime()
   return Number.isFinite(time) ? time : 0
+}
+
+function normalizePositiveInteger(value, fallback = 1) {
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0 ? Math.floor(number) : fallback
+}
+
+function readGalleryPayloadRecords(payload) {
+  if (Array.isArray(payload)) return payload
+  if (!payload || typeof payload !== 'object') return []
+  if (payload.data && typeof payload.data === 'object') return readGalleryPayloadRecords(payload.data)
+  return payload.records || payload.items || payload.rows || payload.list || payload.results || payload.data || []
+}
+
+function readGalleryPayloadTotal(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return 0
+  if (payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) {
+    return readGalleryPayloadTotal(payload.data)
+  }
+  return Number(payload.total || payload.totalCount || payload.total_count || payload.count || 0)
+}
+
+function readGalleryPayloadHasMore(payload, page, pageSize, records, total) {
+  if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+    if (payload.data && typeof payload.data === 'object' && !Array.isArray(payload.data)) {
+      return readGalleryPayloadHasMore(payload.data, page, pageSize, records, total)
+    }
+    const explicitHasMore = payload.hasMore ?? payload.has_more ?? payload.nextPage ?? payload.next_page
+    if (explicitHasMore !== undefined && explicitHasMore !== null) return Boolean(explicitHasMore)
+  }
+  if (total > 0) return page * pageSize < total
+  return records.length >= pageSize
 }
 
 export function loadDeletedGalleryIds() {
@@ -147,7 +181,7 @@ export function filterVisibleGalleryRecords(records = [], options = {}) {
   const deletedBefore = Number.isFinite(options.deletedBefore) ? options.deletedBefore : loadGalleryClearedBefore()
   return (Array.isArray(records) ? records : []).filter(
     (record) =>
-      getGenerationRecordToolKey(record) !== 'layer-split' &&
+      !embeddedOperationTools.has(getGenerationRecordToolKey(record)) &&
       !isGalleryRecordDeleted(record, { deletedIds, deletedBefore }),
   )
 }
@@ -164,11 +198,15 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
   const gallerySyncMessage = ref('')
   const gallerySyncError = ref('')
   const galleryLastSyncedAt = ref('')
+  const galleryPage = ref(1)
+  const galleryTotal = ref(0)
+  const galleryHasMore = ref(false)
 
   const galleryImageCount = computed(() => gallery.value.reduce((total, record) => total + record.images.length, 0))
   const gallerySummary = computed(() => {
     if (!gallery.value.length) return '暂无生成记录'
-    return `${gallery.value.length} 组作品 · ${galleryImageCount.value} 张图片`
+    const totalText = galleryTotal.value > gallery.value.length ? ` / 共 ${galleryTotal.value}` : ''
+    return `${gallery.value.length}${totalText} 组作品 · ${galleryImageCount.value} 张图片`
   })
   const hasPendingGalleryRecords = computed(() => gallery.value.some((record) => isGalleryRecordPending(record)))
   const galleryCloudStatusText = computed(() => {
@@ -213,7 +251,7 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
       .flat()
       .map((record) => normalizeGenerationRecord(record))
       .forEach((record) => {
-        if (getGenerationRecordToolKey(record) === 'layer-split') return
+        if (embeddedOperationTools.has(getGenerationRecordToolKey(record))) return
         if (isGalleryRecordDeleted(record, { deletedIds, deletedBefore })) return
         const shouldKeepEmptyRecord = galleryRetainedEmptyStatuses.has(record.status)
         if (!record.images.length && !shouldKeepEmptyRecord) return
@@ -228,6 +266,40 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     return Array.from(recordsByKey.values())
       .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       .slice(0, maxLocalGalleryRecords)
+  }
+
+  function getGalleryPageParams(page = galleryPage.value) {
+    const safePage = normalizePositiveInteger(page, 1)
+    return {
+      limit: galleryPageSize,
+      offset: (safePage - 1) * galleryPageSize,
+      page: safePage,
+      pageSize: galleryPageSize,
+    }
+  }
+
+  function normalizeGalleryPagePayload(payload, page = galleryPage.value) {
+    const safePage = normalizePositiveInteger(page, 1)
+    const records = Array.isArray(readGalleryPayloadRecords(payload)) ? readGalleryPayloadRecords(payload) : []
+    const total = readGalleryPayloadTotal(payload)
+    return {
+      hasMore: readGalleryPayloadHasMore(payload, safePage, galleryPageSize, records, total),
+      page: safePage,
+      records,
+      total: Number.isFinite(total) && total > 0 ? total : 0,
+    }
+  }
+
+  function applyGalleryPagePayload(payload, page = galleryPage.value) {
+    const pagePayload = normalizeGalleryPagePayload(payload, page)
+    galleryPage.value = pagePayload.page
+    galleryHasMore.value = pagePayload.hasMore
+    galleryTotal.value = pagePayload.total || Math.max(galleryTotal.value, (pagePayload.page - 1) * galleryPageSize + pagePayload.records.length)
+    return pagePayload.records
+  }
+
+  function setGalleryPage(page = 1) {
+    galleryPage.value = normalizePositiveInteger(page, 1)
   }
 
   function shouldReplaceGalleryRecord(current, candidate) {
@@ -357,7 +429,10 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     galleryCloudStatusText,
     galleryImageCount,
     galleryLastSyncedAt,
+    galleryHasMore,
     galleryOpen,
+    galleryPage,
+    galleryPageSize,
     galleryProgressStatuses,
     galleryRecordCover,
     galleryRecordMeta,
@@ -373,6 +448,7 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     gallerySyncError,
     gallerySyncing,
     gallerySyncMessage,
+    galleryTotal,
     hasPendingGalleryRecords,
     isGalleryRecordPending,
     clearGalleryClearedBefore,
@@ -380,9 +456,12 @@ export function useGallery({ generationWaitText, isAuthenticated, modes, normali
     markGalleryClearedBefore,
     markGalleryRecordsDeleted,
     maxLocalGalleryRecords,
+    applyGalleryPagePayload,
+    getGalleryPageParams,
     mergeGalleryRecords,
     persistLocalGallery,
     setGallerySyncMessage,
+    setGalleryPage,
     shouldReplaceGalleryRecord,
   }
 }

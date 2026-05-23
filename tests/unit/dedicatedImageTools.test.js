@@ -24,6 +24,7 @@ function createTask(overrides = {}) {
     referenceCount: ref(0),
     resolution: ref('1K'),
     showNotice: vi.fn(),
+    sourceToolHandoffKey: ref(''),
     urlInput: ref(''),
     ...overrides,
   }
@@ -79,5 +80,20 @@ describe('DedicatedImageTools', () => {
         tool: 'upscale',
       }),
     )
+  })
+
+  it('移除续作带入的素材时会清理当前工具的 handoff 标记', async () => {
+    const sourceToolHandoffKey = ref('upscale')
+    const task = createTask({
+      getReferencePreviewImages: vi.fn(() => [{ src: '/handoff-source.png', title: '续作源图' }]),
+      referenceCount: ref(1),
+      sourceToolHandoffKey,
+    })
+    const wrapper = mountDedicatedImageTools(task, 'upscale')
+
+    await wrapper.get('.thumb-remove').trigger('click')
+
+    expect(task.clearReferences).toHaveBeenCalledWith({ silent: false })
+    expect(sourceToolHandoffKey.value).toBe('')
   })
 })
