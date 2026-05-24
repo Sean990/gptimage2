@@ -1,0 +1,21 @@
+# ImgsGen
+
+ImgsGen 是面向内容团队和创作者的 AI 图片生成与编辑工作台，提供提示词创作、参考图编辑、批量出图、案例库、文档和上线前复核提示。
+
+## 关键页面
+
+- [首页](https://ai.imgsgen.cn/)
+- [AI 图片生成](https://ai.imgsgen.cn/generate)
+- [Prompt 优化](https://ai.imgsgen.cn/prompt-optimizer)
+- [AI 图片案例库](https://ai.imgsgen.cn/showcase)
+- [使用文档](https://ai.imgsgen.cn/docs)
+- [隐私政策](https://ai.imgsgen.cn/privacy-policy)
+- [服务条款](https://ai.imgsgen.cn/terms-of-service)
+
+## 抓取说明
+
+公开产品页、文档页和案例库可用于理解 ImgsGen 的功能、使用边界和合规提示。账户中心、订单、积分、邀请、用户资料、API 和上传资源不应作为公开内容索引或训练入口。
+
+## 联系
+
+- 邮箱：[imgsgen@163.com](mailto:imgsgen@163.com)

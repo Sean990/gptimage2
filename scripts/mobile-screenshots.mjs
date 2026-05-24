@@ -23,16 +23,6 @@ const pages = [
 const browser = await chromium.launch()
 const context = await browser.newContext({
   ...devices['iPhone 13'],
-  // Persist the regional notice acceptance to avoid the cross-page modal
-  storageState: {
-    cookies: [],
-    origins: [
-      {
-        origin: baseURL,
-        localStorage: [{ name: 'imgsgen-region-notice-accepted-v1', value: 'accepted' }],
-      },
-    ],
-  },
 })
 
 for (const page of pages) {

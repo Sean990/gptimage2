@@ -2,10 +2,11 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
+import { DEFAULT_SITE_URL, normalizeSiteUrl } from './src/seo/constants.js'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const siteUrl = (env.VITE_SITE_URL || env.SITE_URL || '').trim().replace(/\/+$/, '')
+  const siteUrl = normalizeSiteUrl(env.VITE_SITE_URL || env.SITE_URL || DEFAULT_SITE_URL)
   const analyzeEnabled = mode === 'analyze' || env.ANALYZE === '1'
 
   return {
@@ -76,18 +77,14 @@ export default defineConfig(({ mode }) => {
         transformIndexHtml: {
           order: 'pre',
           handler(html) {
-            if (siteUrl) {
-              return html.replace(/%VITE_SITE_URL%/g, siteUrl)
-            }
-            return html
-              .replace(/\s*<link rel="canonical"[^>]*>\n?/g, '')
-              .replace(/\s*<link rel="preconnect" href="%VITE_SITE_URL%"[^>]*>\n?/g, '')
-              .replace(/\s*<meta property="og:url"[^>]*>\n?/g, '')
-              .replace(/%VITE_SITE_URL%/g, '')
+            return html.replace(/%VITE_SITE_URL%/g, siteUrl)
           },
         },
       },
     ].filter(Boolean),
+    define: {
+      'import.meta.env.VITE_SITE_URL': JSON.stringify(siteUrl),
+    },
     build: {
       sourcemap: 'hidden',
       rollupOptions: {

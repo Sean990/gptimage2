@@ -6,7 +6,6 @@ import {
   homeImages as fallbackHomeImages,
   legalSections as fallbackLegalSections,
   pricingModes as fallbackPricingModes,
-  showcaseItems as fallbackShowcaseItems,
 } from '../data/siteData'
 import { api } from './api'
 
@@ -36,7 +35,6 @@ const fallbackSiteData = {
   pricingModes: fallbackPricingModes,
   usageCosts: null,
   rewardCredits: null,
-  showcaseItems: fallbackShowcaseItems,
   legalSections: fallbackLegalSections,
 }
 

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { Copy, Download, ImagePlus, Loader2, RefreshCw, Save, Search, Square, Trash2, X } from 'lucide-vue-next'
 import EmptyState from '../EmptyState.vue'
+import LazyImage from '../LazyImage.vue'
 import ModalDialog from '../ModalDialog.vue'
 import '../../assets/gallery-drawer.css'
 
@@ -213,7 +214,7 @@ function onGalleryScroll(event) {
           "
           @click="canPreviewGalleryRecord(record) ? openGalleryImage(record) : null"
         >
-          <img
+          <LazyImage
             v-if="canPreviewGalleryRecord(record)"
             :src="galleryRecordCover(record)"
             :alt="canReuseGalleryRecord(record) ? record.prompt || '图库图片' : galleryRecordMode(record)"

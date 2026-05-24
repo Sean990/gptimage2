@@ -115,11 +115,16 @@
   gap: 14px;
 }
 
+.image-strip .lazy-image-frame,
 .image-strip img {
   aspect-ratio: 4 / 3;
   width: 100%;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
+}
+
+.image-strip img {
+  height: 100%;
   object-fit: cover;
   transition:
     transform var(--dur-3) var(--ease-standard),
@@ -229,9 +234,14 @@
   overflow: hidden;
 }
 
+.preview-card .lazy-image-frame,
 .preview-card img {
   width: 100%;
   aspect-ratio: 5 / 4;
+}
+
+.preview-card img {
+  height: 100%;
   object-fit: cover;
 }
 

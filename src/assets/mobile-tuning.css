@@ -298,22 +298,6 @@ button,
     min-height: 50px;
   }
 
-  /* 区域提示弹窗的按钮排成 1 列 */
-  .region-notice-card {
-    padding: 22px;
-  }
-
-  .region-notice-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .region-notice-actions .btn {
-    width: 100%;
-    min-height: 48px;
-  }
-
   /* 图库预览模态 */
   .gallery-modal {
     width: 100%;
@@ -1046,16 +1030,6 @@ button,
 
   .image-strip {
     grid-template-columns: repeat(3, minmax(82px, 1fr));
-  }
-
-  /* 区域提示弹窗紧凑 */
-  .region-notice-card h2 {
-    font-size: 20px;
-    line-height: 1.25;
-  }
-
-  .region-notice-card p {
-    flex: 1 1 140px;
   }
 
   /* Generate 面板更紧凑 */

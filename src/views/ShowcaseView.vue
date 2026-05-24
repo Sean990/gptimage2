@@ -1,8 +1,9 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { Copy, ExternalLink, Eye, Images, LayoutTemplate, RotateCcw, Search, Sparkles, X } from 'lucide-vue-next'
 import EmptyState from '../components/EmptyState.vue'
+import LazyImage from '../components/LazyImage.vue'
 import ModalDialog from '../components/ModalDialog.vue'
 import SectionTitle from '../components/SectionTitle.vue'
 import SelectPicker from '../components/SelectPicker.vue'
@@ -18,6 +19,7 @@ import {
 import '../assets/showcase.css'
 
 const router = useRouter()
+const route = useRoute()
 const loading = ref(true)
 const loadError = ref('')
 const promptLibraryManifest = ref(null)
@@ -28,7 +30,7 @@ const promptTaxonomy = ref({
   styles: [],
   scenes: [],
 })
-const query = ref('')
+const query = ref(normalizeSearchQuery(route.query.q))
 const category = ref('全部分类')
 const style = ref('全部风格')
 const scene = ref('全部场景')
@@ -38,9 +40,13 @@ const copiedId = ref(null)
 const activeTab = ref('cases')
 const selectedCase = ref(null)
 const selectedTemplate = ref(null)
-const loadedImages = ref(new Set())
 const CASE_PAGE_SIZE = 24
 const visibleCaseCount = ref(CASE_PAGE_SIZE)
+
+function normalizeSearchQuery(value) {
+  const rawValue = Array.isArray(value) ? value[0] : value
+  return String(rawValue || '').trim()
+}
 
 const categories = computed(() => ['全部分类', ...promptTaxonomy.value.categories.map((item) => item.value)])
 const styles = computed(() => ['全部风格', ...promptTaxonomy.value.styles.map((item) => item.value)])
@@ -118,14 +124,6 @@ function showNotice(text) {
   window.setTimeout(() => {
     if (notice.value === text) notice.value = ''
   }, 2400)
-}
-
-function markImageLoaded(id) {
-  loadedImages.value = new Set(loadedImages.value).add(id)
-}
-
-function isImageLoaded(id) {
-  return loadedImages.value.has(id)
 }
 
 function categoryLabel(value) {
@@ -254,6 +252,13 @@ watch([query, category, style, scene, sort], () => {
   visibleCaseCount.value = CASE_PAGE_SIZE
 })
 
+watch(
+  () => route.query.q,
+  (value) => {
+    query.value = normalizeSearchQuery(value)
+  },
+)
+
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
   document.documentElement.classList.remove('gallery-scroll-locked')
@@ -352,13 +357,7 @@ onMounted(loadLocalLibrary)
               >
                 <div class="image-wrap">
                   <button class="showcase-image-button" type="button" @click="openCase(item)">
-                    <img
-                      :src="item.image"
-                      :alt="item.title"
-                      loading="lazy"
-                      :class="{ loaded: isImageLoaded(`case-${item.id}`) }"
-                      @load="markImageLoaded(`case-${item.id}`)"
-                    />
+                    <LazyImage :src="item.image" :alt="item.title" />
                   </button>
                   <button class="btn btn-accent image-action" type="button" @click="generateSimilar(item)">
                     <Sparkles aria-hidden="true" />
@@ -435,13 +434,7 @@ onMounted(loadLocalLibrary)
             >
               <div class="image-wrap">
                 <button class="showcase-image-button" type="button" @click="openTemplate(item)">
-                  <img
-                    :src="item.cover"
-                    :alt="templateTitle(item)"
-                    loading="lazy"
-                    :class="{ loaded: isImageLoaded(`template-${item.id}`) }"
-                    @load="markImageLoaded(`template-${item.id}`)"
-                  />
+                  <LazyImage :src="item.cover" :alt="templateTitle(item)" />
                   <span class="template-badge">模板</span>
                 </button>
               </div>
@@ -499,7 +492,7 @@ onMounted(loadLocalLibrary)
       </div>
       <div class="prompt-detail-layout">
         <div class="prompt-detail-image">
-          <img :src="selectedCase.image" :alt="selectedCase.imageAlt" />
+          <LazyImage :src="selectedCase.image" :alt="selectedCase.imageAlt" />
         </div>
         <div class="prompt-detail-body">
           <div class="prompt-tag-row">
@@ -555,7 +548,7 @@ onMounted(loadLocalLibrary)
       </div>
       <div class="prompt-detail-layout">
         <div class="prompt-detail-image">
-          <img :src="selectedTemplate.cover" :alt="templateTitle(selectedTemplate)" />
+          <LazyImage :src="selectedTemplate.cover" :alt="templateTitle(selectedTemplate)" />
         </div>
         <div class="prompt-detail-body">
           <p>{{ selectedTemplate.useWhen.zh || selectedTemplate.description.zh }}</p>

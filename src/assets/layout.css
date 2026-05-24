@@ -385,7 +385,7 @@
   line-height: 1.7;
 }
 
-.footer-region-notice {
+.footer-compliance-notice {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 10px;
@@ -397,20 +397,20 @@
   background: rgba(251, 191, 36, 0.1);
 }
 
-.footer-region-notice svg {
+.footer-compliance-notice svg {
   width: 18px;
   height: 18px;
   margin-top: 2px;
   color: #b45309;
 }
 
-.footer-region-notice p {
+.footer-compliance-notice p {
   margin: 0;
   font-size: var(--fs-sm);
   line-height: 1.65;
 }
 
-.footer-region-notice strong {
+.footer-compliance-notice strong {
   color: var(--text-strong);
   font-weight: var(--fw-semibold);
 }

@@ -15,6 +15,7 @@ import {
   WandSparkles,
   X,
 } from 'lucide-vue-next'
+import LazyImage from '../LazyImage.vue'
 import OutputActionBar from './OutputActionBar.vue'
 import { getThumbnailUrl, getLargeImageUrl } from '../../utils/imageOptimizer'
 import '../../assets/generate-output.css'
@@ -982,16 +983,16 @@ onBeforeUnmount(() => {
               @keydown="handleImageStageKeyboard($event, item, index)"
             >
               <template v-if="isCompareActive(item, index) && hasOriginalImage(item)">
-                <img
-                  class="output-compare-image output-compare-before"
+                <LazyImage
+                  image-class="output-compare-image output-compare-before"
                   :src="item.originalSrc"
                   :alt="`${item.title} 原图`"
                 />
-                <img
-                  class="output-compare-image output-compare-after"
+                <LazyImage
+                  image-class="output-compare-image output-compare-after"
                   :src="item.src"
                   :alt="`${item.title} 结果`"
-                  :style="{ clipPath: `inset(0 ${100 - getComparePosition(item, index)}% 0 0)` }"
+                  :image-style="{ clipPath: `inset(0 ${100 - getComparePosition(item, index)}% 0 0)` }"
                 />
                 <span
                   class="output-compare-divider"
@@ -1010,7 +1011,12 @@ onBeforeUnmount(() => {
                 <span class="output-compare-badge output-compare-badge-before">原图</span>
                 <span class="output-compare-badge output-compare-badge-after">结果</span>
               </template>
-              <img v-else :src="getLargeImageUrl(item.src)" :alt="item.title" draggable="false" />
+              <LazyImage
+                v-else
+                :src="getLargeImageUrl(item.src)"
+                :alt="item.title"
+                :draggable="false"
+              />
 
               <span v-if="shouldShowEditGuide(item, index)" class="output-edit-guide" aria-hidden="true">
                 <span class="output-edit-guide-box"></span>
@@ -1034,9 +1040,12 @@ onBeforeUnmount(() => {
             </div>
 
             <div v-if="item.editHistory?.length" class="output-edit-history" aria-label="改图前后对比">
-              <img :src="item.editHistory[item.editHistory.length - 1].beforeSrc" alt="修改前" />
+              <LazyImage
+                :src="item.editHistory[item.editHistory.length - 1].beforeSrc"
+                alt="???"
+              />
               <span>修改前</span>
-              <img :src="item.src" alt="修改后" />
+              <LazyImage :src="item.src" alt="修改后" />
               <span>当前</span>
             </div>
 
@@ -1162,7 +1171,7 @@ onBeforeUnmount(() => {
                     class="output-layer-row"
                     :class="{ muted: layer.visible === false }"
                   >
-                    <img :src="layer.src" :alt="layer.label" />
+                    <LazyImage :src="layer.src" :alt="layer.label" />
                     <span>{{ layer.label }}</span>
                     <button
                       class="icon-button"
@@ -1232,7 +1241,7 @@ onBeforeUnmount(() => {
               :aria-label="`查看第 ${entry.index + 1} 张生成结果`"
               @click="selectOutputEntry(entry.index)"
             >
-              <img :src="getThumbnailUrl(entry.item.src)" :alt="entry.item.title" />
+              <LazyImage :src="getThumbnailUrl(entry.item.src)" :alt="entry.item.title" />
               <span>{{ entry.index + 1 }} / {{ outputEntries.length }}</span>
             </button>
           </div>
@@ -1286,7 +1295,7 @@ onBeforeUnmount(() => {
             "
             @click="canPreviewGalleryRecord(record) ? openGalleryImage(record) : null"
           >
-            <img
+            <LazyImage
               v-if="canPreviewGalleryRecord(record)"
               :src="getThumbnailUrl(galleryRecordCover(record))"
               :alt="canReuseGalleryRecord(record) ? record.prompt || '最近任务图片' : galleryRecordMode(record)"

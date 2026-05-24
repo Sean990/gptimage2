@@ -17,6 +17,7 @@ import {
   Wand2,
 } from 'lucide-vue-next'
 import FeatureCard from '../components/FeatureCard.vue'
+import LazyImage from '../components/LazyImage.vue'
 import PricingCards from '../components/PricingCards.vue'
 import SectionTitle from '../components/SectionTitle.vue'
 import Toast from '../components/Toast.vue'
@@ -93,13 +94,11 @@ onMounted(() => {
             </div>
           </div>
           <div class="image-strip">
-            <img
+            <LazyImage
               v-for="image in homeImages.slice(1)"
               :key="image.title"
               :src="image.src"
               :alt="image.title"
-              loading="lazy"
-              decoding="async"
             />
           </div>
         </div>
@@ -243,7 +242,7 @@ onMounted(() => {
         </div>
 
         <article class="card preview-card">
-          <img :src="homeImages[1].src" :alt="homeImages[1].title" loading="lazy" decoding="async" />
+          <LazyImage :src="homeImages[1].src" :alt="homeImages[1].title" />
           <div class="preview-body">
             <span class="tag">AI 反推提示词示例</span>
             <div class="prompt-box">

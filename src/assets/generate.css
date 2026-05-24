@@ -622,7 +622,6 @@
 }
 
 body.no-scroll .generation-actions-floating,
-body.region-notice-locked .generation-actions-floating,
 body.gallery-scroll-locked .generation-actions-floating {
   display: none;
 }

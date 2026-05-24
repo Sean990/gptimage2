@@ -282,7 +282,6 @@ textarea::-webkit-scrollbar,
 
 html.gallery-scroll-locked,
 body.no-scroll,
-body.region-notice-locked,
 body.gallery-scroll-locked,
 body.mobile-menu-open {
   overflow: hidden;

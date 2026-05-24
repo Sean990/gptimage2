@@ -181,6 +181,15 @@
   background-size: 24px 24px;
 }
 
+.image-preview-stage > .lazy-image-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
 .image-preview-stage img {
   display: block;
   width: auto;
@@ -399,10 +408,14 @@
   transform: translateY(-1px);
 }
 
+.image-preview-thumb .lazy-image-frame,
 .image-preview-thumb img {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.image-preview-thumb img {
   object-fit: cover;
 }
 

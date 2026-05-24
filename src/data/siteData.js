@@ -1,23 +1,29 @@
+import cnpay from '../assets/cnpay.png'
+import softWhiteStudio from '../assets/soft-white-studio.png'
+import autumnDarkFashion from '../assets/autumn-dark-fashion.png'
+import winterSnowPortrait from '../assets/winter-snow-portrait.png'
+import blackEditorialLook from '../assets/black-editorial-look.png'
+
 export const assets = {
-  cnpay: 'https://gptimage2.asia/imgs/cnpay.png',
+  cnpay: cnpay,
 }
 
 export const homeImages = [
   {
     title: '柔光棚拍人像',
-    src: 'https://gptimage2.asia/_next/image?url=%2Fimgs%2Fhome-showcase%2Fsoft-white-studio.png&w=1920&q=75',
+    src: softWhiteStudio,
   },
   {
     title: '室内自然光人像',
-    src: 'https://gptimage2.asia/_next/image?url=%2Fimgs%2Fhome-showcase%2Fautumn-dark-fashion.png&w=1920&q=75',
+    src: autumnDarkFashion,
   },
   {
     title: '纯白高调写真',
-    src: 'https://gptimage2.asia/_next/image?url=%2Fimgs%2Fhome-showcase%2Fwinter-snow-portrait.png&w=1920&q=75',
+    src: winterSnowPortrait,
   },
   {
     title: '清爽运动风写真',
-    src: 'https://gptimage2.asia/_next/image?url=%2Fimgs%2Fhome-showcase%2Fblack-editorial-look.png&w=1920&q=75',
+    src: blackEditorialLook,
   },
 ]
 
@@ -256,87 +262,7 @@ export const pricingModes = {
   },
 }
 
-export const showcaseItems = [
-  [
-    'Nano Banana 生成柔光棚拍人像（附提示词）',
-    '人像写真',
-    '以酒店室内光线为基底，生成安静、克制、有质感的人像写真方案。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2Fd1c3868e57045c08c69fe82c3fa90472.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-  [
-    'Nano Banana 生成室内自然光人像（附提示词）',
-    '人像写真',
-    '柔光穿过纱帘，服装纹理与室内反射共同营造轻盈的自然光氛围。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2Fe8113d1ed0b5c62c40207cbb6d7d81ed.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-  [
-    'Nano Banana 生成纯白高调写真（附提示词）',
-    '人像写真',
-    '纯白棚拍、大窗漫射光和轻颗粒质感，适合清爽干净的人像封面。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F0b45bca723402d2cad677f5e57c7ed5c.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-  [
-    'Nano Banana 生成清爽运动风写真（附提示词）',
-    '人像写真',
-    '窗边自然光与运动穿搭结合，输出清爽、有活力的人像方案。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F8c2b4add441e5030e876b92a8f6594e8.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-  [
-    'Nano Banana 生成网球运动写真（附提示词）',
-    '运动风格',
-    '用商业人像思路组织白色网球穿搭、冷青色调和相机质感。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2Fc4ccf2bc242fc0835995d8470405c5ca.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-  [
-    'Nano Banana 生成秋冬黑灰写真（附提示词）',
-    '人像写真',
-    '都市极简风时尚大片，纱帘柔光搭配黑灰造型，适合秋冬视觉方向。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2Fd1dc061b5bab89ff6c16348748cc56a0.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-  [
-    '魔法爆炸箱：生成动漫主题房间',
-    '场景氛围',
-    '用结构化提示词组织角色周边、墙面装饰和灯光，生成适合传播的主题空间。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F65de496d7a0d240335c081dc38721412.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-  [
-    '用 AI 创建国家立方体风格图像',
-    '风格探索',
-    '把国家符号、材质、建筑和色彩压缩进统一的立方体视觉系统。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F0c9459a13bbb7843a558da73891f0517.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-  [
-    '护照风格图像提示词拆解',
-    '技巧教程',
-    '从纸张纹理、印章、证件字体和留白比例拆解护照风格的生成方法。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F7393a127fc702259168e76253adef862.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-  [
-    '艺术照延展为桌搭手办场景',
-    '创意玩法',
-    '把人物艺术照延展为桌搭手办概念，适合社媒内容和个性化周边方案。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F811b786eec2ef46b9f982dd44a0f2195.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-  [
-    'Nano Banana 生成窗边自然光写真（附提示词）',
-    '人像写真',
-    '自然光、轻窗纱、肤色质感和中景构图，构成稳定的人像写真模板。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F889b43a50c5d8037cecdef82c25eca9c.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-  [
-    'Nano Banana 生成街头氛围写真（附提示词）',
-    '街拍风格',
-    '街头光影、松弛站姿和镜头压缩感，适合头像草稿与内容封面方案。',
-    'https://gptimage2.asia/_next/image?url=https%3A%2F%2Fi-blog.csdnimg.cn%2Fimg_convert%2F35e6cac926de13ea455a4774dfb45fd2.webp%3Fx-oss-process%3Dimage%2Fformat%2Cpng&w=3840&q=75',
-  ],
-].map(([title, category, description, image], index) => ({
-  id: index + 1,
-  title,
-  category,
-  description,
-  image,
-  prompt: `${title}，仅在已取得合法授权的前提下参考人物身份与主要五官特征，摄影质感，细腻肤质，专业布光，杂志级构图，发布前请人工复核。`,
-}))
+
 
 export const legalSections = {
   privacy: {

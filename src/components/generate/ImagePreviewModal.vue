@@ -1,6 +1,7 @@
 <script setup>
 import { ChevronLeft, ChevronRight, Copy, Download, Save, Split, Trash2, X } from 'lucide-vue-next'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import LazyImage from '../LazyImage.vue'
 import ModalDialog from '../ModalDialog.vue'
 import { getGenerationRecordToolKey } from '../../composables/useGenerationPayload'
 import { formatGenerationModelLabel } from '../../composables/useModelPicker'
@@ -389,23 +390,23 @@ onBeforeUnmount(() => {
         class="image-compare-stage image-preview-compare-stage"
       >
         <span class="image-compare-frame" :style="compareFrameStyle">
-          <img
-            class="image-compare-base image-compare-before"
+          <LazyImage
+            image-class="image-compare-base image-compare-before"
             :src="currentPreviewImage?.originalSrc"
             :alt="`${currentPreviewImage?.title || '预览图片'} 原图`"
-            draggable="false"
+            :draggable="false"
           />
           <span
             class="image-compare-result-pane"
             :style="{ clipPath: `inset(0 ${100 - comparePosition}% 0 0)` }"
             aria-hidden="true"
           >
-            <img
+            <LazyImage
               ref="compareResultImageRef"
-              class="image-compare-image image-compare-result"
+              image-class="image-compare-image image-compare-result"
               :src="currentPreviewImage?.src"
               :alt="`${currentPreviewImage?.title || '预览图片'} 结果`"
-              draggable="false"
+              :draggable="false"
               @load="updateCompareFrame"
             />
           </span>
@@ -427,11 +428,11 @@ onBeforeUnmount(() => {
           <span class="image-compare-badge image-compare-badge-after">原图</span>
         </span>
       </span>
-      <img
+      <LazyImage
         v-else
         :src="currentPreviewImage?.src"
         :alt="currentPreviewImage?.title"
-        :style="{ transform: `translate3d(${dragOffset}px, 0, 0)` }"
+        :image-style="{ transform: `translate3d(${dragOffset}px, 0, 0)` }"
       />
       <button
         v-if="previewCount > 1"
@@ -454,7 +455,7 @@ onBeforeUnmount(() => {
         :aria-current="index === imagePreview.index"
         @click="setPreviewIndex(index)"
       >
-        <img :src="item.src" :alt="item.title" />
+        <LazyImage :src="item.src" :alt="item.title" />
       </button>
     </div>
     <p v-if="currentPreviewImage?.prompt" class="image-preview-prompt">{{ currentPreviewImage.prompt }}</p>

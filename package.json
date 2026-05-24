@@ -12,6 +12,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "deploy:production": "node scripts/deploy-production.mjs",
     "deploy:prod": "node scripts/deploy-production.mjs",
+    "seo:check": "node scripts/check-seo.mjs",
     "sync:prompt-library": "node scripts/sync-prompt-library.mjs",
     "test": "pnpm test:unit && pnpm test:e2e",
     "test:a11y": "playwright test e2e/a11y.spec.js",

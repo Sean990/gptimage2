@@ -513,7 +513,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="floating-gallery-wrap" :class="{ 'is-generate-route': isGenerateRoute, 'is-complete': completionPulse }">
-    <button class="floating-gallery-button" type="button" :aria-label="`打开图库，${fabLabel}`" @click="openGallery">
+    <button class="floating-gallery-button" type="button" @click="openGallery">
       <span class="floating-gallery-icon" aria-hidden="true">
         <Loader2 v-if="submitting || pendingCount" class="spinner" />
         <CheckCircle2 v-else-if="completionMessage" />

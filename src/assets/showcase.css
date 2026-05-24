@@ -129,18 +129,16 @@
   text-align: left;
 }
 
+.showcase-card .lazy-image-frame,
 .showcase-card img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition:
-    opacity 0.4s var(--ease-standard),
-    transform 240ms ease;
 }
 
-.showcase-card img.loaded {
-  opacity: 1;
+.showcase-card img {
+  object-fit: cover;
+  transition:
+    transform 240ms ease;
 }
 
 .showcase-card:hover img {
@@ -264,11 +262,15 @@
   box-shadow: var(--shadow-md);
 }
 
+.prompt-detail-image .lazy-image-frame,
 .prompt-detail-image img {
   display: block;
   width: 100%;
   height: 100%;
   max-height: 620px;
+}
+
+.prompt-detail-image img {
   object-fit: contain;
   transition: transform var(--dur-4) var(--ease-standard);
 }

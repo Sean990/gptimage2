@@ -113,7 +113,11 @@ async function main() {
 }
 
 function buildProjects() {
-  runLocal('corepack', ['pnpm@10.11.1', 'build'], frontendDir)
+  const frontendSiteUrl = process.env.VITE_SITE_URL || process.env.SITE_URL || `https://${frontendDomain}`
+  runLocal('corepack', ['pnpm@10.11.1', 'build'], frontendDir, {
+    VITE_SITE_URL: frontendSiteUrl,
+    SITE_URL: frontendSiteUrl,
+  })
   runLocal('pnpm', ['build'], adminDir)
   runLocal('pnpm', ['lint'], apiDir)
 }
@@ -375,12 +379,13 @@ function runRemote(conn, command, options = {}) {
   })
 }
 
-function runLocal(command, args, cwd) {
+function runLocal(command, args, cwd, env = {}) {
   log(`运行：${command} ${args.join(' ')}`)
   const result = spawnSync(command, args, {
     cwd,
     stdio: 'inherit',
     shell: process.platform === 'win32',
+    env: { ...process.env, ...env },
   })
   if (result.status !== 0) {
     throw new Error(`本地命令失败：${command} ${args.join(' ')}`)

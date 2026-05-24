@@ -127,11 +127,11 @@ watch(
       <button class="auth-link-button" type="button" @click="form.setAuthMode('login')">返回登录</button>
     </div>
 
-    <div class="auth-region-notice" role="note">
+    <div class="auth-compliance-notice" role="note">
       <AlertTriangle aria-hidden="true" />
       <p>
-        <strong>地区限制：</strong
-        >本服务暂不向位于中国大陆地区的用户提供。继续登录、注册或重置密码，即表示您确认自己不位于中国大陆地区，并同意不会将本服务用于违反适用法律法规的用途。
+        <strong>合规使用：</strong
+        >继续登录、注册或重置密码，即表示你同意服务条款和隐私政策，并承诺不会将本服务用于违法违规、侵权、冒用身份或误导公众的用途。
       </p>
     </div>
 

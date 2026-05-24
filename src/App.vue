@@ -1,13 +1,28 @@
 <script setup>
-import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
 import { useHead } from '@unhead/vue'
-import { ShieldAlert } from 'lucide-vue-next'
 import AppFooter from './components/AppFooter.vue'
 import AppHeader from './components/AppHeader.vue'
 import AsyncBlockFallback from './components/AsyncBlockFallback.vue'
 import BackToTop from './components/BackToTop.vue'
-import { DEFAULT_DESCRIPTION, DEFAULT_TITLE } from './seo/constants.js'
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_KEYWORDS,
+  DEFAULT_OG_IMAGE_ALT,
+  DEFAULT_OG_IMAGE_HEIGHT,
+  DEFAULT_OG_IMAGE_PATH,
+  DEFAULT_OG_IMAGE_WIDTH,
+  DEFAULT_ROBOTS,
+  DEFAULT_TITLE,
+  SITE_LANGUAGE,
+  SITE_LOCALE,
+  SITE_NAME,
+  absoluteUrl,
+  ensureLeadingSlash,
+  normalizeSiteUrl,
+} from './seo/constants.js'
+import { createRouteJsonLd, serializeJsonLd } from './seo/structuredData.js'
 
 const FloatingGallery = defineAsyncComponent({
   loader: () => import('./components/FloatingGallery.vue'),
@@ -17,34 +32,62 @@ const FloatingGallery = defineAsyncComponent({
   timeout: 12000,
 })
 
-const SITE_URL = (import.meta.env.VITE_SITE_URL || '').replace(/\/+$/, '')
-const REGION_NOTICE_STORAGE_KEY = 'imgsgen-region-notice-accepted-v1'
+const SITE_URL = normalizeSiteUrl(import.meta.env.VITE_SITE_URL)
 
 const route = useRoute()
 
 const pageTitle = computed(() => route.meta?.title || DEFAULT_TITLE)
 const pageDescription = computed(() => route.meta?.description || DEFAULT_DESCRIPTION)
-const pageRobots = computed(() => route.meta?.robots || 'index,follow,max-image-preview:large')
-const canonicalUrl = computed(() => (SITE_URL ? `${SITE_URL}${route.path}` : null))
+const pageRobots = computed(() => route.meta?.robots || DEFAULT_ROBOTS)
+const canonicalPath = computed(() => ensureLeadingSlash(route.meta?.canonicalPath || route.path || '/'))
+const canonicalUrl = computed(() => absoluteUrl(canonicalPath.value, SITE_URL))
+const pageImageUrl = computed(() => absoluteUrl(route.meta?.image || DEFAULT_OG_IMAGE_PATH, SITE_URL))
+const pageJsonLd = computed(() => serializeJsonLd(createRouteJsonLd(route.meta || {}, canonicalPath.value, SITE_URL)))
 
-useHead({
-  htmlAttrs: { lang: 'zh-CN' },
-  title: pageTitle,
-  meta: [
-    { name: 'description', content: pageDescription },
-    { name: 'robots', content: pageRobots },
-    { property: 'og:title', content: pageTitle },
-    { property: 'og:description', content: pageDescription },
-    { property: 'og:url', content: canonicalUrl },
-    { name: 'twitter:title', content: pageTitle },
-    { name: 'twitter:description', content: pageDescription },
-  ],
-  link: [{ rel: 'canonical', href: canonicalUrl }],
+useHead(() => {
+  const title = pageTitle.value
+  const description = pageDescription.value
+  const canonical = canonicalUrl.value
+  const imageUrl = pageImageUrl.value
+
+  return {
+    htmlAttrs: { lang: SITE_LANGUAGE },
+    title,
+    meta: [
+      { name: 'description', content: description },
+      { name: 'keywords', content: DEFAULT_KEYWORDS.join(', ') },
+      { name: 'robots', content: pageRobots.value },
+      { name: 'author', content: SITE_NAME },
+      { name: 'application-name', content: SITE_NAME },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:site_name', content: SITE_NAME },
+      { property: 'og:locale', content: SITE_LOCALE },
+      { property: 'og:title', content: title },
+      { property: 'og:description', content: description },
+      { property: 'og:url', content: canonical },
+      { property: 'og:image', content: imageUrl },
+      { property: 'og:image:secure_url', content: imageUrl },
+      { property: 'og:image:width', content: String(DEFAULT_OG_IMAGE_WIDTH) },
+      { property: 'og:image:height', content: String(DEFAULT_OG_IMAGE_HEIGHT) },
+      { property: 'og:image:alt', content: DEFAULT_OG_IMAGE_ALT },
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: title },
+      { name: 'twitter:description', content: description },
+      { name: 'twitter:image', content: imageUrl },
+      { name: 'twitter:image:alt', content: DEFAULT_OG_IMAGE_ALT },
+    ],
+    link: [{ rel: 'canonical', href: canonical }],
+    script: [
+      {
+        key: 'route-json-ld',
+        type: 'application/ld+json',
+        textContent: pageJsonLd.value,
+      },
+    ],
+  }
 })
 
 const cursorRef = ref(null)
-const showRegionNotice = ref(false)
-const regionNoticePrimaryRef = ref(null)
 let motionMedia = null
 let pointerFineMedia = null
 let followFrame = 0
@@ -202,36 +245,6 @@ function syncPointerPreference() {
   syncMotionPreference(motionMedia || { matches: false })
 }
 
-function lockRegionNoticeScroll() {
-  document.body.classList.add('region-notice-locked')
-}
-
-function unlockRegionNoticeScroll() {
-  document.body.classList.remove('region-notice-locked')
-}
-
-function hasAcceptedRegionNotice() {
-  try {
-    return window.localStorage.getItem(REGION_NOTICE_STORAGE_KEY) === 'accepted'
-  } catch {
-    return false
-  }
-}
-
-function storeRegionNoticeAcceptance() {
-  try {
-    window.localStorage.setItem(REGION_NOTICE_STORAGE_KEY, 'accepted')
-  } catch {
-    // If storage is blocked, still allow the current session to proceed after explicit confirmation.
-  }
-}
-
-function acceptRegionNotice() {
-  storeRegionNoticeAcceptance()
-  showRegionNotice.value = false
-  unlockRegionNoticeScroll()
-}
-
 onMounted(() => {
   motionMedia = window.matchMedia('(prefers-reduced-motion: reduce)')
   pointerFineMedia = window.matchMedia('(hover: hover) and (pointer: fine)')
@@ -240,17 +253,10 @@ onMounted(() => {
   if (!motionMedia.matches && pointerFineMedia.matches) addBackgroundListeners()
   motionMedia.addEventListener('change', syncMotionPreference)
   pointerFineMedia.addEventListener('change', syncPointerPreference)
-
-  if (!hasAcceptedRegionNotice()) {
-    showRegionNotice.value = true
-    lockRegionNoticeScroll()
-    nextTick(() => regionNoticePrimaryRef.value?.focus())
-  }
 })
 
 onBeforeUnmount(() => {
   removeBackgroundListeners()
-  unlockRegionNoticeScroll()
   motionMedia?.removeEventListener('change', syncMotionPreference)
   pointerFineMedia?.removeEventListener('change', syncPointerPreference)
   if (followFrame) window.cancelAnimationFrame(followFrame)
@@ -272,33 +278,4 @@ onBeforeUnmount(() => {
   <div class="floating-gallery-async-slot">
     <FloatingGallery />
   </div>
-
-  <Teleport to="body">
-    <div
-      v-if="showRegionNotice"
-      class="modal-backdrop region-notice-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="region-notice-title"
-      aria-describedby="region-notice-description"
-    >
-      <div class="modal-card region-notice-card">
-        <span class="region-notice-icon" aria-hidden="true">
-          <ShieldAlert />
-        </span>
-        <div>
-          <h2 id="region-notice-title">地区限制提示</h2>
-          <p id="region-notice-description">
-            由于法律与合规要求，本服务暂不向位于中国大陆地区的用户提供。若您位于中国大陆地区，或代表中国大陆地区主体使用本服务，请立即停止访问、注册或使用。继续访问或使用即表示您确认自己不位于中国大陆地区，且不会将本服务用于违反适用法律法规的用途。因您违反本地区限制或适用法律法规而产生的责任，由您自行承担；法律规定不得排除或限制的责任，不受本提示影响。
-          </p>
-        </div>
-        <div class="region-notice-actions">
-          <RouterLink class="btn btn-ghost" to="/terms-of-service">查看服务条款</RouterLink>
-          <button ref="regionNoticePrimaryRef" class="btn btn-primary" type="button" @click="acceptRegionNotice">
-            我确认不在中国大陆并继续
-          </button>
-        </div>
-      </div>
-    </div>
-  </Teleport>
 </template>

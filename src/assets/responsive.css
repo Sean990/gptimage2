@@ -531,19 +531,6 @@
     padding: 12px;
   }
 
-  .region-notice-card {
-    padding: 20px;
-  }
-
-  .region-notice-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .region-notice-actions .btn {
-    width: 100%;
-  }
-
   .gallery-modal {
     height: calc(100dvh - 24px);
     max-height: calc(100dvh - 24px);
