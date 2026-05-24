@@ -36,6 +36,7 @@
   -webkit-backdrop-filter: blur(16px) saturate(1.25);
   transition:
     transform var(--dur-2) var(--ease-standard),
+    opacity var(--dur-2) var(--ease-standard),
     border-color var(--dur-2) var(--ease-standard),
     box-shadow var(--dur-2) var(--ease-standard);
 }
@@ -187,3 +188,34 @@
   border-color: rgba(74, 222, 128, 0.28);
   background: rgba(20, 83, 45, 0.92);
 }
+
+/* 收起状态的样式控制 */
+.floating-gallery-wrap.is-collapsed .floating-gallery-button {
+  transform: translateX(calc(100% - 58px + max(22px, env(safe-area-inset-right))));
+  opacity: 0.85;
+}
+
+.floating-gallery-wrap.is-collapsed .floating-gallery-button:hover,
+.floating-gallery-wrap.is-collapsed .floating-gallery-button:focus-within {
+  transform: translateX(0);
+  opacity: 1;
+  border-color: rgba(37, 99, 235, 0.38);
+  box-shadow:
+    0 22px 54px rgba(37, 99, 235, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+:root[data-theme='dark'] .floating-gallery-wrap.is-collapsed .floating-gallery-button:hover,
+:root[data-theme='dark'] .floating-gallery-wrap.is-collapsed .floating-gallery-button:focus-within {
+  border-color: rgba(96, 165, 250, 0.42);
+  box-shadow:
+    0 22px 54px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 1024px) {
+  .floating-gallery-wrap.is-generate-route.is-collapsed .floating-gallery-button {
+    transform: translateX(calc(100% - 58px + max(18px, env(safe-area-inset-right))));
+  }
+}
+

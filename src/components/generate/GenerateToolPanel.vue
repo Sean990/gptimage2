@@ -275,7 +275,7 @@ async function onMaskDrop(event) {
             :aria-expanded="modelMenuOpen"
             aria-haspopup="listbox"
             aria-controls="model-menu"
-            @click.stop="toggleModelMenu"
+            @click="toggleModelMenu"
             @keydown.escape="closeModelMenu"
           >
             <span class="model-picker-copy">

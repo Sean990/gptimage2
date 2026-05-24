@@ -37,6 +37,7 @@ const {
   creditCost,
   generate,
   getReferencePreviewImages,
+  imageGenerationCosts,
   loading,
   mode,
   openImagePreview,
@@ -491,6 +492,13 @@ async function submitTool(tool) {
   })
 }
 
+function getToolCost(tool) {
+  const costs = imageGenerationCosts?.value || {}
+  const base = Number(costs.imageToImageBase ?? 0)
+  const qualityExtra = Number(costs.highQualityExtra ?? 0)
+  return base + qualityExtra
+}
+
 const dragActive = ref('')
 
 function onDragEnter(tool, event) {
@@ -550,7 +558,7 @@ async function onDrop(tool, event) {
           </div>
           <div class="image-tool-meta">
             <em>{{ tool.metric }}</em>
-            <em>本次消耗 {{ creditCost > 0 ? creditCost : '按成功扣除' }} 积分</em>
+            <em>消耗 {{ getToolCost(tool) }} 积分</em>
           </div>
         </header>
 
@@ -695,7 +703,7 @@ async function onDrop(tool, event) {
             </button>
             <span class="generation-cost-pill">
               <Gem aria-hidden="true" />
-              本次消耗 {{ creditCost > 0 ? `${creditCost} 积分` : '按成功扣除' }}
+              消耗 {{ getToolCost(tool) }} 积分
             </span>
           </template>
         </FloatingActionBar>

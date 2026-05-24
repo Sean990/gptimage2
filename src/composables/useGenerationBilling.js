@@ -9,6 +9,7 @@ export function useGenerationBilling({
   quality,
   requiresReference,
   siteData,
+  activeTool,
 }) {
   const userCredits = computed(() => auth.credits.value)
   const usageCosts = computed(() => siteData.value.usageCosts || {})
@@ -39,12 +40,15 @@ export function useGenerationBilling({
   const generationBillingTip = computed(() => imageGenerationCosts.value.billingTip || generationBillingTipDefault)
   const generationBillingTipInline = computed(() => generationBillingTip.value.replace(/[。.!！]+$/, ''))
   const creditCost = computed(() => {
+    const isDedicatedTool = activeTool && activeTool.value && activeTool.value !== 'generate'
     const base =
-      mode.value === 'edit'
-        ? Number(imageGenerationCosts.value.editBase ?? 0)
-        : requiresReference.value
-          ? Number(imageGenerationCosts.value.imageToImageBase ?? 0)
-          : Number(imageGenerationCosts.value.textToImageBase ?? 0)
+      isDedicatedTool
+        ? Number(imageGenerationCosts.value.imageToImageBase ?? 0)
+        : mode.value === 'edit'
+          ? Number(imageGenerationCosts.value.editBase ?? 0)
+          : requiresReference.value
+            ? Number(imageGenerationCosts.value.imageToImageBase ?? 0)
+            : Number(imageGenerationCosts.value.textToImageBase ?? 0)
     const qualityExtra = quality.value === 'high' ? Number(imageGenerationCosts.value.highQualityExtra ?? 0) : 0
     return normalizedImageCount.value * (base + qualityExtra)
   })

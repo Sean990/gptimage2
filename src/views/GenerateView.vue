@@ -31,7 +31,10 @@ const isMobile = ref(false)
 const generateWorkspaceDraft = ref(null)
 let mobileMediaQuery = null
 
-const task = useGenerationTask({ onGalleryRecordUsed: handleGalleryRecordUsed })
+const task = useGenerationTask({
+  onGalleryRecordUsed: handleGalleryRecordUsed,
+  activeTool,
+})
 
 const { batchMode, footerTipText, notice, output } = task
 

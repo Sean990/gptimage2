@@ -44,6 +44,34 @@ let noticeTimer = null
 let completionTimer = null
 let pendingRefreshTimer = null
 
+const isCollapsed = ref(false)
+let collapseTimer = null
+
+function startCollapseTimer() {
+  clearCollapseTimer()
+  if (galleryOpen.value) return
+  collapseTimer = window.setTimeout(() => {
+    isCollapsed.value = true
+  }, 3000)
+}
+
+function clearCollapseTimer() {
+  if (collapseTimer) {
+    window.clearTimeout(collapseTimer)
+    collapseTimer = null
+  }
+}
+
+function handleMouseEnter() {
+  clearCollapseTimer()
+  isCollapsed.value = false
+}
+
+function handleMouseLeave() {
+  if (galleryOpen.value) return
+  startCollapseTimer()
+}
+
 const isAuthenticated = computed(() => auth.isAuthenticated.value)
 const isGenerateRoute = computed(() => route.path === '/generate')
 
@@ -129,10 +157,13 @@ const fabLabel = computed(() => {
 function triggerCompletion(message = '任务已完成') {
   completionMessage.value = message
   completionPulse.value = true
+  isCollapsed.value = false
+  clearCollapseTimer()
   if (completionTimer) window.clearTimeout(completionTimer)
   completionTimer = window.setTimeout(() => {
     completionPulse.value = false
     completionMessage.value = ''
+    startCollapseTimer()
   }, 3000)
 }
 
@@ -221,12 +252,15 @@ function schedulePendingRefresh() {
 
 async function openGallery() {
   galleryOpen.value = true
+  isCollapsed.value = false
+  clearCollapseTimer()
   await syncCloudGallery({ page: 1, silent: false })
 }
 
 function closeGallery() {
   galleryOpen.value = false
   schedulePendingRefresh()
+  startCollapseTimer()
 }
 
 function openGalleryImage(record) {
@@ -496,10 +530,12 @@ onMounted(() => {
   window.addEventListener(generationCompletedEventName, onGenerationCompleted)
   window.addEventListener(galleryChangedEventName, onGalleryChanged)
   window.addEventListener('storage', onStorage)
+  startCollapseTimer()
 })
 
 onBeforeUnmount(() => {
   clearPendingRefreshTimer()
+  clearCollapseTimer()
   if (noticeTimer) window.clearTimeout(noticeTimer)
   if (completionTimer) window.clearTimeout(completionTimer)
   window.removeEventListener(galleryEventName, onGalleryUpdated)
@@ -512,7 +548,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="floating-gallery-wrap" :class="{ 'is-generate-route': isGenerateRoute, 'is-complete': completionPulse }">
+  <div
+    class="floating-gallery-wrap"
+    :class="{ 'is-generate-route': isGenerateRoute, 'is-complete': completionPulse, 'is-collapsed': isCollapsed }"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
+  >
     <button class="floating-gallery-button" type="button" @click="openGallery">
       <span class="floating-gallery-icon" aria-hidden="true">
         <Loader2 v-if="submitting || pendingCount" class="spinner" />

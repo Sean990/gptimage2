@@ -60,7 +60,7 @@ onBeforeUnmount(() => {
         :aria-expanded="open"
         aria-haspopup="listbox"
         :aria-controls="`${id}-menu`"
-        @click.stop="toggle"
+        @click="toggle"
         @keydown.escape="close"
       >
         <span class="model-picker-copy">

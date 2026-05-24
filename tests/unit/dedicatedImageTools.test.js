@@ -14,6 +14,7 @@ function createTask(overrides = {}) {
     creditCost: ref(24),
     generate: vi.fn().mockResolvedValue(),
     getReferencePreviewImages: vi.fn(() => []),
+    imageGenerationCosts: ref({}),
     loading: ref(false),
     mode: ref('generate'),
     openImagePreview: vi.fn(),

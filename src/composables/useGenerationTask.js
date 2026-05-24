@@ -26,7 +26,7 @@ import { usePromptUI } from './usePromptUI'
 import { useReferenceImages } from './useReferenceImages'
 import { useScrollLock } from './useScrollLock'
 
-export function useGenerationTask({ onGalleryRecordUsed } = {}) {
+export function useGenerationTask({ onGalleryRecordUsed, activeTool = ref('generate') } = {}) {
   const route = useRoute()
   const router = useRouter()
   const auth = useAuthStore()
@@ -197,6 +197,7 @@ export function useGenerationTask({ onGalleryRecordUsed } = {}) {
     quality: formState.quality,
     requiresReference: formState.requiresReference,
     siteData,
+    activeTool,
   })
   const { billingEnabled, creditCost, hasUsageCostConfig, userCredits } = billingApi
 
